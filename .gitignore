@@ -11,3 +11,4 @@ assets/evidence/timelapse/frames-kept/
 .superpowers/
 sddm/hush/current
 sddm/hush/fonts/*.ttf
+__pycache__/
