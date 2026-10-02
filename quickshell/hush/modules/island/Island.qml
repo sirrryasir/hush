@@ -22,6 +22,11 @@ Item {
     property var queue: []
     property string restCenterText: Qt.formatDate(dateSrc.date, "ddd d MMM")
     readonly property color fg: Colors.darkOnSurface
+    // Set by IslandWindow while the pill is retracted (fullscreen, auto-hide); IPC reports "hidden".
+    property bool hidden: false
+    // The shown state's v2 priority (config/Priorities), until the Arbiter drives the island.
+    readonly property int priority: ({ rest: Priorities.rest, media: Priorities.activity, osd: Priorities.osd,
+        notification: Priorities.notification, expanded: Priorities.expanded })[state] || 0
 
     width: body.width; height: body.height
     readonly property real bodyWidth: body.width

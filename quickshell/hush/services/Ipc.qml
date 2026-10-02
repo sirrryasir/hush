@@ -31,7 +31,7 @@ Singleton {
     IpcHandler {
         target: "hush"
         function ping(): string { return "pong" }
-        function islandState(): string { return root.island ? root.island.state : "none" }
+        function islandState(): string { return root.island ? (root.island.hidden ? "hidden" : root.island.state) : "none" }
         function islandScreen(): string { return root.islandScreenName }
         function islandSize(): string { return root.island ? Math.round(root.island.bodyWidth) + "x" + Math.round(root.island.bodyHeight) : "none" }
         function screens(): int { return Quickshell.screens.length }

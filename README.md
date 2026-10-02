@@ -73,6 +73,14 @@ hl.bind("SUPER + SHIFT + W", hl.dsp.exec_cmd("~/.local/bin/hush wall random"))
 
 and start it from autostart: `hush reload` then `hush shell start`.
 
+The island is one transparent, full-width layer per monitor (namespace `hush-island`, 360 px tall, never resized); only its input mask follows the pill, so clicks beside the pill reach your windows. Blur it with a layer rule; `ignore_alpha` keeps the transparent area unblurred:
+
+```lua
+hl.layer_rule({ match = { namespace = "hush-island" }, blur = true, ignore_alpha = 0.2 })
+```
+
+`island.mode` in `~/.config/hush/settings.json` picks `reserve` (default, `island.reserve` = 40 px exclusive zone), `overlay` (no reserve) or `autohide` (a 1 px strip at the top edge, `hush-island-reveal`, shows the pill on hover, on workspace change and for OSDs, notifications and the control center). A fullscreen window retracts the pill.
+
 ## Installation
 
 Needs Hyprland, Quickshell (`qs`), matugen, python3 with Pillow, lua, awww (wallpapers), imagemagick and git.

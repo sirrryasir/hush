@@ -16,6 +16,11 @@ Singleton {
     // Sorted list of {id, name, active, occupied, monitor}: ids 1..5 plus any others that exist.
     property var workspaces: []
     readonly property string focusedMonitorName: Hyprland.focusedMonitor ? Hyprland.focusedMonitor.name : ""
+    // True while the focused monitor's active workspace has a fullscreen window (the island retracts).
+    readonly property bool fullscreenOnFocused: {
+        const m = Hyprland.focusedMonitor
+        return !!(m && m.activeWorkspace && m.activeWorkspace.hasFullscreen)
+    }
 
     function rebuild() {
         const byId = {};
@@ -90,7 +95,11 @@ Singleton {
     Timer { id: debounce; interval: 100; onTriggered: root.rebuild() }
     Connections {
         target: Hyprland
-        function onRawEvent(ev) { debounce.restart() }
+        function onRawEvent(ev) {
+            debounce.restart()
+            // hasFullscreen is only re-read from a workspace refresh.
+            if (ev.name === "fullscreen") Hyprland.refreshWorkspaces()
+        }
     }
     Connections {
         target: Hyprland.toplevels
