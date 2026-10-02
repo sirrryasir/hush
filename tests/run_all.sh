@@ -1,7 +1,13 @@
 #!/usr/bin/env bash
 cd "$(dirname "$0")"
-rc=0
-for t in test_fonts.sh test_themes.sh test_templates_hypr.sh test_templates_term.sh test_templates_toolkit.sh test_hush_cli.sh test_plugins.sh test_hypr_live.sh test_nvim.sh test_helium.sh test_gtk.sh test_hyprlock.sh test_contrast.sh test_island_contrast.sh test_app_contrast.sh test_integration.sh test_shell.sh test_island.sh test_surface.sh test_modes.sh test_morph.sh test_rest.sh test_hover.sh test_launcher.sh test_wallpapers.sh test_media.sh test_activity_ui.sh test_osd.sh test_arbiter.sh test_settings.sh test_notifications.sh test_control_center.sh test_island_focus.sh test_retire.sh test_hooks.sh test_no_personal.sh test_readme.sh test_shell_integration.sh test_colorfade.sh test_perf.sh; do
-  echo "=== $t ==="; bash "$t" || rc=1
+# Every tests/test_*.sh runs. List a file in SKIP only if it needs hardware that is absent on the
+# machine (add a comment saying which); nothing needs skipping on a Hyprland desktop with a GPU.
+SKIP=()
+pass=0 failn=0 skip=0 rc=0
+for t in test_*.sh; do
+  if [[ " ${SKIP[*]} " == *" $t "* ]]; then echo "=== $t (SKIP) ==="; skip=$((skip+1)); continue; fi
+  echo "=== $t ==="
+  if bash "$t"; then pass=$((pass+1)); else failn=$((failn+1)); rc=1; fi
 done
+echo "$pass PASS $failn FAIL $skip SKIP"
 exit $rc
