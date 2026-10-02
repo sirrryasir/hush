@@ -2,13 +2,13 @@ import QtQuick
 import Quickshell
 import qs.config
 
-// lock / sleep / reboot / power off. Destructive ones need a second click within 2 s.
+// lock / sleep / reboot / power off. Lock goes through `hush lock`; destructive ones need a second click within 2 s.
 Row {
     id: row
     spacing: 6
     property string armed: ""
     readonly property var actions: [
-        { id: "lock", glyph: "lock", cmd: ["hyprlock"], confirm: false },
+        { id: "lock", glyph: "lock", cmd: [Paths.hush, "lock"], confirm: false },
         { id: "sleep", glyph: "bedtime", cmd: ["systemctl", "suspend"], confirm: true },
         { id: "reboot", glyph: "restart_alt", cmd: ["systemctl", "reboot"], confirm: true },
         { id: "poweroff", glyph: "power_settings_new", cmd: ["systemctl", "poweroff"], confirm: true }

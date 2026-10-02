@@ -35,6 +35,7 @@ usage: hush <command>
   track <on|off>       off: git skip-worktree on those files in their repos; on: undo
   fallback             stop the Hush shell, start Waybar and SwayNC
   sddm sync            refresh ~/.cache/hush/sddm (wallpaper, colours, avatar) for the SDDM theme
+  lock                 lock the screen with hyprlock (once)
   shell <start|stop|restart|status|log>  manage the Hush Quickshell shell
 EOF
 }
@@ -467,7 +468,7 @@ main() {
   mkdir -p "$CACHE_DIR" "$STATE_DIR"
   # Serialize every mutating command: they share $RENDER and $MATUGEN_CFG.
   case "${1:-}" in
-    list|status|shell|generated|track|""|-h|--help|help|--version|version) ;; # shell does not render; it must not hold the lock
+    list|status|shell|generated|track|lock|""|-h|--help|help|--version|version) ;; # shell does not render; it must not hold the lock
     *) exec 9>"$CACHE_DIR/lock"; flock -w 30 9 || die "another hush is running" ;;
   esac
   case "${1:-}" in
@@ -482,6 +483,7 @@ main() {
     fallback) cmd_fallback ;;
     sddm) cmd_sddm "${2:-}" ;;
     shell) cmd_shell "${2:-}" ;;
+    lock) pgrep -x hyprlock >/dev/null || exec hyprlock ;;
     --version|version) cat "$HUSH_ROOT/VERSION" ;;
     ""|-h|--help|help) usage ;;
     *) usage; die "unknown command: $1" ;;

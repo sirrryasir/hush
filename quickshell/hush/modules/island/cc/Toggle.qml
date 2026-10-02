@@ -8,7 +8,9 @@ Rectangle {
     property string label: ""
     property string subtitle: ""
     property bool checked: false
+    property bool chevron: false
     signal clicked()
+    signal chevronClicked()
 
     implicitHeight: 56
     radius: 14
@@ -25,7 +27,7 @@ Rectangle {
         }
         Column {
             anchors.verticalCenter: parent.verticalCenter
-            width: parent.width - 22 - 12
+            width: parent.width - 22 - 12 - (tile.chevron ? 22 : 0)
             Text {
                 width: parent.width; text: tile.label; elide: Text.ElideRight; color: tile.ink
                 font.family: Theme.fontUi; font.pixelSize: Theme.textControl; font.weight: Font.Medium
@@ -38,4 +40,14 @@ Rectangle {
         }
     }
     MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: tile.clicked() }
+    // Opens the tile's sub-page; sits above the tile's own click area.
+    Item {
+        visible: tile.chevron
+        anchors.right: parent.right; anchors.top: parent.top; anchors.bottom: parent.bottom; width: 40
+        Text {
+            anchors.centerIn: parent; text: "chevron_right"; color: tile.ink
+            font.family: Theme.fontIcon; font.pixelSize: 22
+        }
+        MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: tile.chevronClicked() }
+    }
 }
