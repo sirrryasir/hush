@@ -33,7 +33,7 @@ print(' '.join(sorted({'%d' % l['h'] for mon in json.load(sys.stdin).values() fo
   assert_eq "360" "$g" "island layer windows are 360 tall"
   # The calm spring is speed-capped (settings motion.springCalm.velocity), so poll until it settles.
   settle() { local i s; for i in $(seq 30); do s=$(shell_ipc islandSize); [[ "$s" == "$1" ]] && break; sleep 0.1; done; echo "$s"; }
-  local rest; rest=$(settle "320x36")
+  sleep 1; local rest; rest=$(shell_ipc islandSize)
   [[ "$rest" =~ ^[0-9]+x36$ ]] && pass "pill is ${rest} at rest" || fail "pill at rest is $rest"
   shell_ipc toggleControlCenter
   assert_eq "560x320" "$(settle 560x320)" "pill springs to 560x320 expanded"

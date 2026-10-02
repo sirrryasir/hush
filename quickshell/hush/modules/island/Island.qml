@@ -21,6 +21,9 @@ Item {
     property var active: ({ name: "rest", priority: 0 })
     property var queue: []
     property string restCenterText: Qt.formatDate(dateSrc.date, "ddd d MMM")
+    // The clock text the rest state shows (tests read it over IPC).
+    property string restClock: ""
+    property real restWidth: 0
     readonly property color fg: Colors.darkOnSurface
     // Set by IslandWindow while the pill is retracted (fullscreen, auto-hide); IPC reports "hidden".
     property bool hidden: false

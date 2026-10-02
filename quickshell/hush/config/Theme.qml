@@ -7,7 +7,6 @@ Singleton {
     readonly property string fontMono: "JetBrainsMono Nerd Font"
     readonly property string fontIcon: "Material Symbols Rounded"
     readonly property int textIsland: 13
-    readonly property int textCorner: 12
     readonly property int textLauncher: 14
     readonly property int textControl: 13
     readonly property int topMargin: 6

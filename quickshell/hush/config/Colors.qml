@@ -17,6 +17,7 @@ Singleton {
     property var dark: ({})
     readonly property color darkOnSurface: dark.on_surface || on_surface
     readonly property color darkPrimary: dark.primary || primary
+    readonly property color darkError: dark.error || error
 
     // Defaults are the harbor palette so the shell renders before Colors.json exists.
     property color primary: "#9cd1c1"

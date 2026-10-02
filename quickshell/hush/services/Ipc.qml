@@ -42,6 +42,8 @@ Singleton {
         function primary(): string { return Colors.primary.toString() }
         function darkOnSurface(): string { return Colors.darkOnSurface.toString() }
         function focusedWorkspace(): int { return Hypr.focusedId }
+        function restWidth(): int { return root.island ? root.island.restWidth : 0 }
+        function restClock(): string { return root.island ? root.island.restClock : "" }
         function batteryPercent(): int { return Battery.percent }
         function netConnected(): bool { return Net.connected }
         function goWorkspace(id: int): void { Hypr.go(id) }

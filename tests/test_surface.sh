@@ -75,6 +75,7 @@ t_constant() {
   assert_eq "expanded" "$(shell_ipc islandState)" "control center opens"
   after=$(layers)
   assert_eq "$before" "$after" "layer geometry unchanged while expanded"
+  local i; for i in $(seq 20); do [[ "$(shell_ipc islandSize)" == "560x320" ]] && break; sleep 0.1; done
   assert_eq "560x320" "$(shell_ipc islandSize)" "pill springs to 560x320 inside the fixed surface"
   shell_ipc toggleControlCenter >/dev/null; sleep 0.8
   assert_eq "$before" "$(layers)" "layer geometry unchanged after collapse"

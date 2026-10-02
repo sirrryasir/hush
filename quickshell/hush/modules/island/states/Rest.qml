@@ -1,35 +1,24 @@
 import QtQuick
 import Quickshell
 import qs.config
+import "../rest"
 
-// The island at rest: theme dot, date (or a media title once B3 provides one), clock.
+// The island at rest (design 2.1): activity circle (collapses when empty), clock, status ring.
+// The pill's width is this row's width on the 8 px grid, so an empty activity slot narrows it.
 StateBase {
     id: rest
-    name: "rest"; size: Sizes.rest; priority: 0
+    name: "rest"; priority: 0
+    readonly property int pad: 14
+    readonly property int gap: 10
+    size: Qt.size(Sizes.snap(pad * 2 + (activity.shown ? activity.width + gap : 0) + clock.width + gap + ring.width), 36)
 
-    SystemClock { id: clockSrc; precision: SystemClock.Minutes }
+    Binding { target: rest.island; property: "restClock"; value: clock.text; when: rest.island !== null }
+    Binding { target: rest.island; property: "restWidth"; value: rest.size.width; when: rest.island !== null }
 
     Row {
-        anchors.fill: parent; anchors.leftMargin: 14; anchors.rightMargin: 14; spacing: 10
-        Rectangle {
-            width: 8; height: 8; radius: 4; color: Colors.darkPrimary
-            anchors.verticalCenter: parent.verticalCenter
-            Behavior on color { ColorAnimation { duration: Theme.durationNormal } }
-        }
-        Text {
-            id: center
-            width: parent.width - 8 - 10 - clock.width - 10
-            anchors.verticalCenter: parent.verticalCenter
-            text: rest.island ? rest.island.restCenterText : ""
-            elide: Text.ElideRight; color: Colors.darkOnSurface
-            font.family: Theme.fontUi; font.pixelSize: Theme.textIsland; font.weight: Font.Medium
-        }
-        Text {
-            id: clock
-            anchors.verticalCenter: parent.verticalCenter; color: Colors.darkOnSurface
-            text: Qt.formatTime(clockSrc.date, "hh:mm")
-            font.family: Theme.fontUi; font.pixelSize: Theme.textIsland; font.weight: Font.Medium
-            font.features: ({ "tnum": 1 })
-        }
+        anchors.centerIn: parent; spacing: rest.gap
+        ActivityCircle { id: activity; visible: shown; anchors.verticalCenter: parent.verticalCenter }
+        Clock { id: clock; anchors.verticalCenter: parent.verticalCenter }
+        StatusRing { id: ring; anchors.verticalCenter: parent.verticalCenter }
     }
 }
