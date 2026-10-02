@@ -5,7 +5,8 @@ import qs.services as Svc
 
 // The hover face (design 2.2), 320x44: this monitor's workspaces as dots with the active one drawn
 // as a pill, the date, and the media title while something plays. A dot goes to its workspace and
-// the date opens the calendar; any other left click falls through to the pill's click mapping.
+// the date opens the calendar; the active dot or a long press opens the GloView overview; any other
+// left click goes to the pill's click mapping.
 StateBase {
     id: face
     name: "hover"; size: Sizes.hover; priority: 1
@@ -13,6 +14,14 @@ StateBase {
     readonly property var workspaces: Svc.Hypr.workspacesFor(island ? island.screenName : Svc.Hypr.focusedMonitorName)
     readonly property string title: Svc.Media.playing ? (Svc.Media.title || "") : ""
 
+    // A long press anywhere on the face opens the overview; a short click falls through to the pill.
+    MouseArea {
+        anchors.fill: parent
+        acceptedButtons: Qt.LeftButton
+        Accessible.role: Accessible.Button; Accessible.name: "Workspace overview (long press)"
+        onPressAndHold: Svc.Ipc.overview()
+        onClicked: if (face.island) face.island.click(Qt.LeftButton)
+    }
     Row {
         id: dots
         anchors.left: parent.left; anchors.leftMargin: 18; anchors.verticalCenter: parent.verticalCenter
@@ -27,7 +36,10 @@ StateBase {
                 Behavior on width { NumberAnimation { duration: Theme.durationShort; easing.type: Easing.OutCubic } }
                 MouseArea {
                     anchors.fill: parent; anchors.margins: -4
-                    onClicked: Svc.Hypr.go(parent.modelData.id)
+                    Accessible.role: Accessible.Button
+                    Accessible.name: "Workspace " + parent.modelData.name + (parent.modelData.active ? ", current" : "")
+                    // The active dot opens the workspace overview (GloView); any other dot goes there.
+                    onClicked: parent.modelData.active ? Svc.Ipc.overview() : Svc.Hypr.go(parent.modelData.id)
                 }
             }
         }
@@ -40,6 +52,7 @@ StateBase {
         font.family: Theme.fontUi; font.pixelSize: Theme.textIsland; font.weight: Font.Medium
         MouseArea {
             anchors.fill: parent; anchors.margins: -6
+            Accessible.role: Accessible.Button; Accessible.name: "Calendar, " + date.text
             onClicked: if (face.island) face.island.openSurface("calendar")
         }
     }

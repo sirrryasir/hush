@@ -42,6 +42,10 @@ Item {
     readonly property color fg: Colors.darkOnSurface
     // Set by IslandWindow while the pill is retracted (fullscreen, auto-hide); IPC reports "hidden".
     property bool hidden: false
+    // Retract/reveal crossings are stamped too (tests time the reveal strip from them).
+    onHiddenChanged: mark(hidden ? "@hidden" : "@shown")
+    // Set by IslandWindow while the retracted island's OSD shows on the fullscreen OSD overlay.
+    property bool overlayOsd: false
     // Launcher mode for the next open ("apps", "windows", "calc", "clip").
     property string launcherMode: "apps"
 
@@ -173,6 +177,7 @@ Item {
         const was = lastState; lastState = state
         mark(state)
         if (surfaceOpen) forceActiveFocus()
+        navTarget = null
         if (state === "notifCenter") Svc.Notifs.markSeen()
         // The hover face resumed from the queue with the pointer already gone: let the grace close it.
         if (state === "hover" && !hover.hovered) grace.restart()
@@ -182,6 +187,83 @@ Item {
         inStateChange = false
     }
     function rearm() { if (hover.hovered && hoverAllowed && state === "rest") arbiter.raise("hover") }
+
+    // --- keyboard navigation inside surfaces (Task 16) ---
+    // Tab / Shift+Tab walk the open surface's controls in reading order, the arrows move to the
+    // nearest control in that direction, Enter or Space clicks it, Esc steps back / closes. A ring
+    // in the primary colour marks the control. Controls are the surface's enabled, visible
+    // MouseAreas (every surface and the control center build their buttons from them), minus
+    // full-surface click swallowers. A surface that owns its keys (the launcher) is left alone.
+    property Item navTarget: null
+    property rect navRect: Qt.rect(0, 0, 0, 0)
+    function isControl(it) { return !!it && it.acceptedButtons !== undefined && it.pressAndHoldInterval !== undefined && it.enabled }
+    function navCandidates() {
+        const root = surface.item
+        if (!root || !surfaceOpen || root.wantsKeyboard) return []
+        const out = [], W = root.width, H = root.height
+        const walk = it => {
+            if (!it || !it.visible || it.opacity <= 0.01) return
+            if (it !== root && isControl(it) && it.width > 1 && it.height > 1 && !(it.width >= W * 0.9 && it.height >= H * 0.9)) {
+                const p = it.mapToItem(root, it.width / 2, it.height / 2)
+                if (p.x >= 0 && p.y >= 0 && p.x <= W && p.y <= H) out.push({ item: it, x: p.x, y: p.y })
+            }
+            for (let i = 0; i < it.children.length; i++) walk(it.children[i])
+        }
+        walk(root)
+        // Reading order: rows (8 px tolerance) top to bottom, then left to right.
+        out.sort((a, b) => Math.abs(a.y - b.y) > 8 ? a.y - b.y : a.x - b.x)
+        return out
+    }
+    function setNav(it) {
+        navTarget = it
+        if (!it) return
+        const p = it.mapToItem(body, 0, 0)
+        navRect = Qt.rect(p.x, p.y, it.width, it.height)
+        mark("@nav")
+    }
+    function navStep(delta) {
+        const c = navCandidates(); if (!c.length) return false
+        const i = c.findIndex(e => e.item === navTarget)
+        setNav(c[i < 0 ? (delta > 0 ? 0 : c.length - 1) : (i + delta + c.length) % c.length].item)
+        return true
+    }
+    function navMove(dx, dy) {
+        const c = navCandidates(); if (!c.length) return false
+        const cur = c.find(e => e.item === navTarget)
+        if (!cur) { setNav(c[0].item); return true }
+        let best = null, bestD = 1e9
+        for (const e of c) {
+            if (e.item === cur.item) continue
+            const ax = (e.x - cur.x) * dx + (e.y - cur.y) * dy          // along the direction
+            const ox = Math.abs((e.x - cur.x) * dy) + Math.abs((e.y - cur.y) * dx) // across it
+            if (ax <= 2) continue
+            const d = ax + 2 * ox
+            if (d < bestD) { bestD = d; best = e }
+        }
+        if (best) setNav(best.item)
+        return true
+    }
+    function navActivate() {
+        const it = navTarget
+        if (!it || !isControl(it) || !it.visible) return false
+        mark("@activate")
+        it.clicked(null)
+        return true
+    }
+    Keys.onPressed: event => {
+        if (!surfaceOpen) return
+        let done = false
+        switch (event.key) {
+        case Qt.Key_Tab: done = navStep(event.modifiers & Qt.ShiftModifier ? -1 : 1); break
+        case Qt.Key_Backtab: done = navStep(-1); break
+        case Qt.Key_Left: done = navMove(-1, 0); break
+        case Qt.Key_Right: done = navMove(1, 0); break
+        case Qt.Key_Up: done = navMove(0, -1); break
+        case Qt.Key_Down: done = navMove(0, 1); break
+        case Qt.Key_Return: case Qt.Key_Enter: case Qt.Key_Space: done = navActivate(); break
+        }
+        if (done) event.accepted = true
+    }
     SystemClock { id: dateSrc; precision: SystemClock.Hours }
 
     // The shape springs to the staged surface's size; the content cross-fades inside it.
@@ -191,6 +273,9 @@ Item {
         MouseArea {
             anchors.fill: parent
             acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
+            Accessible.role: Accessible.Button
+            Accessible.name: "Hush island"
+            Accessible.description: "Left click: control center. Right click: notifications. Middle click: media."
             onClicked: mouse => islandRoot.click(mouse.button)
             onWheel: wheel => { wheel.accepted = islandRoot.scroll(wheel.angleDelta.y) }
         }
@@ -208,6 +293,16 @@ Item {
                 body.calm = Sizes.of(shape).height > Sizes.hover.height || Sizes.of(lastShape).height > Sizes.hover.height
                 lastShape = shape
             }
+        }
+        // Keyboard focus ring (Task 16): drawn over the focused control, inside the pill's clip.
+        Rectangle {
+            objectName: "focusRing"
+            visible: islandRoot.navTarget !== null && islandRoot.surfaceOpen && islandRoot.navTarget.visible
+            x: islandRoot.navRect.x - 3; y: islandRoot.navRect.y - 3
+            width: islandRoot.navRect.width + 6; height: islandRoot.navRect.height + 6
+            radius: Math.min(12, height / 2)
+            color: "transparent"; border.width: 2; border.color: Colors.darkPrimary
+            z: 20
         }
     }
     // Esc steps out of a sub-page first (the control center's Wi-Fi/Bluetooth pages), then closes.

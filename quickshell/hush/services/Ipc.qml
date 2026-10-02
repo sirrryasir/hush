@@ -91,6 +91,22 @@ Singleton {
             return !!it && it.visible
         }
         // --- end hover and input ---
+        // --- modes, fullscreen overlay, keyboard (Task 16) ---
+        function osdOverlayVisible(): bool { return root.island ? root.island.overlayOsd : false }
+        // The keyboard-focused control's objectName (or its class when unnamed), "" when none.
+        function islandFocus(): string {
+            const t = root.island ? root.island.navTarget : null
+            return t && t.visible ? (t.objectName || String(t).split("(")[0]) : ""
+        }
+        // How many controls the keyboard can reach in the shown surface.
+        function islandNavCount(): int { return root.island ? root.island.navCandidates().length : 0 }
+        function islandFocusRing(): bool {
+            const r = root.island ? root.findNamed(root.island, "focusRing") : null
+            return !!r && r.visible
+        }
+        // Workspace overview: the GloView Hyprland plugin (Hush builds none of its own).
+        function overview(): void { root.overview() }
+        // --- end modes ---
         // Morph probe for tests/test_morph.sh: open the control center after delayMs, reverse it
         // reverseMs later (0: stay open), timed in the shell so no IPC client start-up lands mid-capture.
         function morphProbe(delayMs: int, reverseMs: int): void { probeOpen.interval = Math.max(1, delayMs); probeClose.interval = Math.max(0, reverseMs); probeOpen.restart() }
@@ -124,6 +140,16 @@ Singleton {
         if (item.objectName === name) return item
         for (let i = 0; i < item.children.length; i++) { const f = findNamed(item.children[i], name); if (f) return f }
         return null
+    }
+    // Runs `hyprctl gloview` when the GloView plugin is loaded; otherwise does nothing and logs once.
+    property bool overviewWarned: false
+    function overview() { if (!overviewProc.running) overviewProc.running = true }
+    Process {
+        id: overviewProc
+        command: ["sh", "-c", "hyprctl plugin list 2>/dev/null | grep -q 'Plugin GloView' || exit 3; hyprctl gloview >/dev/null"]
+        onExited: code => {
+            if (code === 3 && !root.overviewWarned) { root.overviewWarned = true; console.log("hush: overview needs the GloView plugin (hyprpm); not loaded, ignoring") }
+        }
     }
     property var themeNames: []
     function setTheme(name) { themeProc.command = [Paths.hush, "theme", name]; themeProc.running = true }

@@ -147,6 +147,11 @@ t_clicks() {
     shell_ipc closeSurface >/dev/null; move "$AX" "$AY"; kill "$fp" 2>/dev/null; wait "$fp" 2>/dev/null; sleep 0.8
   else pass "no dbus-python/PyGObject: activity circle click skipped"; fi
 }
+t_overview() {
+  # GloView overview over IPC (toggled twice so the screen is left as it was); no errors either way.
+  shell_ipc overview >/dev/null; sleep 0.8; shell_ipc overview >/dev/null; sleep 0.6
+  local e; e=$(shell_log_errors); [[ -z "$e" ]] && pass "overview IPC runs without errors" || fail "overview: $e"
+}
 t_log() { local e; e=$(shell_log_errors); [[ -z "$e" ]] && pass "no errors in shell log" || fail "shell log errors: $e"; }
-run_test "files" t_files; run_test "hover" t_hover; run_test "rearm" t_rearm; run_test "clicks" t_clicks; run_test "log" t_log
+run_test "files" t_files; run_test "hover" t_hover; run_test "rearm" t_rearm; run_test "clicks" t_clicks; run_test "overview" t_overview; run_test "log" t_log
 finish

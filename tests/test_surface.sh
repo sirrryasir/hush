@@ -112,6 +112,8 @@ t_mask() {
     hyprctl dispatch "hl.dsp.window.fullscreen({ action = \"toggle\", window = \"class:$A\" })" >/dev/null; sleep 0.8
     assert_eq "hidden" "$(shell_ipc islandState)" "$m: fullscreen window retracts the pill"
     assert_eq "$before" "$(layers)" "$m: layer geometry unchanged while hidden"
+    hyprctl layers -j | python3 -c "import json,sys;d=json.load(sys.stdin)['$m']['levels'];sys.exit(0 if any(l['namespace']=='hush-island-reveal' for l in d.get('3',[])) else 1)" \
+      && pass "$m: top-edge reveal strip live over the fullscreen window" || fail "$m: no reveal strip under fullscreen"
     hyprctl dispatch "hl.dsp.window.fullscreen({ action = \"toggle\", window = \"class:$A\" })" >/dev/null; sleep 0.8
     [[ "$(shell_ipc islandState)" != hidden ]] && pass "$m: pill returns after fullscreen" || fail "$m: pill still hidden"
     local c; for c in $A $B; do hyprctl dispatch "hl.dsp.window.close({ window = \"class:$c\" })" >/dev/null; done
