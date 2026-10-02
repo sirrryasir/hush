@@ -15,4 +15,14 @@ Singleton {
         const bars = Math.max(0, Math.min(6, Math.round(percent / 100 * 6)));
         return bars >= 6 ? "battery_full" : "battery_" + bars + "_bar";
     }
+    // True for 2 s after the state changes to charging (the island shows the bolt).
+    property bool justPlugged: false
+    property int _state: dev ? dev.state : 0
+    on_StateChanged: {
+        if (_state === UPowerDeviceState.Charging && _prev !== 0) { justPlugged = true; plugTimer.restart() }
+        else if (_state !== UPowerDeviceState.Charging) { justPlugged = false; plugTimer.stop() }
+        _prev = _state
+    }
+    property int _prev: 0
+    Timer { id: plugTimer; interval: 2000; onTriggered: root.justPlugged = false }
 }

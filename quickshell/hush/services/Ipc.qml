@@ -73,6 +73,18 @@ Singleton {
         function settingsSet(key: string, json: string): void { try { Settings.set(key, JSON.parse(json)) } catch (e) { console.warn("settingsSet: bad json for " + key) } }
         // --- end settings ---
     }
+    // --- activity IPC (Task 15) ---
+    IpcHandler {
+        target: "activity"
+        function timerStart(sec: int): void { Countdown.start(sec, "") }
+        function timerStop(): void { Countdown.stop() }
+        function timerRemaining(): int { return Countdown.remaining }
+        function recording(): bool { return Recording.active }
+        function micInUse(): bool { return Privacy.micInUse }
+        function cameraInUse(): bool { return Privacy.cameraInUse }
+        function justPlugged(): bool { return Battery.justPlugged }
+    }
+    // --- end activity IPC ---
     property var themeNames: []
     function setTheme(name) { themeProc.command = [Paths.hush, "theme", name]; themeProc.running = true }
     Process { id: themeProc }

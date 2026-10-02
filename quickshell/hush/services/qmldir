@@ -8,3 +8,6 @@ singleton Media 1.0 Media.qml
 singleton Audio 1.0 Audio.qml
 singleton Brightness 1.0 Brightness.qml
 singleton Notifs 1.0 Notifs.qml
+singleton Recording 1.0 Recording.qml
+singleton Privacy 1.0 Privacy.qml
+singleton Countdown 1.0 Countdown.qml
