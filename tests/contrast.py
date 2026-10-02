@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""WCAG contrast audit for one Hush theme. Usage: contrast.py <theme> [--quiet] [--wall <image>] (--wall: audit against that wallpaper instead of the theme's). Exit 1 on failure."""
-import json, os, re, sys
-from PIL import Image, ImageStat
+"""WCAG contrast audit for one Hush theme. Usage: contrast.py <theme> [--quiet] [--wall <image>] (--wall: audit against that wallpaper instead of the theme's). Exit 1 on failure.
+contrast.py --island-gate [theme...]: offline gate over the island's role pairs for every theme (default all six);
+palettes are generated with the same matugen flags as `hush theme` into a scratch dir, never ~/.config. Exit 1 on failure."""
+import json, os, re, subprocess, sys, tempfile, tomllib
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 HOME = os.path.expanduser("~")
-theme = sys.argv[1]
 
 def rgb(h): h = h.lstrip('#'); return tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
 def lin(c): c /= 255; return c/12.92 if c <= 0.03928 else ((c+0.055)/1.055)**2.4
@@ -13,6 +13,58 @@ def lum(c): r, g, b = map(lin, c); return 0.2126*r + 0.7152*g + 0.0722*b
 def cr(a, b):
     la, lb = sorted((lum(a), lum(b)), reverse=True); return (la+0.05)/(lb+0.05)
 def blend(fg, bg, a): return tuple(a*f + (1-a)*b for f, b in zip(fg, bg))
+
+def island_gate(themes):
+    root = ROOT; blk = (0, 0, 0)
+    names = themes or ["harbor", "ember", "moss", "dusk", "paper", "fog"]
+    table = {}; order = []
+    for t in names:
+        d = tomllib.load(open(f"{root}/themes/{t}/theme.toml", "rb"))
+        tmp = tempfile.mkdtemp(prefix=f"hush-contrast-{t}-")
+        cfg = open(f"{root}/matugen/config.toml.head").read() + "\n" + open(f"{root}/matugen/config.d/colors-json.toml").read()
+        open(f"{tmp}/m.toml", "w").write(cfg.replace("@HUSH_ROOT@", root).replace("@CONFIG@", tmp))
+        if d["source"] == "wallpaper":
+            cmd = ["matugen", "image", f"{root}/themes/{t}/wallpaper.png", "--source-color-index", "0"]
+        else:
+            cmd = ["matugen", "color", "hex", d["source"]]
+        cmd += ["-c", f"{tmp}/m.toml", "-m", d["mode"], "-t", d["scheme"], "--contrast", str(d["contrast"]), "-q"]
+        subprocess.run(cmd, check=True)
+        c = json.load(open(f"{tmp}/hush/Colors.json")); k = c["dark"]
+        C = lambda x: rgb(c[x]); K = lambda x: rgb(k[x])
+        pairs = [  # (label, fg, bg, minimum)
+            ("pill text (darkOnSurface/black)", K("on_surface"), blk, 7.0),
+            ("hover text 0.7 (date/black)", blend(K("on_surface"), blk, .7), blk, 4.5),
+            ("hover dot active (1.0)", K("on_surface"), blk, 3.0),
+            ("hover dot occupied (0.55)", blend(K("on_surface"), blk, .55), blk, 3.0),
+            ("ring darkPrimary/black", K("primary"), blk, 3.0),
+            ("ring darkError/black", K("error"), blk, 3.0),
+            ("ring privacy tertiary/black", K("tertiary"), blk, 3.0),
+            ("surface text on_surface/pill", C("on_surface"), blk, 4.5),
+            ("surface text on_surface_variant/pill", C("on_surface_variant"), blk, 4.5),
+            ("surface text on_surface/container_high", C("on_surface"), C("surface_container_high"), 4.5),
+            ("surface text on_surface_variant/container", C("on_surface_variant"), C("surface_container"), 4.5),
+            ("chip off on_surface/container", C("on_surface"), C("surface_container"), 4.5),
+            ("chip on on_primary/primary", C("on_primary"), C("primary"), 4.5),
+            ("warning error/container_high", C("error"), C("surface_container_high"), 3.0),
+            ("critical error/error_container", C("error"), C("error_container"), 3.0),
+        ]
+        table[t] = [(l, cr(f, b), mn) for l, f, b, mn in pairs]
+        order = [l for l, *_ in pairs]
+    bad = 0
+    print("%-46s" % "pair (min)" + "".join("%-14s" % n for n in names))
+    for i, l in enumerate(order):
+        mn = table[names[0]][i][2]
+        cells = []
+        for n in names:
+            r = table[n][i][1]; ok = r >= mn; bad += not ok
+            cells.append("%-14s" % ("%5.2f %s" % (r, "PASS" if ok else "FAIL")))
+        print("%-46s" % f"{l} ({mn:g})" + "".join(cells))
+    print(f"island contrast gate: {bad} failing cells over {len(names)} themes", file=sys.stderr)
+    return 1 if bad else 0
+
+if sys.argv[1] == "--island-gate": sys.exit(island_gate(sys.argv[2:]))
+from PIL import Image, ImageStat
+theme = sys.argv[1]
 
 col = json.load(open(f"{HOME}/.config/hush/Colors.json"))
 kitty = {}
