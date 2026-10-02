@@ -15,7 +15,8 @@ Item {
     readonly property var player: Svc.Media.player
     readonly property real length: Svc.Media.length
     readonly property real position: scrub.pressed ? scrub.drag : Svc.Media.position
-    readonly property bool canSeek: player !== null && player.canSeek && player.positionSupported && length > 0
+    // !! because a departing player yields undefined fields (and undefined does not assign to bool).
+    readonly property bool canSeek: !!(player && player.canSeek && player.positionSupported) && length > 0
     readonly property color tint: Colors.islandPrimary
 
     // settings modules.media.cava: explicit true/false wins, otherwise on when cava is installed.

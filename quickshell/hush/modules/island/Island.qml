@@ -138,8 +138,10 @@ Item {
             : button === Qt.MiddleButton ? (isl.clickMiddle || "media") : (isl.clickLeft || "cc"))
     }
     function scroll(dy) {
-        if (surfaceOpen || dy === 0 || (Settings.island.scroll || "volume") !== "volume") return false
-        Svc.Audio.setVolume(Svc.Audio.volume + (dy > 0 ? 0.05 : -0.05))
+        const mode = Settings.island.scroll || "volume", step = dy > 0 ? 0.05 : -0.05
+        if (surfaceOpen || dy === 0 || mode === "none") return false
+        if (mode === "brightness") return Svc.Brightness.set(Svc.Brightness.level + step)
+        Svc.Audio.setVolume(Svc.Audio.volume + step)
         return true
     }
     function showOsd(kind) { osdReg.show(kind) }

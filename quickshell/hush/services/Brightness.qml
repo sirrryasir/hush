@@ -34,6 +34,16 @@ Singleton {
     }
     FileView { id: maxFile; onLoaded: root.recompute() }
     FileView { id: curFile; watchChanges: true; onFileChanged: reload(); onLoaded: root.recompute() }
+    // Sets the backlight (0..1, floor 1 %) and shows the OSD at once instead of waiting for the
+    // sysfs poll; false when there is no backlight device.
+    readonly property bool available: curFile.path !== ""
+    function set(v) {
+        if (!available) return false
+        const l = Math.max(0.01, Math.min(1, v))
+        if (Math.abs(l - level) >= 0.0005) { level = l; if (ready) changed("brightness") }
+        Quickshell.execDetached(["brightnessctl", "-q", "set", Math.round(l * 100) + "%"])
+        return true
+    }
     Timer { interval: 2000; running: true; onTriggered: root.ready = true }
     // sysfs inotify is unreliable for ACPI/key-driven changes; poll only while a device exists.
     Timer { interval: 2000; repeat: true; running: curFile.path !== ""; onTriggered: curFile.reload() }

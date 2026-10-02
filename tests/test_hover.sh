@@ -136,6 +136,20 @@ t_clicks() {
   [[ "$v1" != "$v0" ]] && pass "wheel on the pill changes the volume ($v0 -> $v1)" || fail "wheel left volume at $v0"
   assert_eq "osd" "$(state)" "wheel shows the OSD in the pill"
   move "$AX" "$AY"; sleep 1.6
+  # island.scroll = brightness: the wheel moves the backlight (restored after) with the OSD.
+  if command -v brightnessctl >/dev/null && ls /sys/class/backlight/*/brightness >/dev/null 2>&1; then
+    local sj="$CFG/hush/settings.json" sbak="" b0 b1 braw; [[ -f "$sj" ]] && sbak=$(cat "$sj")
+    braw=$(brightnessctl -q g); brightnessctl -q s 50%; sleep 0.3; b0=$(brightnessctl -q g)
+    shell_ipc settingsSet island.scroll '"brightness"' >/dev/null; sleep 0.5
+    move "$PX" "$PY"; sleep 0.05; yd mousemove -w -x 0 -y 1; sleep 0.4
+    b1=$(brightnessctl -q g)
+    [[ "$b1" != "$b0" ]] && pass "scroll=brightness: wheel changes the backlight ($b0 -> $b1)" || fail "scroll=brightness: backlight stayed $b0"
+    assert_eq "osd" "$(state)" "brightness wheel shows the OSD"
+    move "$AX" "$AY"; sleep 1.6
+    shell_ipc settingsSet island.scroll '"volume"' >/dev/null; sleep 0.3
+    if [[ -n "$sbak" ]]; then printf '%s\n' "$sbak" >"$sj"; else rm -f "$sj"; fi
+    brightnessctl -q s "$braw"
+  else pass "no backlight: scroll=brightness skipped"; fi
   # Media at rest is the activity circle (no capsule state); clicking it opens the media surface.
   if python3 -c 'import dbus, gi' 2>/dev/null; then
     python3 tests/fakempris.py & local fp=$!; sleep 3
