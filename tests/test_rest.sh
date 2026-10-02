@@ -52,6 +52,28 @@ t_status() {
   [[ "$d" -le 1 ]] && pass "batteryPercent $q within 1 of $bat" || fail "batteryPercent $q vs sysfs $bat"
   assert_eq "true" "$(shell_ipc netConnected)" "netConnected true"
 }
+# Status ring centre: the battery percent by default; island.statusCenter flips it to a glyph.
+t_center() {
+  local c sj="$CFG/hush/settings.json" sbak=""; c=$(shell_ipc ringCenter)
+  if [[ "$(shell_ipc batteryPresent)" != "true" ]]; then
+    [[ "$c" == glyph:* ]] && pass "no battery: centre is the Wi-Fi glyph ($c)" || fail "no battery: centre $c"; return; fi
+  if [[ "$(shell_ipc batteryCharging)" == "true" ]]; then
+    assert_eq "glyph:bolt" "$c" "charging: the bolt replaces the percent"
+  else
+    assert_eq "percent:$(shell_ipc batteryPercent)" "$c" "status centre shows the battery percent"
+  fi
+  [[ -f "$sj" ]] && sbak=$(cat "$sj")
+  shell_ipc settingsSet island.statusCenter '"wifi"' >/dev/null; sleep 0.5
+  c=$(shell_ipc ringCenter)
+  [[ "$c" == glyph:* ]] && pass "statusCenter wifi: centre is a glyph ($c)" || fail "statusCenter wifi: centre $c"
+  shell_ipc settingsSet island.statusCenter '"none"' >/dev/null; sleep 0.5
+  c=$(shell_ipc ringCenter)
+  [[ "$c" == none || "$c" == glyph:bolt ]] && pass "statusCenter none: empty centre ($c)" || fail "statusCenter none: centre $c"
+  shell_ipc settingsSet island.statusCenter '"percent"' >/dev/null; sleep 0.5
+  [[ "$(shell_ipc ringCenter)" == percent:* || "$(shell_ipc batteryCharging)" == "true" ]] && pass "statusCenter percent restores the number" || fail "percent not restored"
+  if [[ -n "$sbak" ]]; then printf '%s\n' "$sbak" >"$sj"; else rm -f "$sj"; fi
+  [[ -n "$(shell_ipc batterySummary)" ]] && pass "battery summary: $(shell_ipc batterySummary)" || fail "empty battery summary"
+}
 t_log() { local e; e=$(shell_log_errors); [[ -z "$e" ]] && pass "no errors in shell log" || fail "shell log errors: $e"; }
 run_test "rest" t_rest
 run_test "clock" t_clock
@@ -59,5 +81,6 @@ run_test "corners" t_corners
 run_test "workspace" t_workspace
 run_test "go" t_go
 run_test "status" t_status
+run_test "center" t_center
 run_test "log" t_log
 finish

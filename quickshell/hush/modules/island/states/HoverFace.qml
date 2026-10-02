@@ -58,13 +58,23 @@ StateBase {
     }
     Text {
         anchors.left: date.right; anchors.leftMargin: 12
-        anchors.right: parent.right; anchors.rightMargin: 18
+        anchors.right: battery.visible ? battery.left : parent.right; anchors.rightMargin: battery.visible ? 12 : 18
         anchors.verticalCenter: parent.verticalCenter
         horizontalAlignment: Text.AlignRight
         visible: face.title !== ""
         text: face.title; elide: Text.ElideRight; maximumLineCount: 1
         color: Colors.alpha(face.fg, 0.7)
         font.family: Theme.fontUi; font.pixelSize: Theme.textIsland
+    }
+    // Battery: "80 % · 3 h 10 m left" (or "Charging · 1 h to full"); hidden without a battery.
+    Text {
+        id: battery
+        objectName: "hoverBattery"
+        anchors.right: parent.right; anchors.rightMargin: 18; anchors.verticalCenter: parent.verticalCenter
+        visible: Svc.Battery.present
+        text: Svc.Battery.summary
+        color: Svc.Battery.present && !Svc.Battery.charging && Svc.Battery.percent <= 15 ? Colors.islandError : Colors.alpha(face.fg, 0.7)
+        font.family: Theme.fontUi; font.pixelSize: Theme.textIsland; font.features: { "tnum": 1 }
     }
     SystemClock { id: clock; precision: SystemClock.Hours }
 }

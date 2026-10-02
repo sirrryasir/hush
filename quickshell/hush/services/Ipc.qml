@@ -42,6 +42,11 @@ Singleton {
         function restWidth(): int { return root.island ? root.island.restWidth : 0 }
         function restClock(): string { return root.island ? root.island.restClock : "" }
         function batteryPercent(): int { return Battery.percent }
+        function batteryPresent(): bool { return Battery.present }
+        function batteryCharging(): bool { return Battery.charging }
+        function batterySummary(): string { return Battery.summary }
+        // What the rest status ring shows in its centre: "percent:80", "glyph:<name>" or "none".
+        function ringCenter(): string { const r = root.island ? root.findNamed(root.island, "statusRing") : null; return r ? r.center : "" }
         function netConnected(): bool { return Net.connected }
         // Bluetooth: the control center's toggle (lifts an rfkill block when the adapter is missing).
         function btToggle(): void { Bt.toggle() }

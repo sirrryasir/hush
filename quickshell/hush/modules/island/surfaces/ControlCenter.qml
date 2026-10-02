@@ -115,6 +115,7 @@ FocusScope {
                 label: "Brightness"; icon: "brightness_6"; value: Svc.Brightness.level
                 onMoved: v => { cc.pendingBrightness = v; briDebounce.restart() }
             }
+            BatteryChip { Layout.alignment: Qt.AlignVCenter }
             PowerRow { Layout.alignment: Qt.AlignVCenter | Qt.AlignRight }
         }
 
