@@ -42,16 +42,29 @@ Control center per theme: [dusk](assets/themes/dusk-cc.png), [ember](assets/them
 
 | Command | What it does |
 | --- | --- |
+| `hush list` | list the themes |
 | `hush theme <name\|next\|prev>` | apply a theme (wallpaper, colors, reloads) |
-| `hush wall <path\|random>` | change the wallpaper, keep the theme's scheme | 
+| `hush wall <path\|random>` | change the wallpaper, keep the theme's scheme |
 | `hush wall/theme ... --from X,Y` | circle-reveal transition from pixel X,Y (default: island centre on the focused monitor); `HUSH_REDUCED_MOTION=1` or `island.reducedMotion` gives an instant swap |
 | `hush reload` | re-render templates for the current state |
 | `hush status` | print active theme, wallpaper, mode, scheme |
 | `hush check` | validate generated config (exit 1 on problems) |
+| `hush generated` / `hush track <on\|off>` | list generated files that a git repo tracks / mark them skip-worktree there |
 | `hush fallback` | stop the Hush shell, start Waybar and SwayNC |
 | `hush shell <start\|stop\|restart\|status\|log>` | manage the Quickshell shell |
-| `hush generated` / `hush track <on\|off>` | list generated files that a git repo tracks / mark them skip-worktree there |
+| `hush sddm sync` | refresh the SDDM theme's wallpaper, colors and avatar |
+| `hush lock` | lock the screen with hyprlock (once) |
+| `hush settings` | open (or close) the settings surface in the island |
+| `hush overview` | open the GloView overview (needs the plugin) |
+| `hush plugins [status\|install]` | status of, or install, the optional Hyprland plugins |
+| `hush timer <N>m\|<N>s\|<N>h\|stop` | start a countdown shown at rest in the island, or cancel it |
+| `hush volume up\|down\|mute\|mic-mute [step]` | change the output volume (default 5 %, capped at 100 %) or toggle mute; the island shows the OSD |
+| `hush brightness up\|down [step]` | change the screen brightness (default 5 %); the island shows the OSD |
 | `hush --version` | print the version |
+
+### Keyboard
+
+In the island's panels, Tab and Shift+Tab (or the arrow keys) move focus, Left and Right step a slider (hold Shift for steps of ten), Enter or Space activates the focused control, and Esc closes the panel. Suggested binds: Super+Backspace for the control center and Super+Space for the launcher; scrolling over the pill changes the volume.
 
 ## Add a theme
 

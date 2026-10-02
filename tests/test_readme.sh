@@ -10,4 +10,8 @@ for t in dusk ember fog harbor moss paper; do
   done
 done
 n=$(grep -c 'hush ' README.md); [ "$n" -ge 8 ] || { echo "FAIL: only $n 'hush ' lines"; fail=1; }
+for c in $(sed -n '/^    list) list_themes/,/^    \*) usage/p' bin/hush | awk '/^    [a-z-]+\)/{sub(/\).*/,"");print $1}' | grep -v '^version$\|^help$'); do
+  grep -q "hush $c" README.md || { echo "FAIL: README lacks subcommand $c"; fail=1; }
+done
+grep -q '^### Keyboard' README.md || { echo "FAIL: README lacks Keyboard section"; fail=1; }
 [ $fail -eq 0 ] && echo "PASS readme"; exit $fail
