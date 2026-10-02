@@ -6,7 +6,7 @@ import qs.services as Svc
 // Now playing: art, "title · artist", play/pause, and a 2 px progress line.
 StateBase {
     id: media
-    name: "media"; size: Qt.size(420, 36); priority: 1
+    name: "media"; size: Sizes.media; priority: 1
 
     Row {
         anchors.fill: parent; anchors.leftMargin: 12; anchors.rightMargin: 14; spacing: 10

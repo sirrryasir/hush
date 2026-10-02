@@ -14,7 +14,7 @@ StateBase {
     readonly property string body: n ? n.body.replace(/\s*\n+\s*/g, "  ") : ""
     readonly property real textWidth: width - 14 - 20 - 10 - 16
     readonly property bool tall: body !== "" && summaryMetrics.advanceWidth + 10 + bodyMetrics.advanceWidth > textWidth
-    size: tall ? Theme.islandNotificationTall : Theme.islandNotification
+    size: tall ? Sizes.notificationTall : Sizes.notification
 
     TextMetrics { id: summaryMetrics; text: card.summary; font.family: Theme.fontUi; font.pixelSize: Theme.textIsland; font.weight: Font.Medium }
     TextMetrics { id: bodyMetrics; text: card.body; font.family: Theme.fontUi; font.pixelSize: Theme.textIsland }

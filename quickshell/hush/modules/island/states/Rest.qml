@@ -5,7 +5,7 @@ import qs.config
 // The island at rest: theme dot, date (or a media title once B3 provides one), clock.
 StateBase {
     id: rest
-    name: "rest"; size: Theme.islandRest; priority: 0
+    name: "rest"; size: Sizes.rest; priority: 0
 
     SystemClock { id: clockSrc; precision: SystemClock.Minutes }
 

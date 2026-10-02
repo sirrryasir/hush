@@ -31,6 +31,10 @@ Item {
     width: body.width; height: body.height
     readonly property real bodyWidth: body.width
     readonly property real bodyHeight: body.height
+    // Staging introspection for tests: the state whose shape the pill takes, and whose content shows.
+    readonly property string shapeState: surface.shape
+    readonly property string shownState: surface.shown
+    readonly property real contentOpacity: surface.contentOpacity
 
     // A fresh object each time: reassigning the same object does not notify bindings. The new
     // object re-evaluates the Loader's sourceComponent binding, so no explicit reload is needed.
@@ -59,7 +63,7 @@ Item {
         holdTimer.stop(); if (holdMs > 0) { holdTimer.interval = holdMs; holdTimer.start() }
     }
     function toggleExpanded() { state === "expanded" ? release("expanded") : request("expanded", 4, 0) }
-    function showOsd(kind) { if (stateContent["osd"] && stateLoader.item && stateLoader.item.show) stateLoader.item.show(kind) }
+    function showOsd(kind) { if (stateContent["osd"] && surface.item && surface.item.show) surface.item.show(kind) }
 
     onStateChanged: if (state === "expanded") forceActiveFocus()
 
@@ -67,26 +71,27 @@ Item {
     Timer { id: hoverTimer; interval: Theme.hoverExpandMs; onTriggered: if (islandRoot.state === "rest") islandRoot.request("expanded", 4, 0) }
     SystemClock { id: dateSrc; precision: SystemClock.Hours }
 
-    Rectangle {
+    // The shape springs to the staged surface's size; the content cross-fades inside it.
+    Pill {
         id: body
-        readonly property size target: (stateLoader.item && stateLoader.item.size) ? stateLoader.item.size : Theme.islandRest
-        width: target.width; height: target.height
-        radius: height <= 36 ? height / 2 : Theme.radiusExpanded
-        color: "#000000"
-        border.width: 1; border.color: Qt.rgba(1, 1, 1, 0.06)
-        Behavior on width { SpringAnimation { spring: Theme.springStiffness; damping: Theme.springDamping; epsilon: 0.5 } }
-        Behavior on height { SpringAnimation { spring: Theme.springStiffness; damping: Theme.springDamping; epsilon: 0.5 } }
-        clip: true
+        target: surface.shapeSize
         MouseArea {
             anchors.fill: parent; hoverEnabled: true
             onEntered: hoverTimer.start(); onExited: hoverTimer.stop()
             onClicked: { hoverTimer.stop(); islandRoot.toggleExpanded() }
         }
-        Loader {
-            id: stateLoader
+        SurfaceLoader {
+            id: surface
             anchors.fill: parent
-            sourceComponent: islandRoot.stateContent[islandRoot.state] || islandRoot.stateContent["rest"] || null
-            onLoaded: if (item) item.island = islandRoot
+            target: islandRoot.state
+            components: islandRoot.stateContent
+            onItemLoaded: item => { if (item) item.island = islandRoot }
+            // The slow spring for any morph into or out of a panel, the quick one between capsules.
+            property string lastShape: "rest"
+            onShapeChanged: {
+                body.calm = Sizes.of(shape).height > 36 || Sizes.of(lastShape).height > 36
+                lastShape = shape
+            }
         }
     }
     Keys.onEscapePressed: if (state === "expanded") release("expanded")

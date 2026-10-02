@@ -5,7 +5,7 @@ import qs.services
 // Volume / mic / brightness readout: glyph and a thin level track.
 StateBase {
     id: osd
-    name: "osd"; size: Qt.size(300, 36); priority: 2
+    name: "osd"; size: Sizes.osd; priority: 2
     property string kind: "volume"
     readonly property real level: kind === "brightness" ? Brightness.level
         : kind === "mic" ? (Audio.micMuted ? 0 : 1) : (Audio.muted ? 0 : Audio.volume)

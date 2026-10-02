@@ -11,7 +11,7 @@ import "../cc"
 // The control center: media, four toggles, volume and brightness, themes, power. 560x320.
 StateBase {
     id: cc
-    name: "expanded"; size: Theme.islandExpanded; priority: 4
+    name: "expanded"; size: Sizes.expanded; priority: 4
 
     // Which fourth toggle exists: "sunset" when hyprsunset is installed, else "idle" (hypridle).
     property string extra: ""

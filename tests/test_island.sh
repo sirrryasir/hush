@@ -31,12 +31,14 @@ t_geometry() {
 import json,sys
 print(' '.join(sorted({'%d' % l['h'] for mon in json.load(sys.stdin).values() for lvl in mon['levels'].values() for l in lvl if l['namespace']=='hush-island'})))")
   assert_eq "360" "$g" "island layer windows are 360 tall"
-  local rest; rest=$(shell_ipc islandSize)
+  # The calm spring is speed-capped (settings motion.springCalm.velocity), so poll until it settles.
+  settle() { local i s; for i in $(seq 30); do s=$(shell_ipc islandSize); [[ "$s" == "$1" ]] && break; sleep 0.1; done; echo "$s"; }
+  local rest; rest=$(settle "320x36")
   [[ "$rest" =~ ^[0-9]+x36$ ]] && pass "pill is ${rest} at rest" || fail "pill at rest is $rest"
-  shell_ipc toggleControlCenter; sleep 0.6
-  assert_eq "560x320" "$(shell_ipc islandSize)" "pill springs to 560x320 expanded"
-  shell_ipc toggleControlCenter; sleep 0.6
-  assert_eq "$rest" "$(shell_ipc islandSize)" "pill springs back to $rest"
+  shell_ipc toggleControlCenter
+  assert_eq "560x320" "$(settle 560x320)" "pill springs to 560x320 expanded"
+  shell_ipc toggleControlCenter
+  assert_eq "$rest" "$(settle "$rest")" "pill springs back to $rest"
 }
 t_zone() {
   # The island surface sits at the top edge of every monitor and reserves 40 px (settings

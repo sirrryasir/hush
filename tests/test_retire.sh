@@ -15,12 +15,14 @@ t_gone() {
 t_zone() {
   bin/hush shell start >/dev/null; sleep 1
   hyprctl dispatch 'hl.dsp.exec_cmd("kitty --class retire-probe")' >/dev/null; sleep 2
-  local y; y=$(hyprctl clients -j | python3 -c "
-import json,sys
-c=[c for c in json.load(sys.stdin) if c['class']=='retire-probe']
-print(c[0]['at'][1] if c else '')")
+  # The window must start below its monitor's reserved top (the island zone, settings island.reserve).
+  local y top; read -r y top < <(python3 -c "
+import json,subprocess
+cl=[c for c in json.loads(subprocess.check_output(['hyprctl','clients','-j'])) if c['class']=='retire-probe']
+ms={m['id']:m for m in json.loads(subprocess.check_output(['hyprctl','monitors','-j']))}
+print(cl[0]['at'][1], ms[cl[0]['monitor']]['y'] + ms[cl[0]['monitor']]['reserved'][1]) if cl else print('', '')")
   hyprctl dispatch 'hl.dsp.window.close({ window = "class:retire-probe" })' >/dev/null 2>&1; pkill -f '^kitty --class retire-prob[e]' 2>/dev/null
-  [[ -n "$y" ]] && (( y >= 64 )) && pass "window starts at y=$y >= 64" || fail "window y='$y' < 64"
+  [[ -n "$y" ]] && (( y >= top )) && pass "window starts at y=$y >= reserved $top" || fail "window y='$y' < reserved '$top'"
 }
 t_fallback() {
   bin/hush fallback >/dev/null; sleep 2

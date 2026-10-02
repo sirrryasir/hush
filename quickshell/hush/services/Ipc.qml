@@ -28,6 +28,9 @@ Singleton {
     }
     Connections { target: Hypr; function onFocusedMonitorNameChanged() { root.pick() } }
 
+    Timer { id: probeOpen; onTriggered: { if (root.island) root.island.toggleExpanded(); if (probeClose.interval > 0) probeClose.restart() } }
+    Timer { id: probeClose; onTriggered: if (root.island && root.island.state === "expanded") root.island.toggleExpanded() }
+
     IpcHandler {
         target: "hush"
         function ping(): string { return "pong" }
@@ -54,6 +57,10 @@ Singleton {
         function wallpapersCount(): int { return root.wallpapers ? root.wallpapers.count : 0 }
         function wallpapersSelect(path: string): void { if (root.wallpapers) root.wallpapers.select(path) }
         function toggleControlCenter(): void { if (root.island) root.island.toggleExpanded() }
+        // Morph probe for tests/test_morph.sh: open the control center after delayMs, reverse it
+        // reverseMs later (0: stay open), timed in the shell so no IPC client start-up lands mid-capture.
+        function morphProbe(delayMs: int, reverseMs: int): void { probeOpen.interval = Math.max(1, delayMs); probeClose.interval = Math.max(0, reverseMs); probeOpen.restart() }
+        function islandStage(): string { return root.island ? root.island.shapeState + "/" + root.island.shownState + "/" + root.island.contentOpacity.toFixed(2) : "none" }
         function toggleDrawer(): void { if (root.drawer) root.drawer.toggle() }
         function clearNotifications(): void { Notifs.clearAll() }
         function unread(): int { return Notifs.unread }
