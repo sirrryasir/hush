@@ -52,27 +52,28 @@ t_status() {
   [[ "$d" -le 1 ]] && pass "batteryPercent $q within 1 of $bat" || fail "batteryPercent $q vs sysfs $bat"
   assert_eq "true" "$(shell_ipc netConnected)" "netConnected true"
 }
-# Status ring centre: the battery percent by default; island.statusCenter flips it to a glyph.
+# Status slot: empty at rest by default (clock only; critical battery and the 2 s plug-in bolt are
+# the exceptions); island.statusCenter "battery" shows the battery glyph, "wifi" the ring + glyph.
 t_center() {
-  local c sj="$CFG/hush/settings.json" sbak=""; c=$(shell_ipc ringCenter)
-  if [[ "$(shell_ipc batteryPresent)" != "true" ]]; then
-    [[ "$c" == glyph:* ]] && pass "no battery: centre is the Wi-Fi glyph ($c)" || fail "no battery: centre $c"; return; fi
-  if [[ "$(shell_ipc batteryCharging)" == "true" ]]; then
-    assert_eq "glyph:bolt" "$c" "charging: the bolt replaces the percent"
-  else
-    assert_eq "percent:$(shell_ipc batteryPercent)" "$c" "status centre shows the battery percent"
-  fi
+  local c sj="$CFG/hush/settings.json" sbak="" crit=0 p
+  [[ "$(shell_ipc islandState)" == rest ]] || { shell_ipc closeSurface >/dev/null; sleep 1; }
+  c=$(shell_ipc ringCenter); p=$(shell_ipc batteryPercent)
+  if [[ "$(shell_ipc batteryPresent)" == "true" && "$(shell_ipc batteryCharging)" != "true" ]] && (( p <= 15 )); then crit=1; fi
+  if (( crit )); then assert_eq "battery:$p" "$c" "critical battery shows at rest"
+  else assert_eq "none" "$c" "rest shows no status by default (clock only)"; fi
   [[ -f "$sj" ]] && sbak=$(cat "$sj")
+  if [[ "$(shell_ipc batteryPresent)" == "true" ]]; then
+    shell_ipc settingsSet island.statusCenter '"battery"' >/dev/null; sleep 0.5
+    assert_eq "battery:$p" "$(shell_ipc ringCenter)" "statusCenter battery: the battery glyph with the percent"
+  fi
   shell_ipc settingsSet island.statusCenter '"wifi"' >/dev/null; sleep 0.5
   c=$(shell_ipc ringCenter)
-  [[ "$c" == glyph:* ]] && pass "statusCenter wifi: centre is a glyph ($c)" || fail "statusCenter wifi: centre $c"
+  [[ "$c" == glyph:* ]] && pass "statusCenter wifi: ring with a glyph ($c)" || fail "statusCenter wifi: centre $c"
   shell_ipc settingsSet island.statusCenter '"none"' >/dev/null; sleep 0.5
-  c=$(shell_ipc ringCenter)
-  [[ "$c" == none || "$c" == glyph:bolt ]] && pass "statusCenter none: empty centre ($c)" || fail "statusCenter none: centre $c"
-  shell_ipc settingsSet island.statusCenter '"percent"' >/dev/null; sleep 0.5
-  [[ "$(shell_ipc ringCenter)" == percent:* || "$(shell_ipc batteryCharging)" == "true" ]] && pass "statusCenter percent restores the number" || fail "percent not restored"
+  if (( crit )); then assert_eq "battery:$p" "$(shell_ipc ringCenter)" "statusCenter none keeps the critical glyph"
+  else assert_eq "none" "$(shell_ipc ringCenter)" "statusCenter none: empty again"; fi
   if [[ -n "$sbak" ]]; then printf '%s\n' "$sbak" >"$sj"; else rm -f "$sj"; fi
-  [[ -n "$(shell_ipc batterySummary)" ]] && pass "battery summary: $(shell_ipc batterySummary)" || fail "empty battery summary"
+  [[ "$(shell_ipc batteryPresent)" != "true" || -n "$(shell_ipc batterySummary)" ]] && pass "battery state: $(shell_ipc batterySummary)" || fail "empty battery state"
 }
 t_log() { local e; e=$(shell_log_errors); [[ -z "$e" ]] && pass "no errors in shell log" || fail "shell log errors: $e"; }
 run_test "rest" t_rest

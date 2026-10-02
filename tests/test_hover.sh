@@ -72,6 +72,10 @@ t_hover() {
   [[ $g -ge 110 && $g -le 200 ]] && pass "hover after $g ms (dwell 120, <= 200)" || fail "hover after $g ms"
   local i; for i in $(seq 20); do [[ "$(shell_ipc islandSize)" == "320x44" ]] && break; sleep 0.05; done
   assert_eq "320x44" "$(shell_ipc islandSize)" "hover face is 320x44"
+  assert_eq "true" "$(shell_ipc islandControlVisible hoverWifi)" "hover face shows the Wi-Fi state"
+  if [[ "$(shell_ipc batteryPresent)" == "true" ]]; then
+    assert_eq "true" "$(shell_ipc islandControlVisible hoverBattery)" "hover face shows the battery glyph"
+  fi
   # The grace is read from the shell's own stamps (an IPC poll at 150 ms raced the 300 ms grace).
   move "$AX" "$AY"
   wait_state rest

@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import qs.config
 import qs.services as Svc
+import "../rest"
 
 // The hover face (design 2.2), 320x44: this monitor's workspaces as dots with the active one drawn
 // as a pill, the date, and the media title while something plays. A dot goes to its workspace and
@@ -58,7 +59,7 @@ StateBase {
     }
     Text {
         anchors.left: date.right; anchors.leftMargin: 12
-        anchors.right: battery.visible ? battery.left : parent.right; anchors.rightMargin: battery.visible ? 12 : 18
+        anchors.right: status.left; anchors.rightMargin: 12
         anchors.verticalCenter: parent.verticalCenter
         horizontalAlignment: Text.AlignRight
         visible: face.title !== ""
@@ -66,15 +67,31 @@ StateBase {
         color: Colors.alpha(face.fg, 0.7)
         font.family: Theme.fontUi; font.pixelSize: Theme.textIsland
     }
-    // Battery: "80 % · 3 h 10 m left" (or "Charging · 1 h to full"); hidden without a battery.
-    Text {
-        id: battery
-        objectName: "hoverBattery"
+    // Status: Bluetooth (when on), Wi-Fi, and the battery glyph (larger than at rest, percent inside;
+    // hidden without a battery). The resting pill leaves these out.
+    Row {
+        id: status
         anchors.right: parent.right; anchors.rightMargin: 18; anchors.verticalCenter: parent.verticalCenter
-        visible: Svc.Battery.present
-        text: Svc.Battery.summary
-        color: Svc.Battery.present && !Svc.Battery.charging && Svc.Battery.percent <= 15 ? Colors.islandError : Colors.alpha(face.fg, 0.7)
-        font.family: Theme.fontUi; font.pixelSize: Theme.textIsland; font.features: { "tnum": 1 }
+        spacing: 8
+        Text {
+            objectName: "hoverBt"
+            visible: Svc.Bt.enabled; anchors.verticalCenter: parent.verticalCenter
+            text: Svc.Bt.icon; color: Colors.alpha(face.fg, Svc.Bt.connectedName !== "" ? 0.9 : 0.6)
+            font.family: Theme.fontIcon; font.pixelSize: 16
+        }
+        Text {
+            objectName: "hoverWifi"
+            anchors.verticalCenter: parent.verticalCenter
+            text: Svc.Net.connected ? Svc.Net.icon : "signal_wifi_off"; color: Colors.alpha(face.fg, 0.9)
+            font.family: Theme.fontIcon; font.pixelSize: 16
+        }
+        BatteryGlyph {
+            id: battery
+            objectName: "hoverBattery"
+            anchors.verticalCenter: parent.verticalCenter
+            visible: Svc.Battery.present
+            bodyW: 30; bodyH: 15
+        }
     }
     SystemClock { id: clock; precision: SystemClock.Hours }
 }

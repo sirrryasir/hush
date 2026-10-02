@@ -37,6 +37,9 @@ Singleton {
     property color islandError: dark.error || error
     property color islandErrorContainer: dark.error_container || error_container
     property color islandShadow: dark.shadow || shadow
+    // The battery glyph keeps one muted green in every theme (9.7:1 on the black pill) and a white bolt.
+    readonly property color islandBatteryGood: "#4cc38a"
+    readonly property color islandBatteryBolt: "#ffffff"
 
     // Defaults are the harbor palette so the shell renders before Colors.json exists.
     property color primary: "#9cd1c1"

@@ -44,7 +44,7 @@ Singleton {
         function batteryPercent(): int { return Battery.percent }
         function batteryPresent(): bool { return Battery.present }
         function batteryCharging(): bool { return Battery.charging }
-        function batterySummary(): string { return Battery.summary }
+        function batterySummary(): string { return Battery.present ? Battery.percent + " % · " + Battery.stateText : "" }
         // What the rest status ring shows in its centre: "percent:80", "glyph:<name>" or "none".
         function ringCenter(): string { const r = root.island ? root.findNamed(root.island, "statusRing") : null; return r ? r.center : "" }
         function netConnected(): bool { return Net.connected }

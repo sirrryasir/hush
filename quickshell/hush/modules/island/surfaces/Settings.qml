@@ -186,7 +186,7 @@ FocusScope {
             Row2 { title: "Fullscreen reveal"; Switch { anchors.verticalCenter: parent.verticalCenter; on: Cfg.Settings.island.fullscreenReveal !== false; onToggled: v => Cfg.Settings.set("island.fullscreenReveal", v) } }
             Row2 { title: "Fullscreen OSD"; Switch { anchors.verticalCenter: parent.verticalCenter; on: Cfg.Settings.island.fullscreenOsd !== false; onToggled: v => Cfg.Settings.set("island.fullscreenOsd", v) } }
             Row2 { title: "Reveal time"; Slide { width: parent.width; key: "motion.revealMs"; from: 500; to: 5000; step: 100; unit: "ms" } }
-            Row2 { title: "Status centre"; z: 5; Drop { key: "statusCenter"; options: ["percent", "wifi", "none"] } }
+            Row2 { title: "Status centre"; z: 5; Drop { key: "statusCenter"; options: ["none", "battery", "wifi"] } }
             Row2 { title: "Left click"; z: 4; Drop { key: "clickLeft"; options: ["cc", "notifs", "media", "calendar", "none"] } }
             Row2 { title: "Right click"; z: 3; Drop { key: "clickRight"; options: ["cc", "notifs", "media", "calendar", "none"] } }
             Row2 { title: "Middle click"; z: 2; Drop { key: "clickMiddle"; options: ["cc", "notifs", "media", "calendar", "none"] } }
