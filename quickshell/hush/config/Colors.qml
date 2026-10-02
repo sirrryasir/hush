@@ -71,9 +71,65 @@ Singleton {
     property color on_tertiary_fixed: "#34100a"
     property color on_tertiary_fixed_variant: "#693a32"
 
+    // Cross-fade: each role eases to its new value when a theme change rewrites Colors.json. Off for
+    // the first load (defaults -> real palette) so the shell never fades in from harbor at startup.
+    property bool fade: false
+    readonly property int fadeMs: Math.round(400 * (Settings.island.reducedMotion ? (Settings.motion.reducedScale || 0.4) : 1))
+    Behavior on primary { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on on_primary { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on primary_container { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on on_primary_container { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on secondary { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on on_secondary { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on secondary_container { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on on_secondary_container { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on tertiary { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on on_tertiary { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on tertiary_container { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on on_tertiary_container { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on error { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on on_error { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on error_container { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on on_error_container { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on background { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on on_background { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on surface { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on surface_dim { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on surface_bright { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on surface_container_lowest { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on surface_container_low { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on surface_container { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on surface_container_high { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on surface_container_highest { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on surface_variant { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on surface_tint { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on on_surface { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on on_surface_variant { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on inverse_surface { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on inverse_on_surface { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on inverse_primary { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on outline { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on outline_variant { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on shadow { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on scrim { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on source_color { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on primary_fixed { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on primary_fixed_dim { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on on_primary_fixed { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on on_primary_fixed_variant { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on secondary_fixed { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on secondary_fixed_dim { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on on_secondary_fixed { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on on_secondary_fixed_variant { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on tertiary_fixed { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on tertiary_fixed_dim { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on on_tertiary_fixed { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on on_tertiary_fixed_variant { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+
     function alpha(c, a) { return Qt.rgba(c.r, c.g, c.b, a) }
 
     function apply(obj) {
+        root.fade = root.loaded
         for (const k in obj) {
             if (k === "base16") { root.base16 = obj[k]; continue }
             if (k === "dark") { root.dark = obj[k]; continue }
