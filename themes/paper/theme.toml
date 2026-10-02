@@ -1,0 +1,8 @@
+name = "paper"
+mode = "light"
+scheme = "scheme-fidelity"
+source = "#7fb3a3"
+contrast = 0.0
+icon_theme = "WhiteSur-light"
+[wallgen]
+seed = 53

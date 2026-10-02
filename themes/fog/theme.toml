@@ -1,0 +1,8 @@
+name = "fog"
+mode = "light"
+scheme = "scheme-tonal-spot"
+source = "wallpaper"
+contrast = 0.0
+icon_theme = "WhiteSur-light"
+[wallgen]
+seed = 67

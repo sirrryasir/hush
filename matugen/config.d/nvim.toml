@@ -1,0 +1,3 @@
+[templates.nvim]
+input_path = '@HUSH_ROOT@/matugen/templates/hush.nvim.lua'
+output_path = '@CONFIG@/nvim/colors/hush.lua'

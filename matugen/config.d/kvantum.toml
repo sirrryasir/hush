@@ -1,0 +1,7 @@
+[templates.kvantum]
+input_path = '@HUSH_ROOT@/matugen/templates/hush.kvconfig'
+output_path = '@CONFIG@/Kvantum/hush/hush.kvconfig'
+
+[templates.kvantum-svg]
+input_path = '@HUSH_ROOT@/matugen/templates/hush.svg'
+output_path = '@CONFIG@/Kvantum/hush/hush.svg'

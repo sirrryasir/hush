@@ -1,0 +1,8 @@
+name = "harbor"
+mode = "dark"
+scheme = "scheme-fidelity"
+source = "#7fb3a3"
+contrast = 0.0
+icon_theme = "WhiteSur-dark"
+[wallgen]
+seed = 11

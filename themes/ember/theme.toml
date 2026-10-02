@@ -1,0 +1,8 @@
+name = "ember"
+mode = "dark"
+scheme = "scheme-tonal-spot"
+source = "wallpaper"
+contrast = 0.0
+icon_theme = "WhiteSur-dark"
+[wallgen]
+seed = 23

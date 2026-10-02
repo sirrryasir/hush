@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# Enforces Conventional Commits; see docs/COMMITS.md.
+#   type(scope): subject   (scope optional, "!" allowed for breaking changes, header <= 72 chars)
+#   a body after one blank line, except for docs and chore commits.
+msg_file="$1"
+msg=$(grep -v '^#' "$msg_file")
+header=$(printf '%s\n' "$msg" | sed -n '1p')
+types='feat|fix|perf|refactor|docs|test|chore|build|ci|style|revert'
+die() { printf 'commit-msg: %s\n  got: %s\n  see docs/COMMITS.md\n' "$1" "$header" >&2; exit 1; }
+case "$header" in Merge\ *|fixup!\ *|squash!\ *) exit 0 ;; esac
+[[ "$header" =~ ^($types)(\([a-z0-9._/-]+\))?!?:\ [^[:space:]].*$ ]] || die "header must be 'type(scope): subject' with type one of ${types//|/ }"
+(( ${#header} <= 72 )) || die "header is ${#header} chars; the limit is 72"
+type=${BASH_REMATCH[1]}
+second=$(printf '%s\n' "$msg" | sed -n '2p')
+body=$(printf '%s\n' "$msg" | sed -n '3,$p' | grep -v '^[[:space:]]*$' || true)
+[[ -z "$second" ]] || die "leave a blank line between the header and the body"
+if [[ "$type" != docs && "$type" != chore && -z "$body" ]]; then
+  die "a $type commit needs a body that says why"
+fi
+exit 0

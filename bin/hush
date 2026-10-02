@@ -1,0 +1,392 @@
+#!/usr/bin/env bash
+# hush: theme and wallpaper switcher for the Hush rice.
+set -euo pipefail
+shopt -s inherit_errexit
+
+HUSH_ROOT="${HUSH_ROOT:-$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)}"
+CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+THEMES="$HUSH_ROOT/themes"
+STATE_DIR="$HOME/.config/hush"
+CACHE_DIR="$HOME/.cache/hush"
+STATE="$STATE_DIR/state.json"
+MATUGEN_CFG="$CACHE_DIR/matugen.toml"
+RENDER="$CACHE_DIR/render"
+
+die() { echo "hush: $*" >&2; exit 1; }
+need() { command -v "$1" >/dev/null || die "missing dependency: $1"; }
+
+usage() {
+  cat <<EOF
+usage: hush <command>
+  --version            print the Hush version
+  list                 list themes
+  theme <name|next|prev> apply a theme (wallpaper + colors + reloads)
+  wall <path|random> [--mode light|dark]
+                       change wallpaper; colours come from the image, mode from its
+                       brightness (mean luminance > 140 = light), theme name is kept.
+                       random picks from the themes' own wallpapers, plus every directory
+                       in HUSH_WALL_DIRS (colon-separated) when set
+  reload               re-render templates for the current state
+  status               print active theme, wallpaper, mode, scheme
+  check                validate generated config (exit 1 on problems)
+  generated            print the matugen outputs that some git repo tracks (absolute paths)
+  track <on|off>       off: git skip-worktree on those files in their repos; on: undo
+  fallback             stop the Hush shell, start Waybar and SwayNC
+  shell <start|stop|restart|status|log>  manage the Hush Quickshell shell
+EOF
+}
+
+toml_get() { # file key  (flat keys only; [wallgen] seed read separately)
+  python3 - "$1" "$2" <<'PY'
+import sys, tomllib
+d = tomllib.load(open(sys.argv[1], "rb"))
+v = d
+for part in sys.argv[2].split("."):
+    v = v[part]
+print(v)
+PY
+}
+
+list_themes() { # only directories that hold a theme.toml
+  local d; for d in "$THEMES"/*/; do if [[ -f "$d/theme.toml" ]]; then basename "$d"; fi; done | sort
+}
+
+resolve_theme() { # name -> echoes name or dies
+  local n="$1"
+  if [[ "$n" == "next" ]]; then
+    local cur; cur=$(current_theme)
+    n=$(list_themes | awk -v c="$cur" '{a[NR]=$0; if($0==c) i=NR} END{print (i<NR)?a[i+1]:a[1]}')
+  elif [[ "$n" == "prev" ]]; then
+    local cur; cur=$(current_theme)
+    n=$(list_themes | awk -v c="$cur" '{a[NR]=$0; if($0==c) i=NR} END{print (i>1)?a[i-1]:a[NR]}')
+  fi
+  [[ -f "$THEMES/$n/theme.toml" ]] || die "no theme named \"$n\""
+  echo "$n"
+}
+
+current_theme() { [[ -f "$STATE" ]] && python3 -c "import json;print(json.load(open('$STATE')).get('theme','harbor'))" || echo harbor; }
+current_wall()  { [[ -f "$STATE" ]] && python3 -c "import json;print(json.load(open('$STATE')).get('wallpaper',''))" || echo ""; }
+
+# The config.d fragments carry @HUSH_ROOT@ (template inputs) and @CONFIG@ (output targets,
+# normally ~/.config); they are substituted here so no path in the repo is absolute.
+assemble_config() {
+  mkdir -p "$CACHE_DIR" "$STATE_DIR"
+  { cat "$HUSH_ROOT/matugen/config.toml.head"; for f in "$HUSH_ROOT"/matugen/config.d/*.toml; do echo; cat "$f"; done; } \
+    | sed -e "s|@HUSH_ROOT@|$HUSH_ROOT|g" -e "s|@CONFIG@|$CONFIG_HOME|g" > "$MATUGEN_CFG"
+}
+
+outputs() { # every output_path of the assembled config, one per line
+  assemble_config
+  grep -oE "^output_path = '[^']+'" "$MATUGEN_CFG" | sed -E "s|^output_path = '(.*)'|\\1|"
+}
+
+# Render every template into $RENDER (paths mirrored), then move into place. Atomic on failure.
+render() { # theme wallpaper [mode-override] [force-image: 1 derives colours from the image]
+  local theme="$1" wall="$2" mode_override="${3:-}" force_image="${4:-}"
+  local mode scheme source contrast
+  mode=$(toml_get "$THEMES/$theme/theme.toml" mode)
+  scheme=$(toml_get "$THEMES/$theme/theme.toml" scheme)
+  source=$(toml_get "$THEMES/$theme/theme.toml" source)
+  [[ -z "$mode_override" ]] || mode="$mode_override"
+  if [[ "$force_image" == 1 ]]; then
+    [[ "$source" == "wallpaper" ]] || scheme="scheme-tonal-spot"
+    source="wallpaper"
+  fi
+  contrast=$(toml_get "$THEMES/$theme/theme.toml" contrast)
+  assemble_config
+  rm -rf "$RENDER"; mkdir -p "$RENDER"
+  # Rewrite output paths into the render dir so a failure never touches live files.
+  local rcfg="$CACHE_DIR/matugen.render.toml"
+  sed -E "s|^output_path = '(.*)'|output_path = '$RENDER\\1'|" "$MATUGEN_CFG" > "$rcfg"
+  grep -oE "^output_path = '$RENDER[^']+'" "$rcfg" | sed -E "s|^output_path = '(.*)'|\\1|" | xargs -d '\n' -I{} dirname {} | sort -u | xargs -d '\n' mkdir -p || die "could not prepare render dirs"
+  if grep -E "^output_path = " "$rcfg" | grep -vqE "^output_path = '$RENDER/"; then
+    die "an output_path is not single-quoted-absolute; see $rcfg"
+  fi
+  if [[ "$source" == "wallpaper" ]]; then
+    matugen image "$wall" -c "$rcfg" -m "$mode" -t "$scheme" --contrast "$contrast" --source-color-index 0 -q \
+      || die "matugen failed for theme $theme (image $wall)"
+  else
+    matugen color hex "$source" -c "$rcfg" -m "$mode" -t "$scheme" --contrast "$contrast" -q \
+      || die "matugen failed for theme $theme (color $source)"
+  fi
+  # Every declared output must exist in the render dir, otherwise refuse.
+  while read -r out; do
+    [[ -s "$RENDER$out" ]] || die "template produced no output for $out"
+  done < <(grep -oE "^output_path = '[^']+'" "$MATUGEN_CFG" | sed -E "s|^output_path = '(.*)'|\\1|")
+  # Move into place.
+  (cd "$RENDER" && find . -type f -print0) | while IFS= read -r -d '' f; do
+    local dest="${f#.}"
+    mkdir -p "$(dirname "$dest")" || die "failed to install $dest"
+    mv -f "$RENDER/$f" "$dest" || die "failed to install $dest"
+  done
+  echo "$mode"
+}
+
+# state.json is the "theme applied" signal the shell watches: always written LAST,
+# after Colors.json (render), the wallpaper and the consumer reloads.
+write_state() { # theme wallpaper mode [scheme source]  (scheme/source default to the theme's own)
+  local theme="$1" wall="$2" mode="$3"
+  local scheme="${4:-$(toml_get "$THEMES/$theme/theme.toml" scheme)}" source="${5:-$(toml_get "$THEMES/$theme/theme.toml" source)}"
+  python3 - "$STATE" "$theme" "$wall" "$mode" "$scheme" "$source" <<'PY'
+import json, os, sys, datetime
+p, theme, wall, mode, scheme, source = sys.argv[1:]
+tmp = p + ".tmp"
+with open(tmp, "w") as f:
+    json.dump({"theme": theme, "wallpaper": wall, "mode": mode, "scheme": scheme, "source": source,
+               "applied_at": datetime.datetime.now().astimezone().isoformat(timespec="seconds")},
+              f, indent=2)
+    f.flush(); os.fsync(f.fileno())
+os.replace(tmp, p)  # atomic: watchers never see a truncated state.json
+PY
+}
+
+set_wallpaper() { # path
+  local wall="$1" i
+  if command -v awww >/dev/null; then
+    # At login awww-daemon may still be starting; give it up to 5 s.
+    for ((i = 0; i < 50; i++)); do awww query >/dev/null 2>&1 && break; sleep 0.1; done
+    if awww query >/dev/null 2>&1; then
+      awww img "$wall" --transition-type fade --transition-duration 1.2 >/dev/null 2>&1 || echo "hush: awww failed (continuing)" >&2
+    else
+      echo "hush: awww-daemon not answering after 5 s; wallpaper not set (continuing)" >&2
+    fi
+  fi
+  # hyprlock reads this file for its background image. hyprlang cannot quote values,
+  # so point it at a fixed path (no '#', no spaces) that links to the real wallpaper.
+  local cur="$CACHE_DIR/current-wallpaper.png"
+  case "${wall,,}" in
+    *.png) ln -sfn "$wall" "$cur.tmp" && mv -Tf "$cur.tmp" "$cur" ;;
+    *) if command -v magick >/dev/null; then magick "$wall" "png:$cur.tmp" && mv -f "$cur.tmp" "$cur"
+       else ln -sfn "$wall" "$cur.tmp" && mv -Tf "$cur.tmp" "$cur"; fi ;;
+  esac || echo "hush: could not update $cur (continuing)" >&2
+  printf '$wall = %s\n' "$cur" > "$STATE_DIR/hyprlock-wall.conf"
+}
+
+reload_consumers() { # theme mode
+  local theme="$1" mode="$2" icon
+  icon=$(toml_get "$THEMES/$theme/theme.toml" icon_theme)
+  if command -v hyprctl >/dev/null && [[ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]]; then
+    hyprctl reload >/dev/null 2>&1 || echo "hush: hyprctl reload failed" >&2
+  fi
+  pkill -USR1 -x kitty 2>/dev/null || true
+  pkill -SIGUSR2 -x waybar 2>/dev/null || true
+  if command -v gsettings >/dev/null; then
+    if [[ "$mode" == "light" ]]; then
+      gsettings set org.gnome.desktop.interface color-scheme 'prefer-light' || echo "hush: gsettings failed (continuing)" >&2
+      gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3' || echo "hush: gsettings failed (continuing)" >&2
+    else
+      gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark' || echo "hush: gsettings failed (continuing)" >&2
+      gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark' || echo "hush: gsettings failed (continuing)" >&2
+    fi
+    gsettings set org.gnome.desktop.interface icon-theme "$icon" || echo "hush: gsettings failed (continuing)" >&2
+  fi
+  mkdir -p "$HOME/.config/Kvantum"
+  printf '[General]\ntheme=hush\n' > "$HOME/.config/Kvantum/kvantum.kvconfig"
+  if [[ -d "$HOME/.config/quickshell/hush" ]] && command -v qs >/dev/null; then
+    : # the shell watches Colors.json; nothing to do
+  fi
+}
+
+cmd_theme() {
+  local theme; theme=$(resolve_theme "${1:-}")
+  local wall="$THEMES/$theme/wallpaper.png"
+  [[ -f "$wall" ]] || die "theme $theme has no wallpaper.png (run bin/hush-wallgen $theme)"
+  local mode; mode=$(render "$theme" "$wall")
+  set_wallpaper "$wall"
+  reload_consumers "$theme" "$mode"
+  write_state "$theme" "$wall" "$mode"
+  echo "hush: applied $theme ($mode)"
+}
+
+wall_mode() { # image -> light|dark by mean luminance
+  python3 - "$1" <<'PY'
+import sys
+from PIL import Image, ImageStat
+im = Image.open(sys.argv[1]).convert("L")
+im.thumbnail((256, 256))
+print("light" if ImageStat.Stat(im).mean[0] > 140 else "dark")
+PY
+}
+
+cmd_wall() {
+  local wall="" mode=""
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --mode) mode="${2:-}"; shift 2 || die "--mode needs light or dark" ;;
+      *) wall="$1"; shift ;;
+    esac
+  done
+  [[ -z "$mode" || "$mode" == light || "$mode" == dark ]] || die "--mode must be light or dark"
+  if [[ "$wall" == "random" ]]; then
+    local -a dirs=("$THEMES"); local d
+    if [[ -n "${HUSH_WALL_DIRS:-}" ]]; then IFS=: read -ra extra <<<"$HUSH_WALL_DIRS"; for d in "${extra[@]}"; do [[ -d "$d" ]] && dirs+=("$d"); done; fi
+    wall=$( { find "${dirs[@]}" -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' \) 2>/dev/null || true; } | shuf -n1 || true)
+    [[ -n "$wall" ]] || die "no wallpapers found"
+  fi
+  [[ -f "$wall" ]] || die "no such wallpaper: $wall"
+  wall=$(realpath "$wall")
+  local theme; theme=$(current_theme)
+  [[ -n "$mode" ]] || mode=$(wall_mode "$wall") || die "could not read wallpaper brightness: $wall"
+  local scheme; scheme=$(toml_get "$THEMES/$theme/theme.toml" scheme)
+  [[ "$(toml_get "$THEMES/$theme/theme.toml" source)" == wallpaper ]] || scheme="scheme-tonal-spot"
+  render "$theme" "$wall" "$mode" 1 >/dev/null
+  set_wallpaper "$wall"
+  reload_consumers "$theme" "$mode"
+  write_state "$theme" "$wall" "$mode" "$scheme" wallpaper
+  echo "hush: wallpaper set ($theme, $mode)"
+}
+
+cmd_reload() {
+  local theme wall; theme=$(current_theme); wall=$(current_wall)
+  [[ -f "$wall" ]] || wall="$THEMES/$theme/wallpaper.png"
+  local mode; mode=$(render "$theme" "$wall")
+  set_wallpaper "$wall"
+  reload_consumers "$theme" "$mode"
+  write_state "$theme" "$wall" "$mode"
+  echo "hush: reloaded $theme"
+}
+
+cmd_status() {
+  [[ -f "$STATE" ]] || die "no state yet; run: hush theme harbor"
+  python3 -c "
+import json; s=json.load(open('$STATE'))
+print('theme', s['theme']); print('wallpaper', s['wallpaper']); print('mode', s['mode']); print('scheme', s['scheme']); print('source', s['source']); print('applied', s['applied_at'])"
+}
+
+cmd_check() {
+  local rc=0
+  for f in "$CONFIG_HOME/hypr/modules/theme.lua" "$CONFIG_HOME/hypr/modules/gloview-colors.lua"; do
+    if [[ -f "$f" ]]; then
+      lua -e "dofile('$f')" >/dev/null 2>&1 || { echo "hush check: $f is not valid Lua"; rc=1; }
+    fi
+  done
+  if [[ -f "$STATE_DIR/Colors.json" ]]; then
+    python3 -c "import json; json.load(open('$STATE_DIR/Colors.json'))" 2>/dev/null || { echo "hush check: Colors.json invalid"; rc=1; }
+  fi
+  # decorations.lua indexes these keys; a missing one would abort the module.
+  local tl="$CONFIG_HOME/hypr/modules/theme.lua"
+  if [[ -f "$tl" ]]; then
+    local missing; missing=$(lua -e "
+      local ok, t = pcall(dofile, '$tl')
+      if not ok or type(t) ~= 'table' then print('(theme.lua does not return a table)') return end
+      for _, k in ipairs({'mode','primary','on_primary','surface','surface_container','surface_container_high',
+                          'on_surface','on_surface_variant','outline','outline_variant','shadow','error'}) do
+        local v = t[k]
+        if k == 'mode' then
+          if v ~= 'dark' and v ~= 'light' then print(k) end
+        elseif type(v) ~= 'string' or not v:match('^#%x%x%x%x%x%x$') then print(k) end
+      end" 2>&1 || echo "(lua failed)")
+    [[ -z "$missing" ]] || { echo "hush check: theme.lua missing or invalid keys: $(echo $missing)"; rc=1; }
+  else
+    echo "hush check: $tl missing"; rc=1
+  fi
+  if [[ -z "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]]; then
+    if [[ "${HUSH_CHECK_NO_HYPR:-}" != 1 ]]; then
+      echo "hush check: HYPRLAND_INSTANCE_SIGNATURE is unset; cannot ask Hyprland for config errors (set HUSH_CHECK_NO_HYPR=1 to skip)"
+      rc=1
+    fi
+  elif ! command -v hyprctl >/dev/null; then
+    echo "hush check: hyprctl not found"; rc=1
+  else
+    local errs; errs=$(hyprctl configerrors 2>/dev/null | grep -v '^$' || true)
+    [[ -z "$errs" ]] || { echo "hush check: hyprctl configerrors:"; echo "$errs"; rc=1; }
+  fi
+  while read -r out; do
+    [[ -s "$out" ]] || { echo "hush check: missing output $out"; rc=1; }
+  done < <(outputs)
+  if pgrep -x waybar >/dev/null && pgrep -f "$HUSH_PROC" >/dev/null; then
+    echo "hush check: warning: waybar and the Hush shell are both running"
+  fi
+  [[ $rc -eq 0 ]] && echo "hush check: ok"
+  return $rc
+}
+
+# Outputs land wherever ~/.config points (often a dotfiles repo). Print the resolved path of
+# each one that a git repo tracks, so `track off` can mark it skip-worktree in that repo.
+cmd_generated() {
+  local f r d
+  while read -r f; do
+    r=$(realpath -m "$f"); d=$(dirname "$r")
+    [[ -d "$d" ]] || continue
+    git -C "$d" ls-files --error-unmatch -- "$r" >/dev/null 2>&1 && echo "$r"
+  done < <(outputs) | sort -u
+}
+
+cmd_track() {
+  local flag
+  case "${1:-}" in
+    off) flag=--skip-worktree ;;
+    on) flag=--no-skip-worktree ;;
+    *) die "usage: hush track <on|off>" ;;
+  esac
+  cmd_generated | while read -r f; do git -C "$(dirname "$f")" update-index "$flag" -- "$f"; done
+  echo "hush track $1: done"
+}
+
+cmd_fallback() {
+  cmd_shell stop >/dev/null || true
+  pgrep -x waybar >/dev/null || (waybar -c "$HOME/.config/waybar/minimal-config.jsonc" -s "$HOME/.config/waybar/minimal-style.css" >/dev/null 2>&1 9>&- &)
+  pgrep -x swaync >/dev/null || (swaync >/dev/null 2>&1 9>&- &)
+  echo "hush: fallback bar and notifications started"
+}
+
+HUSH_PROC='^qs -c hush$' # anchored: never match a shell whose command line mentions qs
+
+cmd_shell() {
+  local log="$CACHE_DIR/shell.log"; mkdir -p "$CACHE_DIR"
+  case "${1:-}" in
+    start)
+      pgrep -f "$HUSH_PROC" >/dev/null && { echo "hush shell: already running"; return 0; }
+      pkill -x waybar 2>/dev/null || true; pkill -x swaync 2>/dev/null || true # fallback bar must not coexist
+      if [[ -f "$log" ]]; then wc -l < "$log"; else echo 0; fi > "$CACHE_DIR/shell.restart-marker"
+      (setsid nohup qs -c hush >>"$log" 2>&1 </dev/null 9>&- &)
+      local i out; for i in $(seq 1 40); do
+        out=$(qs -c hush ipc call hush ping 2>/dev/null || true)
+        [[ "$out" == pong ]] && { echo "hush shell: up"; return 0; }
+        sleep 0.25
+      done
+      echo "hush shell: did not answer ping within 10 s (see $log)" >&2; return 1 ;;
+    stop)
+      pkill -f "$HUSH_PROC" 2>/dev/null || true
+      local i; for i in $(seq 1 20); do pgrep -f "$HUSH_PROC" >/dev/null || break; sleep 0.1; done
+      if pgrep -f "$HUSH_PROC" >/dev/null; then # ignored SIGTERM: escalate
+        pkill -KILL -f "$HUSH_PROC" 2>/dev/null || true
+        for i in $(seq 1 20); do pgrep -f "$HUSH_PROC" >/dev/null || break; sleep 0.1; done
+      fi
+      if pgrep -f "$HUSH_PROC" >/dev/null; then echo "hush shell: could not stop" >&2; return 1; fi
+      echo "hush shell: stopped" ;;
+    restart) cmd_shell stop || return 1; cmd_shell start ;; # stop guarantees a fresh start and marker
+    status)
+      if pgrep -f "$HUSH_PROC" >/dev/null; then echo "alive"; else echo "dead"; fi
+      { hyprctl layers -j 2>/dev/null || true; } | { grep -oE '"namespace": "hush-[a-z-]+"' || true; } | sort -u ;;
+    log) tail -n 50 "$log" ;;
+    *) die "usage: hush shell start|stop|restart|status|log" ;;
+  esac
+}
+
+main() {
+  need python3
+  case "${1:-}" in theme|wall|reload) need matugen ;; esac
+  mkdir -p "$CACHE_DIR" "$STATE_DIR"
+  # Serialize every mutating command: they share $RENDER and $MATUGEN_CFG.
+  case "${1:-}" in
+    list|status|shell|generated|track|""|-h|--help|help|--version|version) ;; # shell does not render; it must not hold the lock
+    *) exec 9>"$CACHE_DIR/lock"; flock -w 30 9 || die "another hush is running" ;;
+  esac
+  case "${1:-}" in
+    list) list_themes ;;
+    theme) cmd_theme "${2:-}" ;;
+    wall) shift; cmd_wall "$@" ;;
+    reload) cmd_reload ;;
+    status) cmd_status ;;
+    check) cmd_check ;;
+    generated) cmd_generated ;;
+    track) cmd_track "${2:-}" ;;
+    fallback) cmd_fallback ;;
+    shell) cmd_shell "${2:-}" ;;
+    --version|version) cat "$HUSH_ROOT/VERSION" ;;
+    ""|-h|--help|help) usage ;;
+    *) usage; die "unknown command: $1" ;;
+  esac
+}
+main "$@"

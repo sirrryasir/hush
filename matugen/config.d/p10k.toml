@@ -1,0 +1,3 @@
+[templates.p10k]
+input_path = '@HUSH_ROOT@/matugen/templates/p10k-colors.zsh'
+output_path = '@CONFIG@/hush/p10k-colors.zsh'

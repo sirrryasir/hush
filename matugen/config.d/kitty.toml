@@ -1,0 +1,3 @@
+[templates.kitty]
+input_path = '@HUSH_ROOT@/matugen/templates/kitty-theme.conf'
+output_path = '@CONFIG@/kitty/theme.conf'

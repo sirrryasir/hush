@@ -1,0 +1,3 @@
+[templates.hypr]
+input_path = '@HUSH_ROOT@/matugen/templates/theme.lua'
+output_path = '@CONFIG@/hypr/modules/theme.lua'

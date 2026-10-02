@@ -1,0 +1,3 @@
+[templates.qt6ct]
+input_path = '@HUSH_ROOT@/matugen/templates/qt6ct-colors.conf'
+output_path = '@CONFIG@/qt6ct/colors.conf'

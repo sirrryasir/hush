@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Installs adw-gtk3 into ~/.themes without sudo.
+set -euo pipefail
+dest="$HOME/.themes"; mkdir -p "$dest"
+if [[ -d "$dest/adw-gtk3" && -d "$dest/adw-gtk3-dark" ]]; then echo "hush-gtk: already installed"; exit 0; fi
+tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
+url=$(curl -fsSL https://api.github.com/repos/lassekongo83/adw-gtk3/releases/latest | python3 -c 'import json,sys; a=[x["browser_download_url"] for x in json.load(sys.stdin)["assets"] if x["name"].endswith(".tar.xz")]; print(a[0] if a else "")')
+[[ -n "$url" ]] || { echo "hush-gtk: no .tar.xz asset in the latest adw-gtk3 release" >&2; exit 1; }
+curl -fsSL -o "$tmp/adw.tar.xz" "$url"
+tar -xJf "$tmp/adw.tar.xz" -C "$dest"
+if [[ -f "$dest/adw-gtk3/gtk-3.0/gtk.css" && -f "$dest/adw-gtk3-dark/gtk-3.0/gtk.css" ]]; then
+  echo "hush-gtk: installed adw-gtk3 and adw-gtk3-dark into $dest"
+else
+  rm -rf "$dest/adw-gtk3" "$dest/adw-gtk3-dark"
+  echo "hush-gtk: extraction failed, theme files missing" >&2
+  exit 1
+fi

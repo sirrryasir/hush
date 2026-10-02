@@ -1,0 +1,3 @@
+[templates.helium]
+input_path = '@HUSH_ROOT@/matugen/templates/helium-manifest.json'
+output_path = '@CONFIG@/hush/helium-theme/manifest.json'

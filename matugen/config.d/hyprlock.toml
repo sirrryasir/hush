@@ -1,0 +1,3 @@
+[templates.hyprlock]
+input_path = '@HUSH_ROOT@/matugen/templates/hyprlock-colors.conf'
+output_path = '@CONFIG@/hyprlock/colors.conf'

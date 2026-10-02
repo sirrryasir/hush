@@ -1,0 +1,3 @@
+[templates.colors_json]
+input_path = '@HUSH_ROOT@/matugen/templates/Colors.json'
+output_path = '@CONFIG@/hush/Colors.json'

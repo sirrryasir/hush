@@ -1,0 +1,4 @@
+# Assembled by `hush` from config.toml.head + config.d/*.toml, with @HUSH_ROOT@ and @CONFIG@ substituted. Do not edit the assembled file.
+[config]
+reload_apps = false
+version_check = false

@@ -1,0 +1,3 @@
+[templates.waybar]
+input_path = '@HUSH_ROOT@/matugen/templates/waybar-colors.css'
+output_path = '@CONFIG@/waybar/colors.css'

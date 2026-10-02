@@ -1,0 +1,3 @@
+[templates.fastfetch]
+input_path = '@HUSH_ROOT@/matugen/templates/fastfetch.jsonc'
+output_path = '@CONFIG@/fastfetch/config.jsonc'
