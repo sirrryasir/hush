@@ -34,6 +34,7 @@ Control center per theme: [dusk](assets/themes/dusk-cc.png), [ember](assets/them
 - `matugen/`: templates and per-target config fragments that render the theme
 - `themes/`: one folder per theme (`theme.toml` plus a generated wallpaper)
 - `hyprlock/`: lock screen config and layout (colors are generated)
+- `sddm/`: SDDM login theme and its sudo installer
 - `integrations/nvim/`: a LazyVim plugin spec that follows the generated colorscheme
 - `tests/`: `bash tests/run_all.sh` (live tests drive the running shell and Hyprland)
 
@@ -99,6 +100,16 @@ git clone https://github.com/sirrryasir/hush.git ~/hush
 | `HUSH_ROOT` | the checkout that `bin/hush` lives in | where themes, templates and the shell are read from |
 | `XDG_CONFIG_HOME` | `~/.config` | where generated files are written |
 | `HUSH_WALL_DIRS` | unset | colon-separated extra wallpaper folders for `hush wall random` and the wallpaper grid |
+
+### SDDM login theme
+
+`sddm/hush/` is a Qt6 greeter theme that mirrors the lock screen (blurred wallpaper, thin Inter clock, round avatar, pill password field, session and power buttons). Install it once, with sudo:
+
+```
+sudo sddm/install.sh
+```
+
+This copies the theme to `/usr/share/sddm/themes/hush` (with Inter, since the greeter cannot see your user fonts), writes `/etc/sddm.conf.d/hush.conf` (`[Theme] Current=hush`) and links `hush/current` to `~/.cache/hush/sddm`. `hush sddm sync` writes the current wallpaper, avatar and palette there (world-readable); `hush theme` and `hush wall` call it automatically once that directory exists. The greeter runs as the `sddm` user, so `$HOME` must be traversable (`chmod o+x ~`); `hush sddm sync` warns when it is not. Preview without logging out: `sddm-greeter-qt6 --test-mode --theme sddm/hush` inside a nested compositor.
 
 Generated files (`hush generated`) land in `~/.config`: Hyprland `hypr/modules/theme.lua` and `gloview-colors.lua`, kitty `theme.conf`, `nvim/colors/hush.lua`, GTK, qt6ct, Kvantum, fastfetch, waybar, hyprlock and `~/.config/hush/` (Colors.json, p10k colors, browser theme). If `~/.config` is itself a dotfiles repo, `hush track off` marks the tracked ones `skip-worktree` so `git commit -a` leaves them alone. The fastfetch template reads its logo from `~/.config/fastfetch/logo.txt`.
 

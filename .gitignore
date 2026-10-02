@@ -9,3 +9,5 @@ assets/evidence/timelapse/frames-kept/
 *.log
 .DS_Store
 .superpowers/
+sddm/hush/current
+sddm/hush/fonts/*.ttf
