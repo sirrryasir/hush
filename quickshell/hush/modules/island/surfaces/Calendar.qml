@@ -59,7 +59,7 @@ Item {
                         anchors.centerIn: parent; text: modelData.g; color: Colors.islandFgVar
                         font.family: Theme.fontIcon; font.pixelSize: 20
                     }
-                    MouseArea { id: hit; anchors.fill: parent; hoverEnabled: true; onClicked: cal.shift(modelData.d) }
+                    MouseArea { id: hit; anchors.fill: parent; hoverEnabled: true; onClicked: cal.shift(modelData.d); Accessible.role: Accessible.Button; Accessible.name: modelData.d < 0 ? "Previous month" : "Next month" }
                 }
             }
         }

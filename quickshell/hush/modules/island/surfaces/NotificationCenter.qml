@@ -60,7 +60,7 @@ Item {
                         font.family: Theme.fontUi; font.pixelSize: 12; font.weight: Font.Medium
                     }
                 }
-                MouseArea { id: dndHit; anchors.fill: parent; hoverEnabled: true; onClicked: center.host.dnd = !center.host.dnd }
+                MouseArea { id: dndHit; anchors.fill: parent; hoverEnabled: true; onClicked: center.host.dnd = !center.host.dnd; Accessible.role: Accessible.CheckBox; Accessible.name: "Do not disturb"; Accessible.checked: center.dnd }
             }
             Rectangle {
                 id: clearChip
@@ -71,7 +71,7 @@ Item {
                     id: clearText; anchors.centerIn: parent; text: "Clear all"; color: Colors.islandFg
                     font.family: Theme.fontUi; font.pixelSize: 12; font.weight: Font.Medium
                 }
-                MouseArea { id: clearHit; anchors.fill: parent; hoverEnabled: true; enabled: center.count > 0; onClicked: center.host.clearAll() }
+                MouseArea { id: clearHit; anchors.fill: parent; hoverEnabled: true; enabled: center.count > 0; onClicked: center.host.clearAll(); Accessible.role: Accessible.Button; Accessible.name: "Clear all notifications" }
             }
         }
 
@@ -105,7 +105,7 @@ Item {
                                 color: Colors.islandFgVar
                                 font.family: Theme.fontUi; font.pixelSize: 12; font.weight: Font.Medium
                             }
-                            MouseArea { anchors.fill: parent; onClicked: center.toggleGroup(grp.modelData.app) }
+                            MouseArea { anchors.fill: parent; onClicked: center.toggleGroup(grp.modelData.app); Accessible.role: Accessible.Button; Accessible.name: (grp.open ? "Collapse " : "Expand ") + grp.modelData.app }
                         }
                         Repeater {
                             model: grp.open ? grp.modelData.items : []

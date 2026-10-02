@@ -47,5 +47,6 @@ Item {
         hoverEnabled: true
         onEntered: row.hovered()
         onClicked: row.clicked()
+        Accessible.role: Accessible.Button; Accessible.name: row.entry ? row.entry.name : ""
     }
 }

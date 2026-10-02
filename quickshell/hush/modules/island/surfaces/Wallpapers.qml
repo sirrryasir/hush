@@ -117,6 +117,7 @@ Item {
                 anchors.fill: parent; hoverEnabled: true
                 onEntered: grid.currentIndex = cell.index
                 onClicked: { grid.currentIndex = cell.index; root.pickIndex(cell.index) }
+                Accessible.role: Accessible.Button; Accessible.name: "Wallpaper " + cell.modelData.split("/").slice(-2).join(" ")
             }
         }
     }

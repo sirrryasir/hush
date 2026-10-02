@@ -35,5 +35,18 @@ ShellRoot {
         function dataWidth(): int { return Settings.data.island.width }
         function version(): string { return s.version }
         function wallRequests(): int { return root.wallRequests }
+        // Row titles / switch + slider lookup (walks the surface; pages not shown are still in the tree).
+        function walk(it, f) { if (!it) return; f(it); for (let i = 0; i < it.children.length; i++) walk(it.children[i], f) }
+        function titles(): string { const o = []; walk(s, it => { if (typeof it.title === "string" && it.title !== "" && it.slot === undefined) o.push(it.title) }); return o.join("|") }
+        function rowItem(title: string, member: string): var { let r = null; walk(s, it => { if (r === null && it.title === title) walk(it, c => { if (r === null && c[member] !== undefined && c !== it) r = c }) }); return r }
+        function hasSwitch(title: string): bool { return rowItem(title, "toggled") !== null }
+        function hasSlider(title: string): bool { return rowItem(title, "cur") !== null }
+        function flip(title: string): void { const w = rowItem(title, "toggled"); if (w) w.toggled(!w.on) }
+        function slideTo(title: string, v: int): void { s.commit(rowItem(title, "cur").key, v) }
+        function previewKey(k: string, v: int): void { s.setPreview(k, v) }
+        function shown(k: string): int { return s.value(k) }
+        function stepSlider(title: string, n: int): void { const w = rowItem(title, "cur"); walk(w, c => { if (typeof c.stepAdjust === "function") c.stepAdjust(n) }) }
+        function dataOf(path: string): string { return String(path.split(".").reduce((o, k) => o[k], Settings.data)) }
+        function unitOf(title: string): string { return rowItem(title, "unit").unit }
     }
 }

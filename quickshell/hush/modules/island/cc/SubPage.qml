@@ -26,7 +26,7 @@ Item {
         Rectangle {
             Layout.preferredWidth: 36; Layout.preferredHeight: 36; radius: 18; color: Colors.islandSurfaceHigh
             Text { anchors.centerIn: parent; text: "arrow_back"; color: Colors.islandFg; font.family: Theme.fontIcon; font.pixelSize: 20 }
-            MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: page.back() }
+            MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: page.back(); Accessible.role: Accessible.Button; Accessible.name: "Back" }
         }
         Text {
             Layout.fillWidth: true; Layout.preferredHeight: 36
@@ -39,7 +39,7 @@ Item {
                 id: rg; anchors.centerIn: parent; text: "refresh"; color: Colors.islandFg; font.family: Theme.fontIcon; font.pixelSize: 20
                 RotationAnimator on rotation { running: page.busy; from: 0; to: 360; duration: 900; loops: Animation.Infinite; onRunningChanged: if (!running) rg.rotation = 0 }
             }
-            MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: page.refresh() }
+            MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: page.refresh(); Accessible.role: Accessible.Button; Accessible.name: "Refresh" }
         }
         Rectangle {
             visible: page.switchable
@@ -50,7 +50,7 @@ Item {
                 color: page.switchOn ? Colors.islandOnPrimary : Colors.islandFgVar
                 Behavior on x { NumberAnimation { duration: Theme.durationShort } }
             }
-            MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: page.switched() }
+            MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: page.switched(); Accessible.role: Accessible.CheckBox; Accessible.name: page.title + " on"; Accessible.checked: page.switchOn }
         }
     }
 
@@ -81,7 +81,7 @@ Item {
                 text: modelData.trail || ""; color: row.ink; opacity: 0.8
                 font.family: modelData.trailIcon ? Theme.fontIcon : Theme.fontUi; font.pixelSize: modelData.trailIcon ? 18 : 12
             }
-            MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: page.rowClicked(row.modelData) }
+            MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: page.rowClicked(row.modelData); Accessible.role: Accessible.Button; Accessible.name: row.modelData.label }
         }
         Text {
             anchors.centerIn: parent; visible: list.count === 0

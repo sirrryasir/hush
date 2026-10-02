@@ -106,12 +106,12 @@ FocusScope {
             Layout.fillWidth: true; Layout.preferredHeight: 32; spacing: 12
             Slider {
                 Layout.fillWidth: true; Layout.minimumWidth: 90; Layout.preferredWidth: 150; Layout.alignment: Qt.AlignVCenter
-                icon: Svc.Audio.muted ? "volume_off" : "volume_up"; value: Svc.Audio.volume
+                objectName: "volumeSlider"; label: "Volume"; icon: Svc.Audio.muted ? "volume_off" : "volume_up"; value: Svc.Audio.volume
                 onMoved: v => Svc.Audio.setVolume(v)
             }
             Slider {
                 Layout.fillWidth: true; Layout.minimumWidth: 90; Layout.preferredWidth: 150; Layout.alignment: Qt.AlignVCenter
-                icon: "brightness_6"; value: Svc.Brightness.level
+                label: "Brightness"; icon: "brightness_6"; value: Svc.Brightness.level
                 onMoved: v => { cc.pendingBrightness = v; briDebounce.restart() }
             }
             PowerRow { Layout.alignment: Qt.AlignVCenter | Qt.AlignRight }
@@ -127,7 +127,7 @@ FocusScope {
                     Text { anchors.verticalCenter: parent.verticalCenter; text: "wallpaper"; color: Colors.islandFg; font.family: Theme.fontIcon; font.pixelSize: 18 }
                     Text { anchors.verticalCenter: parent.verticalCenter; text: "Wallpapers"; color: Colors.islandFg; font.family: Theme.fontUi; font.pixelSize: 12; font.weight: Font.Medium }
                 }
-                MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: cc.openWallpapers() }
+                MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: cc.openWallpapers(); Accessible.role: Accessible.Button; Accessible.name: "Wallpapers" }
             }
         }
         Item { Layout.fillHeight: true }

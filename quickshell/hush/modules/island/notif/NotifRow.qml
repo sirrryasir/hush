@@ -17,6 +17,7 @@ Rectangle {
         id: area
         anchors.fill: parent; hoverEnabled: true
         onClicked: if (card.host.invokeDefault(card.notif) && card.notif && !card.notif.resident) card.host.dismiss(card.notif)
+        Accessible.role: Accessible.Button; Accessible.name: "Open notification: " + (card.notif ? card.notif.summary : "")
     }
 
     Item {
@@ -70,7 +71,7 @@ Rectangle {
                         color: Colors.islandOnSecondaryContainer
                         font.family: Theme.fontUi; font.pixelSize: 12; font.weight: Font.Medium
                     }
-                    MouseArea { id: actArea; anchors.fill: parent; hoverEnabled: true; onClicked: modelData.invoke() }
+                    MouseArea { id: actArea; anchors.fill: parent; hoverEnabled: true; onClicked: modelData.invoke(); Accessible.role: Accessible.Button; Accessible.name: modelData.text }
                 }
             }
         }
@@ -80,6 +81,6 @@ Rectangle {
         anchors { right: parent.right; top: parent.top; rightMargin: 12; topMargin: 10 }
         text: "close"; color: closeArea.containsMouse ? Colors.islandFg : Colors.islandFgVar
         font.family: Theme.fontIcon; font.pixelSize: 18
-        MouseArea { id: closeArea; anchors.fill: parent; anchors.margins: -6; hoverEnabled: true; onClicked: card.host.dismiss(card.notif) }
+        MouseArea { id: closeArea; anchors.fill: parent; anchors.margins: -6; hoverEnabled: true; onClicked: card.host.dismiss(card.notif); Accessible.role: Accessible.Button; Accessible.name: "Dismiss notification" }
     }
 }

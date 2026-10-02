@@ -38,6 +38,6 @@ ListView {
             anchors.fill: parent; radius: card.radius; color: "transparent"
             border.width: card.active ? 2 : 0; border.color: Colors.islandPrimary
         }
-        MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: Svc.Ipc.setTheme(card.modelData) }
+        MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: Svc.Ipc.setTheme(card.modelData); Accessible.role: Accessible.Button; Accessible.name: "Theme " + card.modelData }
     }
 }

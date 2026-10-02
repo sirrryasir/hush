@@ -250,14 +250,23 @@ Item {
         it.clicked(null)
         return true
     }
+    // A focused slider (its MouseArea exposes stepAdjust(n)) takes Left/Right as value steps
+    // (Shift = 10 steps); Up/Down and Tab still move the focus.
+    function navAdjust(dir, big) {
+        const t = navTarget
+        if (!t || !surfaceOpen || !t.visible || typeof t.stepAdjust !== "function") return false
+        t.stepAdjust(dir * (big ? 10 : 1))
+        mark("@adjust")
+        return true
+    }
     Keys.onPressed: event => {
         if (!surfaceOpen) return
         let done = false
         switch (event.key) {
         case Qt.Key_Tab: done = navStep(event.modifiers & Qt.ShiftModifier ? -1 : 1); break
         case Qt.Key_Backtab: done = navStep(-1); break
-        case Qt.Key_Left: done = navMove(-1, 0); break
-        case Qt.Key_Right: done = navMove(1, 0); break
+        case Qt.Key_Left: done = navAdjust(-1, event.modifiers & Qt.ShiftModifier) || navMove(-1, 0); break
+        case Qt.Key_Right: done = navAdjust(1, event.modifiers & Qt.ShiftModifier) || navMove(1, 0); break
         case Qt.Key_Up: done = navMove(0, -1); break
         case Qt.Key_Down: done = navMove(0, 1); break
         case Qt.Key_Return: case Qt.Key_Enter: case Qt.Key_Space: done = navActivate(); break

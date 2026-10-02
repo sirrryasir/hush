@@ -52,7 +52,8 @@ Item {
                 width: 32; height: 32; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter
                 text: modelData.g; color: Colors.islandFg
                 font.family: Theme.fontIcon; font.pixelSize: 24
-                MouseArea { anchors.fill: parent; onClicked: Svc.Media[modelData.f]() }
+                MouseArea { anchors.fill: parent; onClicked: Svc.Media[modelData.f]()
+                    Accessible.role: Accessible.Button; Accessible.name: modelData.f === "toggle" ? (Svc.Media.playing ? "Pause" : "Play") : modelData.f === "next" ? "Next track" : "Previous track" }
             }
         }
     }

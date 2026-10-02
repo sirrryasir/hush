@@ -39,7 +39,8 @@ Row {
                 color: btn.isArmed ? Colors.islandError : Colors.islandFg
                 font.family: Theme.fontIcon; font.pixelSize: 18
             }
-            MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: row.press(btn.modelData) }
+            MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: row.press(btn.modelData)
+                Accessible.role: Accessible.Button; Accessible.name: btn.isArmed ? "Confirm " + btn.modelData.id : ({ lock: "Lock", sleep: "Sleep", reboot: "Reboot", poweroff: "Power off" })[btn.modelData.id] }
         }
     }
 }

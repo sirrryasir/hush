@@ -123,6 +123,13 @@ Item {
         }
         MouseArea {
             id: ma
+            Accessible.role: Accessible.Slider; Accessible.name: "Seek"
+            // Keyboard: n steps of 5 s, committed at once.
+            function stepAdjust(n) {
+                if (!root.player) return
+                const p = Math.min(root.length, Math.max(0, root.position + n * 5)); scrub.drag = p
+                root.player.position = p; Svc.Media.position = p
+            }
             anchors.fill: parent; anchors.topMargin: -6; anchors.bottomMargin: -6; enabled: root.canSeek
             function at(x) { return Math.min(1, Math.max(0, x / width)) * root.length }
             onPressed: (m) => scrub.drag = at(m.x)
@@ -148,7 +155,8 @@ Item {
                     color: modelData.big ? Colors.islandOnPrimary : Colors.islandFg
                     font.family: Theme.fontIcon; font.pixelSize: modelData.big ? 28 : 24
                 }
-                MouseArea { id: btn; anchors.fill: parent; hoverEnabled: true; onClicked: Svc.Media[modelData.f]() }
+                MouseArea { id: btn; anchors.fill: parent; hoverEnabled: true; onClicked: Svc.Media[modelData.f]()
+                    Accessible.role: Accessible.Button; Accessible.name: modelData.f === "toggle" ? (Svc.Media.playing ? "Pause" : "Play") : modelData.f === "next" ? "Next track" : "Previous track" }
             }
         }
     }

@@ -6,6 +6,8 @@ import qs.config
 Item {
     id: root
     property string icon: ""
+    property string label: ""
+    property real step: 0.05
     property real value: 0
     signal moved(real v)
     property real dragValue: 0
@@ -40,6 +42,10 @@ Item {
         }
         MouseArea {
             id: area
+            Accessible.role: Accessible.Slider; Accessible.name: root.label || root.icon
+            Accessible.description: Math.round(root.value * 100) + " percent"
+            // Keyboard (the island's navigator calls this on Left/Right): n steps, clamped, committed.
+            function stepAdjust(n) { const v = Math.max(0, Math.min(1, root.value + n * root.step)); root.dragValue = v; root.moved(v) }
             anchors.fill: parent; anchors.margins: -4
             function setFrom(mx) {
                 const v = Math.max(0, Math.min(1, (mx - 4 - 8) / (track.width - 16)))

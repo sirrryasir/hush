@@ -39,7 +39,8 @@ Rectangle {
             }
         }
     }
-    MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: tile.clicked() }
+    MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: tile.clicked()
+        Accessible.role: Accessible.CheckBox; Accessible.name: tile.label; Accessible.checked: tile.checked }
     // Opens the tile's sub-page; sits above the tile's own click area.
     Item {
         visible: tile.chevron
@@ -48,6 +49,7 @@ Rectangle {
             anchors.centerIn: parent; text: "chevron_right"; color: tile.ink
             font.family: Theme.fontIcon; font.pixelSize: 22
         }
-        MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: tile.chevronClicked() }
+        MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: tile.chevronClicked()
+            Accessible.role: Accessible.Button; Accessible.name: "Open " + tile.label + " page" }
     }
 }

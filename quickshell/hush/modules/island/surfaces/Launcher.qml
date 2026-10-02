@@ -125,6 +125,7 @@ FocusScope {
             }
             TextInput {
                 id: input
+                Accessible.role: Accessible.EditableText; Accessible.name: "Search"
                 anchors { left: glyph.right; leftMargin: 10; right: parent.right; verticalCenter: parent.verticalCenter }
                 font.family: Theme.fontUi; font.pixelSize: Theme.textLauncher
                 color: Colors.islandFg
