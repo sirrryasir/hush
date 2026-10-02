@@ -3,23 +3,61 @@ import QtQuick.Effects
 import qs.config
 import qs.services
 
-// Left slot of the rest pill (design 2.1): album art in a circle with a thin progress ring while a
-// media player exists, a music-note glyph when it has no art. `shown` is false when there is nothing
-// to show; the parent then collapses the slot so the pill narrows.
+// Left slot of the rest pill (design 2.1). Priority: recording dot (pulsing red, 1 Hz), countdown ring
+// with mm:ss, then album art in a circle with a thin progress ring while a player is playing (a
+// music-note glyph when it has no art). `shown` is false when there is nothing to show; the parent
+// then collapses the slot so the pill narrows. The recording/timer/media inputs are plain properties
+// bound to the services, so a harness can override them.
 Item {
     id: root
-    readonly property bool shown: Media.player !== null && Media.playing
-    readonly property real progress: Media.length > 0 ? Math.max(0, Math.min(1, Media.position / Media.length)) : 0
-    readonly property bool hasArt: Media.artUrl !== "" && art.status === Image.Ready
-    implicitWidth: 24; implicitHeight: 24
+    property bool recording: Recording.active
+    property bool timerOn: Countdown.running
+    property int timerSecs: Countdown.remaining
+    property bool mediaOn: Media.player !== null && Media.playing
+    property real mediaProgress: Media.length > 0 ? Math.max(0, Math.min(1, Media.position / Media.length)) : 0
+    property string artUrl: Media.artUrl
+    readonly property string mode: recording ? "recording" : timerOn ? "timer" : mediaOn ? "media" : ""
+    readonly property bool shown: mode !== ""
+    readonly property real progress: mode === "timer" ? timerProgress : mediaProgress
+    readonly property bool hasArt: artUrl !== "" && art.status === Image.Ready
+    readonly property string timeText: { const s = Math.max(0, timerSecs); const m = Math.floor(s / 60)
+        return (m < 10 ? "0" : "") + m + ":" + (s % 60 < 10 ? "0" : "") + (s % 60) }
+    // The timer's total is the largest remaining value seen since it started.
+    property int timerTotal: 0
+    property real timerProgress: timerTotal > 0 ? Math.max(0, Math.min(1, timerSecs / timerTotal)) : 0
+    onTimerSecsChanged: if (timerOn && timerSecs > timerTotal) timerTotal = timerSecs
+    onTimerOnChanged: if (!timerOn) timerTotal = 0; else if (timerSecs > timerTotal) timerTotal = timerSecs
+    implicitWidth: mode === "timer" ? 24 + 6 + timeLabel.implicitWidth : 24; implicitHeight: 24
     width: implicitWidth; height: implicitHeight
+
+    Rectangle {
+        id: recDot
+        objectName: "recDot"
+        visible: root.mode === "recording"
+        anchors.centerIn: ringBox; width: 10; height: 10; radius: 5; color: Colors.darkError
+        SequentialAnimation on opacity {
+            running: recDot.visible; loops: Animation.Infinite
+            NumberAnimation { to: 0.25; duration: 500; easing.type: Easing.InOutSine }
+            NumberAnimation { to: 1.0; duration: 500; easing.type: Easing.InOutSine }
+        }
+    }
+    Text {
+        id: timeLabel
+        objectName: "timeLabel"
+        visible: root.mode === "timer"
+        anchors.left: ringBox.right; anchors.leftMargin: 6; anchors.verticalCenter: parent.verticalCenter
+        text: root.timeText; color: Colors.darkOnSurface
+        font.family: Theme.fontMono; font.pixelSize: 11
+    }
+    Item { id: ringBox; x: 0; width: 24; height: 24 }
 
     Item {
         id: disc
-        anchors.centerIn: parent; width: 18; height: 18
+        visible: root.mode === "media"
+        anchors.centerIn: ringBox; width: 18; height: 18
         Image {
             id: art
-            anchors.fill: parent; source: Media.artUrl; fillMode: Image.PreserveAspectCrop
+            anchors.fill: parent; source: root.artUrl; fillMode: Image.PreserveAspectCrop
             sourceSize.width: 48; sourceSize.height: 48; asynchronous: true
             visible: false; layer.enabled: true
         }
@@ -33,7 +71,8 @@ Item {
     }
     Canvas {
         id: ring
-        anchors.fill: parent
+        anchors.fill: ringBox
+        visible: root.mode === "media" || root.mode === "timer"
         property real p: root.progress
         property color track: Qt.rgba(1, 1, 1, 0.16)
         property color fill: Colors.darkPrimary

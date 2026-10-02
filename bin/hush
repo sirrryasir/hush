@@ -37,6 +37,7 @@ usage: hush <command>
   sddm sync            refresh ~/.cache/hush/sddm (wallpaper, colours, avatar) for the SDDM theme
   lock                 lock the screen with hyprlock (once)
   shell <start|stop|restart|status|log>  manage the Hush Quickshell shell
+  timer <N>m|<N>s|<N>h|stop  start a countdown shown at rest in the island, or cancel it
 EOF
 }
 
@@ -462,13 +463,24 @@ cmd_shell() {
   esac
 }
 
+cmd_timer() { # <N>[smh] | stop  (talks to the running shell's activity IPC)
+  local a="${1:-}" n u secs
+  [[ -n "$a" ]] || die "usage: hush timer <N>m|<N>s|<N>h|stop"
+  if [[ "$a" == "stop" ]]; then qs -c hush ipc call activity timerStop >/dev/null || die "the shell is not running"; return; fi
+  [[ "$a" =~ ^([0-9]+)([smh]?)$ ]] || die "bad duration \"$a\" (use e.g. 25m, 90s, 1h)"
+  n="${BASH_REMATCH[1]}"; u="${BASH_REMATCH[2]:-m}"
+  case "$u" in s) secs=$n ;; m) secs=$((n * 60)) ;; h) secs=$((n * 3600)) ;; esac
+  [[ "$secs" -gt 0 ]] || die "duration must be positive"
+  qs -c hush ipc call activity timerStart "$secs" >/dev/null || die "the shell is not running"
+}
+
 main() {
   need python3
   case "${1:-}" in theme|wall|reload) need matugen ;; esac
   mkdir -p "$CACHE_DIR" "$STATE_DIR"
   # Serialize every mutating command: they share $RENDER and $MATUGEN_CFG.
   case "${1:-}" in
-    list|status|shell|generated|track|lock|""|-h|--help|help|--version|version) ;; # shell does not render; it must not hold the lock
+    list|status|shell|timer|generated|track|lock|""|-h|--help|help|--version|version) ;; # shell does not render; it must not hold the lock
     *) exec 9>"$CACHE_DIR/lock"; flock -w 30 9 || die "another hush is running" ;;
   esac
   case "${1:-}" in
@@ -483,6 +495,7 @@ main() {
     fallback) cmd_fallback ;;
     sddm) cmd_sddm "${2:-}" ;;
     shell) cmd_shell "${2:-}" ;;
+    timer) cmd_timer "${2:-}" ;;
     lock) pgrep -x hyprlock >/dev/null || exec hyprlock ;;
     --version|version) cat "$HUSH_ROOT/VERSION" ;;
     ""|-h|--help|help) usage ;;
