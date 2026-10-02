@@ -4,7 +4,7 @@ import Quickshell.Io
 import Quickshell.Hyprland
 import qs.config
 import qs.services
-import "sources"
+import qs.modules.island.surfaces.launcher
 
 // The launcher controller plus one window per screen. Only the window on the focused
 // monitor is ever shown. Results are computed once here and every window renders them.

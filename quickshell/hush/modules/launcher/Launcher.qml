@@ -3,7 +3,7 @@ import Quickshell
 import Quickshell.Wayland
 import Quickshell.Hyprland
 import qs.config
-import "." as L
+import qs.modules.island.surfaces.launcher as L
 
 // One launcher surface. Centered because no anchors are set.
 PanelWindow {
@@ -100,7 +100,7 @@ PanelWindow {
                 currentIndex: win.controller.currentIndex
                 highlightMoveDuration: Theme.durationShort
                 boundsBehavior: Flickable.StopAtBounds
-                delegate: L.Row {
+                delegate: L.ResultRow {
                     required property var modelData
                     required property int index
                     width: list.width
