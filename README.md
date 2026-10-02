@@ -1,5 +1,9 @@
 <div align="center">
-  <h1>Hush</h1>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/brand/social/readme-header-dark.svg" />
+    <source media="(prefers-color-scheme: light)" srcset="assets/brand/social/readme-header-light.svg" />
+    <img src="assets/brand/social/readme-header-light.svg" alt="Hush" width="600" />
+  </picture>
   <p>A quiet, Apple-calm Hyprland desktop: one Quickshell shell, six themes, one command that recolors everything.</p>
   <img src="assets/themes/harbor-cc.png" alt="Hush, harbor theme, control center open" width="860" />
 </div>

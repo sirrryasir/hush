@@ -169,6 +169,12 @@ reload_consumers() { # theme mode
     hyprctl reload >/dev/null 2>&1 || echo "hush: hyprctl reload failed" >&2
   fi
   pkill -USR1 -x kitty 2>/dev/null || true
+  # fastfetch shows the Breath mark through kitty graphics; matugen renders the tinted SVG, kitty wants PNG.
+  local ff="$CONFIG_HOME/fastfetch"
+  if [[ -s "$ff/hush-logo.svg" ]] && command -v rsvg-convert >/dev/null; then
+    { rsvg-convert -w 512 "$ff/hush-logo.svg" -o "$ff/hush-logo.png.tmp" && mv -f "$ff/hush-logo.png.tmp" "$ff/hush-logo.png"; } \
+      || echo "hush: fastfetch logo render failed (continuing)" >&2
+  fi
   pkill -SIGUSR2 -x waybar 2>/dev/null || true
   if command -v gsettings >/dev/null; then
     if [[ "$mode" == "light" ]]; then
