@@ -13,7 +13,7 @@ Singleton {
     readonly property int exclusiveTop: 48
     readonly property int durationShort: 120
     readonly property int durationNormal: 220
-    readonly property int osdHoldMs: 1200
+    readonly property int osdHoldMs: 1100
     readonly property int notificationHoldMs: 5000
     readonly property int hoverExpandMs: 400
 }

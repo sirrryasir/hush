@@ -6,6 +6,8 @@ import QtQml
 //   declare(name, priority, { sticky, holdMs, coalesce })
 //   raise(name, payload)   payload.key, when set, identifies one item of a source
 //   lower(name[, key])     drops the source (or one keyed item), current or queued
+//   pause(on)              holds the current transient's timer (a hovered notification); off
+//                          re-arms it from its full hold
 //
 // Rules:
 // - The current entry is the highest-priority raised one. A raise above the current one
@@ -30,12 +32,15 @@ QtObject {
 
     signal shown(string name, var payload)
     signal hidden(string name)
+    // The entry is gone for good (lowered, timed out or superseded), not merely preempted.
+    signal ended(string name, var payload)
     signal hoverArm()
 
     property var _decls: ({})
     property var _cur: null
     property var _queue: []
     property int _seq: 0
+    property bool _paused: false
 
     property Timer _hold: Timer {
         repeat: false
@@ -100,8 +105,19 @@ QtObject {
             _end();
     }
 
+    function pause(on) {
+        if (root._paused === !!on)
+            return;
+        root._paused = !!on;
+        if (root._paused)
+            root._hold.stop();
+        else if (root._cur)
+            _arm(root._decls[root._cur.name]);
+    }
+
     function reset() {
         root._hold.stop();
+        root._paused = false;
         root._cur = null;
         root._queue = [];
         root._decls = ({});
@@ -117,7 +133,7 @@ QtObject {
     }
     function _arm(d) {
         root._hold.stop();
-        if (_transient(d)) {
+        if (_transient(d) && !root._paused) {
             root._hold.interval = d.holdMs;
             root._hold.start();
         }
@@ -143,6 +159,8 @@ QtObject {
         if (how === "preempt")
             _enqueue(c);
         root.hidden(c.name);
+        if (how !== "preempt")
+            root.ended(c.name, c.payload);
     }
     // The current entry ends (lowered or timed out): re-arm hover, then play the next one.
     function _end() {

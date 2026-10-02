@@ -14,14 +14,14 @@ Item {
         releaseTimer.stop()
         if (!island || !Svc.Media.player || !Svc.Media.playing) return
         active = true
-        island.request("media", 1, 0)
+        island.arbiter.raise("media")
         island.restCenterText = Svc.Media.title
     }
     function disengage() {
         releaseTimer.stop()
         if (!active || !island) return
         active = false
-        island.release("media")
+        island.arbiter.lower("media")
         island.restCenterText = Qt.formatDate(new Date(), "ddd d MMM")
     }
 

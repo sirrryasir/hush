@@ -29,6 +29,20 @@ t_brightness() {
   assert_eq "osd" "$(shell_ipc islandState)" "brightness change shows osd"
   brightnessctl -q set 5%+; sleep 2
 }
+t_coalesce() {
+  # One OSD whose 1100 ms hold re-times from the last change: raised at 0 and ~800 ms, it is still up
+  # at ~1500 ms and gone ~1100 ms after the second raise (a burst never stacks or flickers).
+  wait_state() { local i; for i in $(seq "${2:-60}"); do [[ "$(shell_ipc islandState)" == "$1" ]] && return 0; sleep 0.05; done; return 1; }
+  wait_state rest
+  shell_ipc osd volume; sleep 0.8; shell_ipc osd brightness; sleep 0.6
+  assert_eq "osd" "$(shell_ipc islandState)" "still the OSD 1.4 s after the first change (re-timed)"
+  wait_state rest 40
+  local g; g=$(shell_ipc islandHistory | python3 -c "
+import json,sys
+h=json.load(sys.stdin); i=max(i for i,(n,t) in enumerate(h) if n=='osd')
+print(next((t for n,t in h[i+1:] if not n.startswith('@')), 0)-h[i][1])")
+  [[ $g -ge 1700 && $g -le 2400 ]] && pass "coalesced OSD lasted $g ms (two raises 0.8 s apart + 1100 ms)" || fail "OSD lasted $g ms"
+}
 t_log() { local e; e=$(shell_log_errors); [[ -z "$e" ]] && pass "no errors in shell log" || fail "shell log errors: $e"; }
-run_test "startup" t_startup; run_test "volume" t_volume; run_test "brightness" t_brightness; run_test "log" t_log
+run_test "startup" t_startup; run_test "volume" t_volume; run_test "brightness" t_brightness; run_test "coalesce" t_coalesce; run_test "log" t_log
 finish

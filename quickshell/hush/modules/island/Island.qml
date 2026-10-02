@@ -18,27 +18,69 @@ Item {
     states: [
         QQ.State { name: "rest" }, QQ.State { name: "hover" }, QQ.State { name: "media" },
         QQ.State { name: "notification" }, QQ.State { name: "osd" }, QQ.State { name: "expanded" },
-        QQ.State { name: "mediaSurface" }, QQ.State { name: "calendar" }, QQ.State { name: "notifCenter" }
+        QQ.State { name: "mediaSurface" }, QQ.State { name: "calendar" }, QQ.State { name: "notifCenter" },
+        QQ.State { name: "launcher" }, QQ.State { name: "wallpapers" }, QQ.State { name: "settings" }
     ]
-    // Surfaces that grow out of the pill (design 2.6); "expanded" is the control center.
-    readonly property var surfaces: ["expanded", "mediaSurface", "calendar", "notifCenter"]
+    // Surfaces that grow out of the pill (design 2.6); "expanded" is the control center. The last
+    // three are modal: they take the keyboard and the whole island surface catches clicks.
+    readonly property var panels: ["expanded", "mediaSurface", "calendar", "notifCenter"]
+    readonly property var modals: []
+    readonly property var surfaces: panels.concat(modals)
     readonly property bool surfaceOpen: surfaces.indexOf(state) >= 0
+    readonly property bool modalOpen: modals.indexOf(state) >= 0
+    // The settings module a surface belongs to (Settings.modules.<name> false disables it).
+    readonly property var moduleOf: ({ mediaSurface: "media", calendar: "calendar", notifCenter: "notifications",
+        launcher: "launcher", wallpapers: "wallpapers", settings: "settings" })
     property var stateContent: ({})
-    property var active: ({ name: "rest", priority: 0 })
-    property var queue: []
     property string restCenterText: Qt.formatDate(dateSrc.date, "ddd d MMM")
     // The clock text the rest state shows (tests read it over IPC).
     property string restClock: ""
     property real restWidth: 0
     // The monitor this island lives on (the hover face shows that monitor's workspaces).
     property string screenName: ""
+    // The screen's top-left in global pixels (the wallpaper grid's --from origin).
+    property point screenOrigin: Qt.point(0, 0)
     readonly property color fg: Colors.darkOnSurface
     // Set by IslandWindow while the pill is retracted (fullscreen, auto-hide); IPC reports "hidden".
     property bool hidden: false
-    // The shown state's v2 priority (config/Priorities), until the Arbiter drives the island.
-    readonly property int priority: surfaceOpen ? Priorities.expanded
-        : (({ rest: Priorities.rest, hover: Priorities.hover, media: Priorities.activity, osd: Priorities.osd,
-            notification: Priorities.notification })[state] || 0)
+    // Launcher mode for the next open ("apps", "windows", "calc", "clip").
+    property string launcherMode: "apps"
+
+    // The single source of truth for what the pill shows (design 2.3). The island state mirrors
+    // arbiter.current (a critical notification shows as "notification"); nothing assigns `state`
+    // except syncState().
+    readonly property Arbiter arbiter: Arbiter {
+        pointerInside: hover.hovered
+        // Deferred one turn, so a hand-over (surface lowered, queued notification promoted) is a
+        // single state change, not a flash of rest in between.
+        onCurrentChanged: Qt.callLater(islandRoot.syncState)
+        onHoverArm: Qt.callLater(islandRoot.rearm)
+        Component.onCompleted: {
+            for (const n of islandRoot.panels) declare(n, Priorities.expanded, {})
+            for (const n of islandRoot.modals) declare(n, Priorities.modal, {})
+            declare("critical", Priorities.critical, { sticky: true })
+            declare("notification", Priorities.notification, { holdMs: Theme.notificationHoldMs })
+            declare("osd", Priorities.osd, { holdMs: Theme.osdHoldMs, coalesce: true })
+            declare("hover", Priorities.hover, {})
+            declare("media", Priorities.activity, {})
+        }
+    }
+    readonly property var payload: arbiter.payload
+    readonly property int priority: arbiter.currentPriority
+    // A notification card under the pointer keeps its hold (sticky critical ones never time out).
+    readonly property bool holdPaused: hover.hovered && state === "notification"
+    onHoldPausedChanged: arbiter.pause(holdPaused)
+
+    function stateFor(name) { return name === "critical" ? "notification" : (name || "rest") }
+    // A state assignment inside a state change is refused by the StateGroup, so a change that lands
+    // while one is being handled is deferred to the next turn of the event loop.
+    property bool inStateChange: false
+    function syncState() {
+        const s = stateFor(arbiter.current)
+        if (state === s) return
+        if (inStateChange) { Qt.callLater(syncState); return }
+        state = s
+    }
     readonly property bool pointerInside: hover.hovered
     readonly property bool armed: surface.armed
 
@@ -54,51 +96,34 @@ Item {
     // A fresh object each time: reassigning the same object does not notify bindings. The new
     // object re-evaluates the Loader's sourceComponent binding, so no explicit reload is needed.
     function register(name, component) { const m = Object.assign({}, stateContent); m[name] = component; stateContent = m }
-    // priority: surface 4 > notification 3 > osd 2 > hover 1.5 > media 1 > rest 0. holdMs 0 holds until
-    // release(). A request for the active name replaces its priority and hold. A higher request
-    // preempts the active state, which is dropped, except media, which waits in the queue (the hover
-    // face or a surface over a playing track hands the capsule back). No content: ignored.
-    function request(name, priority, holdMs) {
-        if (!stateContent[name]) { console.warn("hush island: no content for state " + name); return }
-        if (priority >= active.priority || active.name === name) {
-            if (active.name === "media" && name !== "media") enqueue("media", active.priority, 0)
-            setActive(name, priority, holdMs)
-        } else enqueue(name, priority, holdMs)
-    }
-    function enqueue(name, priority, holdMs) {
-        const q = queue.filter(e => e.name !== name)
-        q.push({ name: name, priority: priority, holdMs: holdMs })
-        q.sort((a, b) => b.priority - a.priority)
-        queue = q
-    }
-    function release(name) {
-        if (active.name !== name) { queue = queue.filter(q => q.name !== name); return }
-        holdTimer.stop()
-        if (queue.length) { const q = queue.slice(); const n = q.shift(); queue = q; setActive(n.name, n.priority, n.holdMs) }
-        else setActive("rest", 0, 0)
-    }
-    function setActive(name, priority, holdMs) {
-        active = { name: name, priority: priority }; state = name
-        holdTimer.stop(); if (holdMs > 0) { holdTimer.interval = holdMs; holdTimer.start() }
-    }
 
     // --- surfaces ---
-    function openSurface(name) { if (surfaces.indexOf(name) >= 0) request(name, 4, 0) }
-    function closeSurface() { if (surfaceOpen) release(state) }
-    function toggleSurface(name) { state === name ? closeSurface() : openSurface(name) }
+    // Opening a surface closes any other one and the hover face; transients raised meanwhile wait
+    // in the arbiter's queue and play once the surface closes.
+    function openSurface(name, opts) {
+        if (surfaces.indexOf(name) < 0) return
+        const m = moduleOf[name]
+        if (m && Settings.modules[m] === false) return
+        if (name === "launcher") launcherMode = opts && opts.mode ? opts.mode : "apps"
+        // The notification center shows every toast; none should pop again after it closes.
+        if (name === "notifCenter") Svc.Notifs.seenAll()
+        for (const n of surfaces) if (n !== name) arbiter.lower(n)
+        arbiter.lower("hover")
+        arbiter.raise(name, opts || {})
+    }
+    // What the arbiter shows now (state follows it a turn later).
+    readonly property bool surfaceCurrent: surfaces.indexOf(arbiter.current) >= 0
+    function closeSurface() { if (surfaceCurrent) { mark("@close"); arbiter.lower(arbiter.current) } }
+    function toggleSurface(name, opts) { arbiter.current === name ? closeSurface() : openSurface(name, opts) }
     // Super+Backspace and IPC: open the control center, or close whatever surface is open.
-    function toggleExpanded() { surfaceOpen ? closeSurface() : openSurface("expanded") }
+    function toggleExpanded() { surfaceCurrent ? closeSurface() : openSurface("expanded") }
     // Click mapping (design 2.2, Settings.island.click*): cc | notifs | media | calendar | launcher | none.
     function act(action) {
-        const mods = Settings.modules
         switch (action) {
         case "cc": toggleSurface("expanded"); break
-        case "notifs":
-            if (mods.notifications !== false) toggleSurface("notifCenter")
-            else if (Svc.Ipc.drawer) Svc.Ipc.drawer.toggle()
-            break
-        case "media": if (mods.media !== false) toggleSurface("mediaSurface"); break
-        case "calendar": if (mods.calendar !== false) toggleSurface("calendar"); break
+        case "notifs": toggleSurface("notifCenter"); break
+        case "media": toggleSurface("mediaSurface"); break
+        case "calendar": toggleSurface("calendar"); break
         case "launcher": if (Svc.Ipc.launcher) Svc.Ipc.launcher.toggle(); break
         }
     }
@@ -112,7 +137,9 @@ Item {
         Svc.Audio.setVolume(Svc.Audio.volume + (dy > 0 ? 0.05 : -0.05))
         return true
     }
-    function showOsd(kind) { if (stateContent["osd"] && surface.item && surface.item.show) surface.item.show(kind) }
+    function showOsd(kind) { osdReg.show(kind) }
+    // The surface item, once it is the one shown (Loader is asynchronous), else null.
+    function surfaceItem(name) { return state === name && surface.shown === name ? surface.item : null }
 
     // --- hover (design 2.2) ---
     // Dwell before the face opens, grace before it closes. A glance never starts while the pill is
@@ -127,33 +154,33 @@ Item {
     function hoverChanged() {
         mark(hover.hovered ? "@in" : "@out")
         if (hover.hovered) { grace.stop(); if (state !== "hover") armHover() }
-        else { dwell.stop(); hoverPending = false; if (state === "hover") grace.restart() }
+        else { dwell.stop(); hoverPending = false; grace.restart() }
     }
     function armHover() { if (hoverAllowed && (state === "rest" || state === "media")) dwell.restart() }
     function tryHover() {
         if (!hover.hovered || !hoverAllowed || !(state === "rest" || state === "media")) return
         if (body.shrinking()) { hoverPending = true; shrinkPoll.restart(); return }
-        request("hover", 1.5, 0)
+        arbiter.raise("hover")
     }
     Timer { id: dwell; interval: Settings.motion.hoverDwellMs || 120; onTriggered: islandRoot.tryHover() }
-    Timer { id: grace; interval: Settings.motion.leaveGraceMs || 300; onTriggered: if (!hover.hovered) islandRoot.release("hover") }
+    Timer { id: grace; interval: Settings.motion.leaveGraceMs || 300; onTriggered: if (!hover.hovered) islandRoot.arbiter.lower("hover") }
     Timer { id: shrinkPoll; interval: 16; repeat: true; onTriggered: if (!islandRoot.hoverPending || !body.shrinking()) { stop(); if (islandRoot.hoverPending) { islandRoot.hoverPending = false; islandRoot.tryHover() } } }
     HoverHandler { id: hover; onHoveredChanged: islandRoot.hoverChanged() }
 
     onStateChanged: {
+        inStateChange = true
         const was = lastState; lastState = state
         mark(state)
         if (surfaceOpen) forceActiveFocus()
         if (state === "notifCenter") Svc.Notifs.markSeen()
-        // Deferred: a state assignment inside a state change is refused by the StateGroup.
-        if (hover.hovered && hoverAllowed && (state === "rest" || state === "media")) {
-            if (was === "osd" || was === "notification") Qt.callLater(rearm)
-            else armHover()
-        }
+        // The hover face resumed from the queue with the pointer already gone: let the grace close it.
+        if (state === "hover" && !hover.hovered) grace.restart()
+        // After an OSD or notification the arbiter's hoverArm re-arms at once; anything else dwells.
+        if (hover.hovered && hoverAllowed && (state === "rest" || state === "media") && was !== "osd" && was !== "notification")
+            armHover()
+        inStateChange = false
     }
-    function rearm() { if (hover.hovered && hoverAllowed && (state === "rest" || state === "media")) request("hover", 1.5, 0) }
-
-    Timer { id: holdTimer; onTriggered: islandRoot.release(islandRoot.active.name) }
+    function rearm() { if (hover.hovered && hoverAllowed && (state === "rest" || state === "media")) arbiter.raise("hover") }
     SystemClock { id: dateSrc; precision: SystemClock.Hours }
 
     // The shape springs to the staged surface's size; the content cross-fades inside it.
@@ -194,7 +221,7 @@ Item {
     }
     Component { id: restComp; Rest { island: islandRoot } }
     Component { id: hoverComp; HoverFace { island: islandRoot } }
-    OsdRegistrar { island: islandRoot }
+    OsdRegistrar { id: osdReg; island: islandRoot }
     Loader { source: "states/MediaRegistrar.qml"; onLoaded: item.island = islandRoot }
     NotificationRegistrar { island: islandRoot }
     Component {

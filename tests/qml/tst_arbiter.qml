@@ -11,12 +11,14 @@ TestCase {
     name: "Arbiter"
 
     property var log: []
+    property var ended: []
 
     Arbiter {
         id: arb
         onShown: (n, p) => tc.log.push("+" + n)
         onHidden: n => tc.log.push("-" + n)
         onHoverArm: tc.log.push("arm")
+        onEnded: (n, p) => tc.ended.push(n + (p && p.key ? ":" + p.key : ""))
     }
 
     // Common declarations, priorities as in config/Priorities.qml.
@@ -28,12 +30,13 @@ TestCase {
         ["d", "osd", 50, { holdMs: 150, coalesce: true }],
         ["d", "osd2", 50, { holdMs: 150, coalesce: true }],
         ["d", "activity", 30, {}],
-        ["d", "hover", 20, {}]
+        ["d", "hover", 40, {}]
     ]
 
     function init() {
         arb.reset();
         tc.log = [];
+        tc.ended = [];
     }
 
     function run(steps) {
@@ -153,5 +156,35 @@ TestCase {
         run([["p", true], ["r", "osd"], ["l", "osd"]]);
         arb.hoverArm.disconnect(h);
         compare(arb.current, "hover");
+    }
+
+    // Pause holds a transient past its deadline; resuming re-arms the full hold.
+    function test_pause_holds() {
+        run([["r", "notification", { key: "a" }]]);
+        arb.pause(true);
+        wait(250);
+        compare(arb.current, "notification", "paused past the 150 ms hold");
+        arb.pause(false);
+        wait(80);
+        compare(arb.current, "notification", "re-armed from the full hold");
+        tryCompare(arb, "current", "", 400);
+    }
+
+    // ended fires for expiry and lowering, not for preemption (the entry resumes).
+    function test_ended_not_on_preempt() {
+        run([["r", "notification", { key: "a" }], ["r", "expanded"], ["l", "expanded"]]);
+        compare(JSON.stringify(tc.ended), JSON.stringify(["expanded"]));
+        compare(arb.current, "notification", "preempted notification resumes");
+        tryCompare(arb, "current", "", 400);
+        compare(JSON.stringify(tc.ended), JSON.stringify(["expanded", "notification:a"]));
+    }
+
+    // Queue resume: a notification raised under a surface plays as soon as the surface lowers.
+    function test_queue_resume() {
+        run([["r", "expanded"], ["r", "notification", { key: "n1" }], ["r", "notification", { key: "n2" }]]);
+        compare(JSON.stringify(arb.queue), JSON.stringify(["notification", "notification"]));
+        arb.lower("expanded");
+        compare(arb.current, "notification");
+        compare(arb.payload.key, "n1");
     }
 }

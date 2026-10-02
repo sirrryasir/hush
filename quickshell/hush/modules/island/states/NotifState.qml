@@ -4,12 +4,16 @@ import qs.config
 import qs.services
 
 // One notification on the island: app icon, summary, body. 520x36, or 520x56 when the
-// body does not fit beside the summary on one line. Hover pauses the hold; click runs
-// the default action or opens the drawer.
+// body does not fit beside the summary on one line. Hover pauses the hold (the island pauses its
+// arbiter); click runs the default action, else opens the notification center.
 StateBase {
     id: card
     name: "notification"; priority: 3
-    readonly property var n: Notifs.current
+    // The arbiter's payload; the last one is kept so the card does not blank while it fades out.
+    property var n: null
+    readonly property var shownN: island && island.payload ? island.payload.n : null
+    onShownNChanged: if (shownN) n = shownN
+    Component.onCompleted: if (shownN) n = shownN
     readonly property string summary: n ? n.summary : ""
     readonly property string body: n ? n.body.replace(/\s*\n+\s*/g, "  ") : ""
     // From the declared width, not this item's own: the item is sized from `size`, which depends on
@@ -57,12 +61,12 @@ StateBase {
         font.family: Theme.fontUi; font.pixelSize: Theme.textIsland
     }
     MouseArea {
-        anchors.fill: parent; hoverEnabled: true
-        onEntered: Notifs.hold(true)
-        onExited: Notifs.hold(false)
+        anchors.fill: parent
         onClicked: {
-            if (Notifs.invokeDefault(card.n)) Notifs.next()
-            else if (Ipc.drawer && !Ipc.drawer.open) Ipc.drawer.toggle()
+            if (!card.island || !card.n) return
+            if (Notifs.invokeDefault(card.n)) {
+                card.island.arbiter.lower("notification", card.n.id); card.island.arbiter.lower("critical", card.n.id)
+            } else card.island.openSurface("notifCenter")
         }
     }
 }

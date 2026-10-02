@@ -46,8 +46,8 @@ Item {
         Rectangle {
             anchors.fill: parent
             gradient: Gradient {
-                GradientStop { position: 0; color: "#00000000" }
-                GradientStop { position: 1; color: "#99000000" }
+                GradientStop { position: 0; color: Colors.alpha(Colors.shadow, 0) }
+                GradientStop { position: 1; color: Colors.alpha(Colors.shadow, 0.6) }
             }
         }
     }
@@ -142,7 +142,7 @@ Item {
             delegate: Rectangle {
                 required property var modelData
                 width: modelData.big ? 44 : 36; height: width; radius: width / 2; anchors.verticalCenter: parent.verticalCenter
-                color: modelData.big ? root.tint : (btn.containsMouse ? "#22ffffff" : "transparent")
+                color: modelData.big ? root.tint : (btn.containsMouse ? Colors.alpha(Colors.darkOnSurface, 0.13) : "transparent")
                 Text {
                     anchors.centerIn: parent; text: modelData.g
                     color: modelData.big ? Colors.on_primary : Colors.darkOnSurface

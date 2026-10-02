@@ -15,6 +15,8 @@ FocusScope {
     property string page: "island"
     property var preview: ({})
     property string version: "0.0.0"
+    // A one-line problem the host reports (another notification daemon owns the bus name).
+    property string warning: ""
     signal previewed(string key, real value)
     signal openWallpapers()
     signal closeRequested()
@@ -196,5 +198,14 @@ FocusScope {
             Label { text: "Version " + root.version; color: Colors.on_surface_variant }
             Label { text: "A quiet shell for Hyprland and Quickshell."; color: Colors.on_surface_variant }
         }
+    }
+
+    // Warning line along the bottom of every page.
+    Row {
+        objectName: "settingsWarning"
+        visible: root.warning !== ""
+        x: 148; y: parent.height - 30; height: 20; spacing: 6
+        Text { anchors.verticalCenter: parent.verticalCenter; text: "warning"; color: Colors.error; font.family: Theme.fontIcon; font.pixelSize: 16 }
+        Label { height: parent.height; width: root.width - 148 - 34; text: root.warning; color: Colors.error; elide: Text.ElideRight }
     }
 }
