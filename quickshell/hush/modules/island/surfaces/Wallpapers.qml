@@ -1,0 +1,120 @@
+import QtQuick
+import Quickshell
+import Quickshell.Io
+import Quickshell.Widgets
+import qs.config
+import qs.config as Cfg
+
+// Wallpapers surface (design 2.6): a grid of every theme wallpaper plus images found in the
+// directories of HUSH_WALL_DIRS (colon-separated). Hover or arrows move the highlight; Enter or a
+// click runs `hush wall <path> --from X,Y` with X,Y the tile's centre in global pixels, so the
+// circle reveal grows from the tile. Esc emits `close`.
+Item {
+    id: root
+    property size size: Sizes.wallpapers
+    property var files: []
+    readonly property int count: files.length
+    readonly property alias currentIndex: grid.currentIndex
+    // Global (compositor) position of this item's top-left. The host sets it when it knows better;
+    // by default the window is assumed horizontally centred on its screen at the top.
+    property point origin: {
+        const w = Window.window
+        const s = w && w.screen ? w.screen : null
+        const p = root.mapToItem(null, 0, 0)
+        return Qt.point((s ? s.x + (s.width - w.width) / 2 : 0) + p.x, (s ? s.y : 0) + p.y)
+    }
+    property string hushBin: Paths.hush
+    signal close()
+    signal picked(string path, point from)
+
+    function pickIndex(i) {
+        if (i < 0 || i >= files.length) return
+        const it = grid.itemAtIndex(i)
+        const c = it ? it.mapToItem(root, it.thumbCentre.x, it.thumbCentre.y)
+                     : Qt.point(root.width / 2, root.height / 2)
+        const from = Qt.point(Math.round(root.origin.x + c.x), Math.round(root.origin.y + c.y))
+        apply.command = [root.hushBin, "wall", files[i], "--from", from.x + "," + from.y]
+        apply.running = true
+        root.picked(files[i], from)
+    }
+    function focusCurrent() {
+        const i = files.indexOf(Cfg.State.wallpaper)
+        grid.currentIndex = i >= 0 ? i : 0
+        grid.positionViewAtIndex(grid.currentIndex, GridView.Contain)
+        grid.forceActiveFocus()
+    }
+    onFilesChanged: if (files.length) Qt.callLater(focusCurrent)
+
+    Process { id: apply; stderr: StdioCollector { onStreamFinished: if (text.length) console.log("wall err: " + text) } }
+
+    Process {
+        id: lister
+        property var found: []
+        command: ["bash", "-c",
+            "IFS=: read -ra d <<<\"${HUSH_WALL_DIRS:-}\"; find \"${d[@]}\" \"$1\" -maxdepth 2 -type f " +
+            "\\( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' \\) 2>/dev/null | sort", "hush-wallpapers", Paths.themes]
+        running: Paths.ready
+        stdout: SplitParser { onRead: line => { if (line.length) lister.found.push(line) } }
+        onExited: root.files = lister.found.slice()
+    }
+
+    GridView {
+        id: grid
+        anchors.fill: parent; anchors.margins: 16
+        cellWidth: 196; cellHeight: 99 + 24 + 8
+        clip: true
+        model: root.files
+        keyNavigationEnabled: true
+        boundsBehavior: Flickable.StopAtBounds
+
+        Keys.onPressed: event => {
+            if (event.key === Qt.Key_Escape) { root.close(); event.accepted = true }
+            else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) { root.pickIndex(grid.currentIndex); event.accepted = true }
+        }
+
+        delegate: Item {
+            id: cell
+            required property int index
+            required property string modelData
+            readonly property bool current: modelData === Cfg.State.wallpaper
+            readonly property bool sel: grid.currentIndex === index
+            readonly property point thumbCentre: Qt.point(thumb.x + thumb.width / 2, thumb.y + thumb.height / 2)
+            width: grid.cellWidth; height: grid.cellHeight
+
+            ClippingRectangle {
+                id: thumb
+                x: 4; y: 3; width: 176; height: 99; radius: 14
+                color: Colors.surface_container_high
+                Image {
+                    anchors.fill: parent
+                    source: Qt.resolvedUrl("file://" + encodeURI(cell.modelData).replace(/#/g, "%23"))
+                    sourceSize: Qt.size(352, 198)
+                    fillMode: Image.PreserveAspectCrop
+                    asynchronous: true
+                }
+                Rectangle {
+                    anchors.fill: parent; radius: 14; color: "transparent"
+                    border.width: cell.current ? 2 : (cell.sel ? 2 : 0)
+                    border.color: cell.current ? Colors.primary : Colors.on_surface
+                    opacity: cell.sel || cell.current ? 1 : 0
+                }
+            }
+            Text {
+                x: 4; y: 99 + 6; width: 176
+                text: {
+                    const parts = cell.modelData.split("/")
+                    const base = parts.pop().replace(/\.[^.]+$/, "")
+                    return base === "wallpaper" ? parts.pop() : base
+                }
+                elide: Text.ElideRight
+                color: cell.current ? Colors.primary : cell.sel ? Colors.on_surface : Colors.on_surface_variant
+                font.family: Theme.fontUi; font.pixelSize: 11
+            }
+            MouseArea {
+                anchors.fill: parent; hoverEnabled: true
+                onEntered: grid.currentIndex = cell.index
+                onClicked: { grid.currentIndex = cell.index; root.pickIndex(cell.index) }
+            }
+        }
+    }
+}
