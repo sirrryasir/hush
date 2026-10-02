@@ -37,6 +37,8 @@ usage: hush <command>
   sddm sync            refresh ~/.cache/hush/sddm (wallpaper, colours, avatar) for the SDDM theme
   lock                 lock the screen with hyprlock (once)
   settings             open (or close) the settings surface in the island
+  plugins [status|install]  optional Hyprland plugins gloview and dynamic-cursors (hyprpm)
+  overview             open the GloView overview (hyprctl gloview)
   shell <start|stop|restart|status|log>  manage the Hush Quickshell shell
   timer <N>m|<N>s|<N>h|stop  start a countdown shown at rest in the island, or cancel it
 EOF
@@ -391,6 +393,12 @@ cmd_check() {
     local errs; errs=$(hyprctl configerrors 2>/dev/null | grep -v '^$' || true)
     [[ -z "$errs" ]] || { echo "hush check: hyprctl configerrors:"; echo "$errs"; rc=1; }
   fi
+  if [[ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]] && command -v hyprctl >/dev/null; then
+    local pe
+    for pe in "${PLUGINS[@]}"; do
+      plugin_loaded "${pe%%|*}" || echo "hush check: warning: plugin ${pe%%|*} is not loaded (optional; see 'hush plugins')"
+    done
+  fi
   while read -r out; do
     [[ -s "$out" ]] || { echo "hush check: missing output $out"; rc=1; }
   done < <(outputs)
@@ -421,6 +429,44 @@ cmd_track() {
   esac
   cmd_generated | while read -r f; do git -C "$(dirname "$f")" update-index "$flag" -- "$f"; done
   echo "hush track $1: done"
+}
+
+# Optional Hyprland plugins: name|hyprpm repository.
+PLUGINS=("gloview|https://github.com/fedsfarm/gloview" "dynamic-cursors|https://github.com/VirtCode/hypr-dynamic-cursors")
+
+plugin_loaded() { # name: is it in `hyprctl plugin list`?
+  command -v hyprctl >/dev/null && hyprctl plugin list 2>/dev/null | grep -qiE "^Plugin ${1}( |$)"
+}
+plugin_installed() { # name: known to hyprpm, or its .so sits in the hyprpm cache
+  local c="${XDG_CACHE_HOME:-$HOME/.cache}"
+  if command -v hyprpm >/dev/null && hyprpm list 2>/dev/null | grep -qiE "(^|[^a-z-])${1}([^a-z-]|$)"; then return 0; fi
+  compgen -G "/var/cache/hyprpm/${USER:-$(id -un)}/$1/*.so" >/dev/null || compgen -G "$c/hyprpm/$1/*.so" >/dev/null
+}
+
+cmd_plugins() {
+  local sub="${1:-status}" e name repo l i rc=0 missing=()
+  case "$sub" in status|install) ;; *) die "usage: hush plugins [status|install]" ;; esac
+  for e in "${PLUGINS[@]}"; do
+    name="${e%%|*}"
+    l=no; i=no
+    plugin_loaded "$name" && l=yes
+    plugin_installed "$name" && i=yes
+    [[ $sub == status ]] && printf '%-16s loaded %-3s installed %s\n' "$name" "$l" "$i"
+    [[ $i == yes ]] || missing+=("$e")
+  done
+  [[ $sub == install ]] || return 0
+  if [[ ${#missing[@]} -eq 0 ]]; then echo "hush plugins: nothing to install"; return 0; fi
+  command -v hyprpm >/dev/null || die "hyprpm not found (it ships with Hyprland; it needs the Hyprland headers to build plugins)"
+  for e in "${missing[@]}"; do
+    name="${e%%|*}"; repo="${e#*|}"
+    echo "+ hyprpm add $repo"
+    if ! hyprpm add "$repo"; then
+      echo "hush plugins: could not add $name; hyprpm needs the Hyprland headers (run 'hyprpm update' and see its output)" >&2; rc=1; continue
+    fi
+    echo "+ hyprpm enable $name"
+    hyprpm enable "$name" || { echo "hush plugins: could not enable $name" >&2; rc=1; }
+  done
+  return $rc
 }
 
 cmd_fallback() {
@@ -481,7 +527,7 @@ main() {
   mkdir -p "$CACHE_DIR" "$STATE_DIR"
   # Serialize every mutating command: they share $RENDER and $MATUGEN_CFG.
   case "${1:-}" in
-    list|status|shell|timer|settings|generated|track|lock|""|-h|--help|help|--version|version) ;; # shell does not render; it must not hold the lock
+    list|status|plugins|overview|shell|timer|settings|generated|track|lock|""|-h|--help|help|--version|version) ;; # shell does not render; it must not hold the lock
     *) exec 9>"$CACHE_DIR/lock"; flock -w 30 9 || die "another hush is running" ;;
   esac
   case "${1:-}" in
@@ -495,6 +541,8 @@ main() {
     track) cmd_track "${2:-}" ;;
     fallback) cmd_fallback ;;
     sddm) cmd_sddm "${2:-}" ;;
+    plugins) cmd_plugins "${2:-status}" ;;
+    overview) command -v hyprctl >/dev/null || die "hyprctl not found"; hyprctl gloview ;;
     shell) cmd_shell "${2:-}" ;;
     timer) cmd_timer "${2:-}" ;;
     lock) pgrep -x hyprlock >/dev/null || exec hyprlock ;;

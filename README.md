@@ -85,6 +85,24 @@ hl.layer_rule({ match = { namespace = "hush-island" }, blur = true, ignore_alpha
 
 Hovering the pill for 120 ms opens the hover face (this monitor's workspaces, the date, the playing title); it closes 300 ms after the pointer leaves. Left click opens the control center, right click the notification center, middle click the media panel, and the wheel sets the volume (`island.clickLeft`/`clickRight`/`clickMiddle`: `cc`, `notifs`, `media`, `calendar`, `launcher` or `none`; `island.scroll`: `volume` or `none`; timings under `motion`). Clicking the date on the hover face opens the calendar. Esc or a click outside closes a panel, and its buttons ignore clicks for the first 500 ms (`motion.armMs`).
 
+## Plugins (optional)
+
+Two Hyprland plugins pair well with Hush; both are optional and Hush works without them.
+
+- **GloView** is a Mission Control style overview: every window of every workspace, with a workspace strip on top, coloured from the active theme.
+- **dynamic-cursors** makes the cursor feel physical and adds shake to find: wiggle the mouse and the cursor grows (2x) so you can spot it.
+
+```bash
+hush plugins            # status: loaded (hyprctl) and installed (hyprpm)
+hush plugins install    # hyprpm add + enable for whatever is missing; never uses sudo
+```
+
+`hyprpm` builds plugins from source, so it needs the Hyprland headers (`hyprpm update` pulls them). `hush check` only warns when a plugin is not loaded. `hush overview` runs `hyprctl gloview`; bind it, for example `hl.bind("SUPER + Tab", hl.dsp.exec_cmd("hush overview"))`, and press Super+Tab for the overview. `install.sh` links `hypr/plugins.lua` to `~/.config/hush/plugins.lua`; load it once from `hyprland.lua` and it loads both plugins from the hyprpm cache (skipping any that are missing), configures dynamic-cursors and applies the generated GloView colours:
+
+```lua
+pcall(dofile, os.getenv("HOME") .. "/.config/hush/plugins.lua")
+```
+
 ## Installation
 
 Needs Hyprland, Quickshell (`qs`), matugen, python3 with Pillow, lua, awww (wallpapers), imagemagick and git.
