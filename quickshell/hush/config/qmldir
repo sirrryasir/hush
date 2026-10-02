@@ -3,3 +3,4 @@ singleton Colors 1.0 Colors.qml
 singleton Theme 1.0 Theme.qml
 singleton State 1.0 State.qml
 singleton Paths 1.0 Paths.qml
+singleton Priorities 1.0 Priorities.qml
