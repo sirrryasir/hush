@@ -8,3 +8,4 @@ assets/evidence/timelapse/*.jpg
 assets/evidence/timelapse/frames-kept/
 *.log
 .DS_Store
+.superpowers/
