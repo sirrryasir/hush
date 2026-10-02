@@ -9,6 +9,7 @@ Singleton {
     id: root
     readonly property size rest: Qt.size(320, 36)
     readonly property size media: Qt.size(424, 36)
+    readonly property size mediaSurface: Qt.size(420, 180)
     readonly property size osd: Qt.size(304, 36)
     readonly property size notification: Qt.size(520, 36)
     readonly property size notificationTall: Qt.size(520, 56)
@@ -20,6 +21,7 @@ Singleton {
     function of(name) {
         switch (name) {
         case "media": return media
+        case "mediaSurface": return mediaSurface
         case "osd": return osd
         case "notification": return notification
         case "expanded": return expanded

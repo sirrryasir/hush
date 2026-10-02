@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Test stand-in for cava: prints 28 ascii bars (0-100, ';' separated) at ~30 fps until killed.
+n=0
+while :; do
+  line=""; for i in $(seq 0 27); do line+="$(( 50 + (RANDOM % 40) * ((i + n) % 9) / 9 ));"; done
+  echo "$line"; n=$((n+1)); sleep 0.033
+done
