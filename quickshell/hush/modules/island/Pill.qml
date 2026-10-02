@@ -11,15 +11,19 @@ Rectangle {
     property bool calm: false
     readonly property bool reduced: !!Settings.island.reducedMotion
     readonly property var spec: reduced ? (Settings.motion.springReduced || ({ spring: 50, damping: 1 }))
-        : calm ? (Settings.motion.springCalm || ({ spring: 2.4, damping: 0.37, velocity: 600 }))
-        : (Settings.motion.springQuick || ({ spring: 6.7, damping: 0.64, velocity: 800 }))
+        : calm ? (Settings.motion.springCalm || ({ spring: 6, damping: 0.5, velocity: 0 }))
+        : (Settings.motion.springQuick || ({ spring: 12, damping: 0.6, velocity: 0 }))
     readonly property real springK: spec.spring
     readonly property real springD: spec.damping
-    // Speed cap in px/s (0 = none): keeps the long panel morphs from tearing ahead between frames.
+    // Speed cap in px/s (0 = none; the defaults are uncapped so a panel opens in ~250 ms).
     readonly property real springV: spec.velocity || 0
     // True while any dimension is still travelling (tests and staging read it).
     readonly property bool moving: Math.abs(width - Sizes.snap(target.width)) > 0.5
         || Math.abs(height - target.height) > 0.5
+
+    // True while the shape is still getting smaller (no hover glance may start then, design 2.2).
+    // A function, not a binding: the hover face it gates retargets this very shape.
+    function shrinking() { return width > Sizes.snap(target.width) + 0.5 || height > target.height + 0.5 }
 
     width: Sizes.snap(target.width)
     height: target.height

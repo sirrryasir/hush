@@ -8,6 +8,7 @@ import Quickshell
 Singleton {
     id: root
     readonly property size rest: Qt.size(104, 36)
+    readonly property size hover: Qt.size(320, 44)
     readonly property size media: Qt.size(424, 36)
     readonly property size mediaSurface: Qt.size(420, 180)
     readonly property size osd: Qt.size(304, 36)
@@ -24,6 +25,7 @@ Singleton {
     function snap(w) { return Math.ceil(w / 8) * 8 }
     function of(name) {
         switch (name) {
+        case "hover": return hover
         case "media": return media
         case "mediaSurface": return mediaSurface
         case "osd": return osd
@@ -38,6 +40,6 @@ Singleton {
         }
     }
     function area(s) { return s.width * s.height }
-    // Pill corner radius for a size: a full capsule up to 36 px tall, a rounded panel above.
-    function radiusFor(h) { return h <= 36 ? h / 2 : radiusExpanded }
+    // Pill corner radius for a size: a full capsule up to the 44 px hover face, a rounded panel above.
+    function radiusFor(h) { return h <= hover.height ? h / 2 : radiusExpanded }
 }

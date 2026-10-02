@@ -104,5 +104,6 @@ Singleton {
         function count(): int { return root.list.length }
         function current(): string { return root.current ? root.current.summary : "" }
         function toggleDnd(): bool { root.dnd = !root.dnd; return root.dnd }
+        function dndOn(): bool { return root.dnd }
     }
 }

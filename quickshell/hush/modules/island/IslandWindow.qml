@@ -25,7 +25,7 @@ Scope {
     property bool peeking: false
     readonly property bool raised: island.priority >= Priorities.osd
     readonly property bool revealed: !autohide || held || peeking || raised
-    readonly property bool hidden: island.state !== "expanded" && (fullscreen || !revealed)
+    readonly property bool hidden: !island.surfaceOpen && (fullscreen || !revealed)
     readonly property bool modalOpen: island.priority >= Priorities.modal
 
     function hoverChanged() {
@@ -47,7 +47,7 @@ Scope {
         color: "transparent"
         WlrLayershell.namespace: "hush-island"
         WlrLayershell.layer: WlrLayer.Top
-        WlrLayershell.keyboardFocus: island.state === "expanded" ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
+        WlrLayershell.keyboardFocus: island.surfaceOpen ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
         // The pill's rect, empty while retracted; the full surface only while a modal surface is open.
         mask: Region {
             item: scope.hidden ? null : island
@@ -59,17 +59,18 @@ Scope {
         Island {
             id: island
             hidden: scope.hidden
+            screenName: scope.modelData.name
             anchors.horizontalCenter: parent.horizontalCenter
             y: scope.hidden ? -height - 2 : scope.topGap
             Behavior on y { NumberAnimation { duration: Theme.durationNormal; easing.type: Easing.OutCubic } }
             HoverHandler { id: pillHover; onHoveredChanged: scope.hoverChanged() }
         }
 
-        // Click outside the expanded island collapses it.
+        // A click outside an open surface closes it.
         HyprlandFocusGrab {
             windows: [win]
-            active: island.state === "expanded"
-            onCleared: island.release("expanded")
+            active: island.surfaceOpen
+            onCleared: { island.mark("@grab"); island.closeSurface() }
         }
     }
 

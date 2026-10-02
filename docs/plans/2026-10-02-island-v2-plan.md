@@ -34,6 +34,7 @@ Rewrite `modules/island/IslandWindow.qml`: one PanelWindow per screen (Variants)
 `modules/island/rest/{ActivityCircle,Clock,StatusRing}.qml`: activity circle (album art with progress ring from Media, recording dot, timer, charging bolt; slot collapses when empty), clock (Inter 13, tabular, 8 px grid), status ring (battery arc, glyph Wi-Fi/BT/mic). Delete `modules/corners/` and its layer rules; update `shell.qml`, tests (`test_corners.sh` removed), README. Screenshot at rest on each theme. Commit `feat(island): rest cluster; corners removed`.
 
 ### Task 6: Hover face and input
+**Added (main ruling after Task 4):** retune the calm spring so the control center opens in <= 350 ms (uncap or raise the velocity cap); change tests/test_morph.sh to a velocity-continuity gate (per-frame jump <= 2 x previous jump + 8 px, no overshoot beyond target + 4 px) instead of the absolute 40 px rule.
 HoverHandler with dwell/grace/re-arm (Settings.motion), hover face 320×44 (workspaces dots, date, media title), click mapping (left cc, right notifs, middle media, scroll volume with OSD), arming window on surfaces, Esc and click-outside close, keyboard entry bind `Super+Backspace` already present. Tests `tests/test_hover.sh`: cursor move onto pill → islandState hover after ≤ 200 ms; move away → rest after ≥ 300 ms; OSD then hover → hover within 350 ms after OSD ends; click 100 ms after a surface opened on a button position does nothing. Commit `feat(island): hover face, click mapping, arming`.
 
 ### Task 7: OSD and notifications through the arbiter
@@ -72,6 +73,7 @@ Grid surface; selecting a tile runs `hush wall <path> --from X,Y` (Task 18 adds 
 Media ring, timer/pomodoro (`hush timer 25m` IPC), recording (wf-recorder/obs process watch), charging bolt 2 s (UPower), mic/camera (PipeWire PwObjectTracker). Tests per activity. Commit `feat(island): live activities at rest`.
 
 ### Task 16: Modes, fullscreen overlay, multi-monitor, keyboard
+**Added 2026-10-02 (the maintainer):** while the pill is retracted for a fullscreen window, the top-edge reveal strip stays active: pointer at the top edge reveals the pill over the fullscreen window (same mechanism as auto-hide), it hides again after the leave grace. Test: fullscreen kitty, cursor to y=0, islandState leaves "hidden" within 300 ms.
 Overlay and auto-hide polished (reveal on workspace change), separate `OsdOverlay` for fullscreen, keyboard navigation inside surfaces (arrows, Tab, Esc), `Accessible.role/name`. Tests: mode switch via settings, fullscreen OSD overlay visible, both monitors. Commit `feat(island): modes, fullscreen overlay, keyboard navigation`.
 
 ### Task 17: Performance and contrast gates

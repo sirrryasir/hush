@@ -9,8 +9,8 @@
   },
   "motion": {
     "hoverDwellMs": 120, "leaveGraceMs": 300, "armMs": 500,
-    "springQuick": { "spring": 6.7, "damping": 0.64, "velocity": 800 },
-    "springCalm": { "spring": 2.4, "damping": 0.37, "velocity": 600 },
+    "springQuick": { "spring": 12, "damping": 0.6, "velocity": 0 },
+    "springCalm": { "spring": 6, "damping": 0.5, "velocity": 0 },
     "springReduced": { "spring": 50, "damping": 1, "velocity": 0 },
     "contentInDelayMs": 90, "contentInMs": 120, "contentOutMs": 50, "reducedScale": 0.4
   }

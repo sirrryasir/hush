@@ -83,6 +83,8 @@ hl.layer_rule({ match = { namespace = "hush-island" }, blur = true, ignore_alpha
 
 `island.mode` in `~/.config/hush/settings.json` picks `reserve` (default, `island.reserve` = 40 px exclusive zone), `overlay` (no reserve) or `autohide` (a 1 px strip at the top edge, `hush-island-reveal`, shows the pill on hover, on workspace change and for OSDs, notifications and the control center). A fullscreen window retracts the pill.
 
+Hovering the pill for 120 ms opens the hover face (this monitor's workspaces, the date, the playing title); it closes 300 ms after the pointer leaves. Left click opens the control center, right click the notification center, middle click the media panel, and the wheel sets the volume (`island.clickLeft`/`clickRight`/`clickMiddle`: `cc`, `notifs`, `media`, `calendar`, `launcher` or `none`; `island.scroll`: `volume` or `none`; timings under `motion`). Clicking the date on the hover face opens the calendar. Esc or a click outside closes a panel, and its buttons ignore clicks for the first 500 ms (`motion.armMs`).
+
 ## Installation
 
 Needs Hyprland, Quickshell (`qs`), matugen, python3 with Pillow, lua, awww (wallpapers), imagemagick and git.

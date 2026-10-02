@@ -84,6 +84,7 @@ FocusScope {
                 onChevronClicked: cc.openBluetooth()
             }
             Toggle {
+                objectName: "dndToggle"
                 Layout.fillWidth: true; Layout.preferredWidth: 1
                 icon: Svc.Notifs.dnd ? "notifications_off" : "notifications"; label: "Do not disturb"
                 subtitle: Svc.Notifs.dnd ? "On" : "Off"

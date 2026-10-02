@@ -12,7 +12,9 @@ StateBase {
     readonly property var n: Notifs.current
     readonly property string summary: n ? n.summary : ""
     readonly property string body: n ? n.body.replace(/\s*\n+\s*/g, "  ") : ""
-    readonly property real textWidth: width - 14 - 20 - 10 - 16
+    // From the declared width, not this item's own: the item is sized from `size`, which depends on
+    // `tall`, which depends on textWidth, so reading `width` here was a binding loop.
+    readonly property real textWidth: Sizes.notification.width - 14 - 20 - 10 - 16
     readonly property bool tall: body !== "" && summaryMetrics.advanceWidth + 10 + bodyMetrics.advanceWidth > textWidth
     size: tall ? Sizes.notificationTall : Sizes.notification
 

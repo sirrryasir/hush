@@ -18,7 +18,7 @@ Singleton {
     function registerIsland(name, isl) { const m = Object.assign({}, islands); m[name] = isl; islands = m; pick() }
     function unregisterIsland(name) { const m = Object.assign({}, islands); delete m[name]; islands = m; pick() }
     function pick() {
-        if (island && island.state === "expanded" && Object.values(islands).indexOf(island) >= 0) return
+        if (island && island.surfaceOpen && Object.values(islands).indexOf(island) >= 0) return
         const names = Object.keys(islands)
         if (!names.length) { island = null; islandScreenName = ""; return }
         const n = islands[Hypr.focusedMonitorName] ? Hypr.focusedMonitorName
@@ -59,6 +59,21 @@ Singleton {
         function wallpapersCount(): int { return root.wallpapers ? root.wallpapers.count : 0 }
         function wallpapersSelect(path: string): void { if (root.wallpapers) root.wallpapers.select(path) }
         function toggleControlCenter(): void { if (root.island) root.island.toggleExpanded() }
+        // --- hover and input (Task 6) ---
+        function openSurface(name: string): void { if (root.island) root.island.openSurface(name) }
+        function closeSurface(): void { if (root.island) root.island.closeSurface() }
+        function islandClick(button: string): void { if (root.island) root.island.click(button === "right" ? Qt.RightButton : button === "middle" ? Qt.MiddleButton : Qt.LeftButton) }
+        function islandArmed(): bool { return root.island ? root.island.armed : true }
+        function islandHistory(): string { return root.island ? JSON.stringify(root.island.history) : "[]" }
+        function islandHovered(): bool { return root.island ? root.island.pointerInside : false }
+        // Window-local centre "x y" of a named control in the shown surface (tests click it), or "".
+        function islandControl(name: string): string {
+            const it = root.island && root.island.item ? root.findNamed(root.island.item, name) : null
+            if (!it) return ""
+            const p = it.mapToItem(null, it.width / 2, it.height / 2)
+            return Math.round(p.x) + " " + Math.round(p.y)
+        }
+        // --- end hover and input ---
         // Morph probe for tests/test_morph.sh: open the control center after delayMs, reverse it
         // reverseMs later (0: stay open), timed in the shell so no IPC client start-up lands mid-capture.
         function morphProbe(delayMs: int, reverseMs: int): void { probeOpen.interval = Math.max(1, delayMs); probeClose.interval = Math.max(0, reverseMs); probeOpen.restart() }
@@ -87,6 +102,11 @@ Singleton {
         function justPlugged(): bool { return Battery.justPlugged }
     }
     // --- end activity IPC ---
+    function findNamed(item, name) {
+        if (item.objectName === name) return item
+        for (let i = 0; i < item.children.length; i++) { const f = findNamed(item.children[i], name); if (f) return f }
+        return null
+    }
     property var themeNames: []
     function setTheme(name) { themeProc.command = [Paths.hush, "theme", name]; themeProc.running = true }
     Process { id: themeProc }

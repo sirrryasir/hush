@@ -22,6 +22,10 @@ Item {
     property double shellAt: 0
     property bool opening: true
     signal itemLoaded(var item)
+    // Arming (design 2.2): for armMs after one of armStates becomes the target, every click and
+    // scroll on the pill is swallowed, so a tap meant for the old shape never lands on a new button.
+    property var armStates: []
+    property bool armed: true
 
     // Declared size of the shape state, or the loaded item's own size once it is that state.
     readonly property size shapeSize: (loader.item && shown === shape && loader.item.size) ? loader.item.size : Sizes.of(shape)
@@ -43,7 +47,11 @@ Item {
         inDelay.interval = Math.max(0, inDelayMs - (Date.now() - shellAt))
         inDelay.restart()
     }
-    onTargetChanged: stage()
+    onTargetChanged: {
+        if (armStates.indexOf(target) >= 0) { armed = false; armTimer.restart() } else { armTimer.stop(); armed = true }
+        stage()
+    }
+    Timer { id: armTimer; interval: Settings.motion.armMs || 500; onTriggered: root.armed = true }
     Component.onCompleted: stage()
 
     NumberAnimation { id: fadeOut; target: content; property: "opacity"; to: 0; onFinished: root.swap() }
@@ -66,4 +74,10 @@ Item {
         }
     }
     readonly property size shapeSizeOfShown: (loader.item && loader.item.size) ? loader.item.size : Sizes.of(shown)
+    MouseArea {
+        anchors.fill: parent; z: 10
+        enabled: !root.armed
+        acceptedButtons: Qt.AllButtons
+        onWheel: wheel => wheel.accepted = true
+    }
 }
