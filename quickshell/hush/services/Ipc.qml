@@ -61,6 +61,10 @@ Singleton {
         function theme(name: string): void { root.setTheme(name) }
         function ccThemeCount(): int { return root.themeNames.length }
         function ccSetTheme(name: string): void { root.setTheme(name) }
+        // --- settings (Task 1) ---
+        function settingsGet(key: string): string { const v = Settings.get(key); return v === undefined ? "" : JSON.stringify(v) }
+        function settingsSet(key: string, json: string): void { try { Settings.set(key, JSON.parse(json)) } catch (e) { console.warn("settingsSet: bad json for " + key) } }
+        // --- end settings ---
     }
     property var themeNames: []
     function setTheme(name) { themeProc.command = [Paths.hush, "theme", name]; themeProc.running = true }
@@ -72,5 +76,5 @@ Singleton {
         stdout: StdioCollector { onStreamFinished: root.themeNames = text.trim().split("\n").filter(n => n) }
     }
     Connections { target: Paths; function onReadyChanged() { root.listThemes() } }
-    Component.onCompleted: listThemes()
+    Component.onCompleted: { listThemes(); Settings.data }
 }
