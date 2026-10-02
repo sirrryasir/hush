@@ -107,6 +107,24 @@ t_wall_mode() {
   $H theme harbor >/dev/null
 }
 t_check() { assert_exit 0 "hush check passes on a good state" $H check; }
+t_media_keys() {
+  local d log; d=$(mktemp -d); log="$d/log"
+  printf '#!/bin/sh\necho "wpctl $*" >> "%s"\n' "$log" > "$d/wpctl"
+  printf '#!/bin/sh\necho "brightnessctl $*" >> "%s"\n' "$log" > "$d/brightnessctl"
+  chmod +x "$d/wpctl" "$d/brightnessctl"
+  local P="$d:$PATH"
+  PATH="$P" $H volume up; PATH="$P" $H volume down 10; PATH="$P" $H volume mute; PATH="$P" $H volume mic-mute
+  PATH="$P" $H brightness up; PATH="$P" $H brightness down 2
+  assert_contains "$log" "wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ 5%+" "volume up steps 5 % and caps at 100 %"
+  assert_contains "$log" "wpctl set-volume @DEFAULT_AUDIO_SINK@ 10%-" "volume down honours the step"
+  assert_contains "$log" "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle" "volume mute toggles the sink"
+  assert_contains "$log" "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle" "volume mic-mute toggles the source"
+  assert_contains "$log" "brightnessctl -q set 5%+" "brightness up steps 5 %"
+  assert_contains "$log" "set 2%-" "brightness down honours the step"
+  PATH="$P" $H volume sideways >/dev/null 2>&1 && fail "bad volume action accepted" || pass "bad volume action rejected"
+  PATH="$P" $H volume up x >/dev/null 2>&1 && fail "bad step accepted" || pass "non-numeric step rejected"
+  rm -rf "$d"
+}
 run_test "list" t_list
 run_test "bad theme" t_bad_theme
 run_test "apply harbor" t_apply
@@ -116,5 +134,6 @@ run_test "reload sets wallpaper" t_reload_wall
 run_test "lock" t_lock
 run_test "next/prev" t_next_prev
 run_test "wall mode from image" t_wall_mode
+run_test "media keys" t_media_keys
 run_test "check" t_check
 finish

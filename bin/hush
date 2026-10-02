@@ -40,6 +40,8 @@ usage: hush <command>
   plugins [status|install]  optional Hyprland plugins gloview and dynamic-cursors (hyprpm)
   overview             open the GloView overview (hyprctl gloview)
   shell <start|stop|restart|status|log>  manage the Hush Quickshell shell
+  volume up|down|mute|mic-mute [step]  change output volume (step %, default 5, capped at 100) or toggle mute
+  brightness up|down [step]  change screen brightness (step %, default 5, never fully off)
   timer <N>m|<N>s|<N>h|stop  start a countdown shown at rest in the island, or cancel it
 EOF
 }
@@ -521,13 +523,37 @@ cmd_timer() { # <N>[smh] | stop  (talks to the running shell's activity IPC)
   qs -c hush ipc call activity timerStart "$secs" >/dev/null || die "the shell is not running"
 }
 
+cmd_volume() { # up|down|mute|mic-mute [step]; the island's Audio service shows the OSD
+  local act="${1:-}" step="${2:-5}"
+  [[ "$step" =~ ^[0-9]+$ ]] || die "bad step \"$step\" (use a whole number of percent)"
+  need wpctl
+  case "$act" in
+    up)   wpctl set-mute @DEFAULT_AUDIO_SINK@ 0; wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ "${step}%+" ;;
+    down) wpctl set-mute @DEFAULT_AUDIO_SINK@ 0; wpctl set-volume @DEFAULT_AUDIO_SINK@ "${step}%-" ;;
+    mute) wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle ;;
+    mic-mute) wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle ;;
+    *) die "usage: hush volume up|down|mute|mic-mute [step]" ;;
+  esac
+}
+
+cmd_brightness() { # up|down [step]
+  local act="${1:-}" step="${2:-5}"
+  [[ "$step" =~ ^[0-9]+$ ]] || die "bad step \"$step\" (use a whole number of percent)"
+  need brightnessctl
+  case "$act" in
+    up)   brightnessctl -q set "${step}%+" ;;
+    down) brightnessctl -q --min-value=1 set "${step}%-" ;;
+    *) die "usage: hush brightness up|down [step]" ;;
+  esac
+}
+
 main() {
   need python3
   case "${1:-}" in theme|wall|reload) need matugen ;; esac
   mkdir -p "$CACHE_DIR" "$STATE_DIR"
   # Serialize every mutating command: they share $RENDER and $MATUGEN_CFG.
   case "${1:-}" in
-    list|status|plugins|overview|shell|timer|settings|generated|track|lock|""|-h|--help|help|--version|version) ;; # shell does not render; it must not hold the lock
+    list|status|plugins|overview|shell|timer|volume|brightness|settings|generated|track|lock|""|-h|--help|help|--version|version) ;; # shell does not render; it must not hold the lock
     *) exec 9>"$CACHE_DIR/lock"; flock -w 30 9 || die "another hush is running" ;;
   esac
   case "${1:-}" in
@@ -545,6 +571,8 @@ main() {
     overview) command -v hyprctl >/dev/null || die "hyprctl not found"; hyprctl gloview ;;
     shell) cmd_shell "${2:-}" ;;
     timer) cmd_timer "${2:-}" ;;
+    volume) shift; cmd_volume "$@" ;;
+    brightness) shift; cmd_brightness "$@" ;;
     lock) pgrep -x hyprlock >/dev/null || exec hyprlock ;;
     settings) qs -c hush ipc call hush settings >/dev/null || die "the shell is not running" ;;
     --version|version) cat "$HUSH_ROOT/VERSION" ;;
