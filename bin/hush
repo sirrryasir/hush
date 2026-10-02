@@ -20,8 +20,10 @@ usage() {
 usage: hush <command>
   --version            print the Hush version
   list                 list themes
-  theme <name|next|prev> apply a theme (wallpaper + colors + reloads)
-  wall <path|random> [--mode light|dark]
+  theme <name|next|prev> [--from X,Y]
+                       apply a theme (wallpaper + colors + reloads); the wallpaper grows
+                       from X,Y in pixels (default: the island centre on the focused monitor)
+  wall <path|random> [--mode light|dark] [--from X,Y]
                        change wallpaper; colours come from the image, mode from its
                        brightness (mean luminance > 140 = light), theme name is kept.
                        random picks from the themes' own wallpapers, plus every directory
@@ -141,13 +143,37 @@ os.replace(tmp, p)  # atomic: watchers never see a truncated state.json
 PY
 }
 
+# Circle-reveal transition args for awww. FROM_XY (validated "X,Y" px) else island centre.
+# Reduced motion (HUSH_REDUCED_MOTION=1 or settings island.reducedMotion) -> instant simple.
+transition_args() {
+  local rm="${HUSH_REDUCED_MOTION:-}"
+  if [[ -z "$rm" && -f "$STATE_DIR/settings.json" ]]; then
+    rm=$(python3 -c "import json,sys;print('1' if json.load(open(sys.argv[1])).get('island',{}).get('reducedMotion') is True else '')" "$STATE_DIR/settings.json" 2>/dev/null || true)
+  fi
+  if [[ "$rm" == 1 ]]; then echo "--transition-type simple --transition-step 255"; return; fi
+  local pos="${FROM_XY:-}"
+  if [[ -z "$pos" ]]; then
+    pos=$(hyprctl monitors -j 2>/dev/null | python3 -c "
+import json,sys
+try:
+    m=[x for x in json.load(sys.stdin) if x.get('focused')][0]
+    print('%d,%d' % (m['x']+m['width']//2, m['y']+6+18))
+except Exception: pass" 2>/dev/null || true)
+  fi
+  local out="--transition-type grow"
+  [[ -n "$pos" ]] && out+=" --transition-pos $pos"
+  echo "$out --transition-duration 0.9 --transition-fps 60 --transition-bezier .16,1,.3,1"
+}
+
+check_from() { [[ "$1" =~ ^[0-9]+,[0-9]+$ ]] || die "--from needs integer pixels X,Y (got \"$1\")"; FROM_XY="$1"; }
+
 set_wallpaper() { # path
   local wall="$1" i
   if command -v awww >/dev/null; then
     # At login awww-daemon may still be starting; give it up to 5 s.
     for ((i = 0; i < 50; i++)); do awww query >/dev/null 2>&1 && break; sleep 0.1; done
     if awww query >/dev/null 2>&1; then
-      awww img "$wall" --transition-type fade --transition-duration 1.2 >/dev/null 2>&1 || echo "hush: awww failed (continuing)" >&2
+      awww img "$wall" $(transition_args) >/dev/null 2>&1 || echo "hush: awww failed (continuing)" >&2
     else
       echo "hush: awww-daemon not answering after 5 s; wallpaper not set (continuing)" >&2
     fi
@@ -249,7 +275,14 @@ cmd_sddm() {
 }
 
 cmd_theme() {
-  local theme; theme=$(resolve_theme "${1:-}")
+  local name=""
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --from) [[ $# -ge 2 ]] || die "--from needs X,Y"; check_from "$2"; shift 2 ;;
+      *) name="$1"; shift ;;
+    esac
+  done
+  local theme; theme=$(resolve_theme "$name")
   local wall="$THEMES/$theme/wallpaper.png"
   [[ -f "$wall" ]] || die "theme $theme has no wallpaper.png (run bin/hush-wallgen $theme)"
   local mode; mode=$(render "$theme" "$wall")
@@ -275,6 +308,7 @@ cmd_wall() {
   while [[ $# -gt 0 ]]; do
     case "$1" in
       --mode) mode="${2:-}"; shift 2 || die "--mode needs light or dark" ;;
+      --from) [[ $# -ge 2 ]] || die "--from needs X,Y"; check_from "$2"; shift 2 ;;
       *) wall="$1"; shift ;;
     esac
   done
@@ -438,7 +472,7 @@ main() {
   esac
   case "${1:-}" in
     list) list_themes ;;
-    theme) cmd_theme "${2:-}" ;;
+    theme) shift; cmd_theme "$@" ;;
     wall) shift; cmd_wall "$@" ;;
     reload) cmd_reload ;;
     status) cmd_status ;;

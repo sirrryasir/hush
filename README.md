@@ -10,7 +10,7 @@
 
 ## What it is
 
-Hush is a quiet, Apple-calm desktop for Hyprland (0.55+, Lua config) on Arch. A single Quickshell shell provides the dynamic island (clock, media, OSD, notifications, control center), screen corners, launcher, wallpaper grid and notification drawer. `hush theme <name>` picks a wallpaper, runs matugen and re-renders colors for the shell, Hyprland, kitty, Neovim, GTK, Qt, Kvantum, hyprlock, fastfetch and the browser theme in one pass.
+Hush is a quiet, Apple-calm desktop for Hyprland (0.55+, Lua config) on Arch. A single Quickshell shell provides the dynamic island (clock, media, OSD, notifications, control center), launcher, wallpaper grid and notification drawer. `hush theme <name>` picks a wallpaper, runs matugen and re-renders colors for the shell, Hyprland, kitty, Neovim, GTK, Qt, Kvantum, hyprlock, fastfetch and the browser theme in one pass.
 
 <table>
   <tr>
@@ -29,7 +29,7 @@ Control center per theme: [dusk](assets/themes/dusk-cc.png), [ember](assets/them
 
 ## What's inside
 
-- `quickshell/hush/`: the shell (island, corners, launcher, wallpaper grid, drawer, notification daemon)
+- `quickshell/hush/`: the shell (island, launcher, wallpaper grid, drawer, notification daemon)
 - `bin/hush`: the CLI; `bin/hush-wallgen`, `bin/hush-fonts`, `bin/hush-gtk`: helpers
 - `matugen/`: templates and per-target config fragments that render the theme
 - `themes/`: one folder per theme (`theme.toml` plus a generated wallpaper)
@@ -43,7 +43,8 @@ Control center per theme: [dusk](assets/themes/dusk-cc.png), [ember](assets/them
 | Command | What it does |
 | --- | --- |
 | `hush theme <name\|next\|prev>` | apply a theme (wallpaper, colors, reloads) |
-| `hush wall <path\|random>` | change the wallpaper, keep the theme's scheme |
+| `hush wall <path\|random>` | change the wallpaper, keep the theme's scheme | 
+| `hush wall/theme ... --from X,Y` | circle-reveal transition from pixel X,Y (default: island centre on the focused monitor); `HUSH_REDUCED_MOTION=1` or `island.reducedMotion` gives an instant swap |
 | `hush reload` | re-render templates for the current state |
 | `hush status` | print active theme, wallpaper, mode, scheme |
 | `hush check` | validate generated config (exit 1 on problems) |
