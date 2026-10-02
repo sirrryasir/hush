@@ -59,9 +59,9 @@ StateBase {
             Toggle {
                 Layout.fillWidth: true; Layout.preferredWidth: 1
                 icon: Svc.Bt.icon; label: "Bluetooth"
-                subtitle: Svc.Bt.connectedName !== "" ? Svc.Bt.connectedName : (Svc.Bt.enabled ? "On" : "Off")
+                subtitle: Svc.Bt.subtitle
                 checked: Svc.Bt.enabled
-                onClicked: if (Bluetooth.defaultAdapter) Bluetooth.defaultAdapter.enabled = !Bluetooth.defaultAdapter.enabled
+                onClicked: Svc.Bt.toggle()
             }
             Toggle {
                 Layout.fillWidth: true; Layout.preferredWidth: 1

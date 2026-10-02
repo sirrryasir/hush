@@ -49,6 +49,10 @@ ShellRoot {
         function scanning(): bool { return Svc.Net.scanning }
         function wallRequests(): int { return root.wallRequests }
         function pressWallpapers(): void { cc.openWallpapers() }
+        // Bluetooth tile (test_cc_surface runs this harness with a stub rfkill and HUSH_BT_NO_ADAPTER=1).
+        function pressBtTile(): void { const t = find(cc, "btToggle"); if (t) t.clicked() }
+        function btBlocked(): bool { return Svc.Bt.blocked }
+        function btSubtitle(): string { const t = find(cc, "btToggle"); return t ? t.subtitle : "" }
         function find(it, name): var { if (!it) return null; if (it.objectName === name) return it; for (let i = 0; i < it.children.length; i++) { const r = find(it.children[i], name); if (r) return r } return null }
         function armSlider(): bool {
             const sl = find(cc, "volumeSlider"); if (!sl) return false

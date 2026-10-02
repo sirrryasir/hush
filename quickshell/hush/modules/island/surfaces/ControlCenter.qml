@@ -76,11 +76,12 @@ FocusScope {
                 onChevronClicked: cc.openWifi()
             }
             Toggle {
+                objectName: "btToggle"
                 Layout.fillWidth: true; Layout.preferredWidth: 1
                 icon: Svc.Bt.icon; label: "Bluetooth"; chevron: true
-                subtitle: Svc.Bt.connectedName !== "" ? Svc.Bt.connectedName : (Svc.Bt.enabled ? "On" : "Off")
+                subtitle: Svc.Bt.subtitle
                 checked: Svc.Bt.enabled
-                onClicked: if (Bluetooth.defaultAdapter) Bluetooth.defaultAdapter.enabled = !Bluetooth.defaultAdapter.enabled
+                onClicked: Svc.Bt.toggle()
                 onChevronClicked: cc.openBluetooth()
             }
             Toggle {
@@ -154,10 +155,10 @@ FocusScope {
         anchors.fill: parent; anchors.margins: 16
         visible: opacity > 0; opacity: cc.page === "bluetooth" ? 1 : 0
         Behavior on opacity { NumberAnimation { duration: Theme.durationShort } }
-        title: "Bluetooth"; busy: Bluetooth.defaultAdapter ? Bluetooth.defaultAdapter.discovering : false
-        emptyText: Svc.Bt.enabled ? "No devices found" : "Bluetooth is off"
+        title: "Bluetooth"; subtitle: Svc.Bt.subtitle; busy: Svc.Bt.pending || (Svc.Bt.adapter ? Svc.Bt.adapter.discovering : false)
+        emptyText: Svc.Bt.enabled ? "No devices found" : Svc.Bt.subtitle === "Off" ? "Bluetooth is off" : Svc.Bt.subtitle
         switchable: true; switchOn: Svc.Bt.enabled
-        onSwitched: if (Bluetooth.defaultAdapter) Bluetooth.defaultAdapter.enabled = !Bluetooth.defaultAdapter.enabled
+        onSwitched: Svc.Bt.toggle()
         onBack: cc.back(); onRefresh: Svc.Bt.scan()
         onRowClicked: row => Svc.Bt.toggleDevice(row.dev)
         model: Svc.Bt.devices.map(d => ({

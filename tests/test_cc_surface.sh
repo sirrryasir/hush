@@ -6,8 +6,20 @@ export HUSH_ROOT="$PWD"
 export QS_DISABLE_CRASH_HANDLER=1
 H=(qs -p "$PWD/tests/harness/cc.qml")
 cc() { local o i; for i in 1 2 3 4 5 6 7 8; do o=$("${H[@]}" ipc call cc "$@" 2>/dev/null) && { echo "$o"; return 0; }; sleep 0.5; done; return 1; }
-LOG=$(mktemp); "${H[@]}" -n >"$LOG" 2>&1 & HPID=$!
-trap 'kill $HPID 2>/dev/null; rm -f "$LOG"' EXIT
+# Bluetooth: a stub rfkill on PATH (logs its arguments, reports bluetooth soft-blocked until
+# "unblock") and HUSH_BT_NO_ADAPTER=1, so the tile exercises the missing-adapter path.
+STUB=$(mktemp -d); echo blocked >"$STUB/state"
+cat >"$STUB/rfkill" <<EOF
+#!/bin/sh
+echo "\$*" >>"$STUB/log"
+case "\$1" in
+  unblock) echo unblocked >"$STUB/state" ;;
+  -J) printf '{"rfkilldevices":[{"id":0,"type":"bluetooth","device":"hci0","soft":"%s","hard":"unblocked"}]}\n' "\$(cat "$STUB/state")" ;;
+esac
+EOF
+chmod +x "$STUB/rfkill"
+LOG=$(mktemp); PATH="$STUB:$PATH" HUSH_BT_NO_ADAPTER=1 "${H[@]}" -n >"$LOG" 2>&1 & HPID=$!
+trap 'kill $HPID 2>/dev/null; rm -rf "$LOG" "$STUB"' EXIT
 t_up() {
   local i; for i in $(seq 20); do [[ "$(cc page)" == main ]] && break; sleep 0.5; done
   assert_eq "main" "$(cc page)" "harness starts on the main page"
@@ -63,6 +75,17 @@ for o in json.load(sys.stdin).values():
   kill "$ypid" 2>/dev/null; rm -f "$sock"
   wpctl set-volume @DEFAULT_AUDIO_SINK@ "$ov"; wpctl set-mute @DEFAULT_AUDIO_SINK@ "$om"
 }
+t_bt() {
+  local i s=""; for i in $(seq 10); do s=$(cc btSubtitle | tr -d '"'); [[ "$s" == "Blocked by rfkill" ]] && break; sleep 0.5; done
+  assert_eq "Blocked by rfkill" "$s" "Bluetooth tile says Blocked by rfkill"
+  assert_eq "true" "$(cc btBlocked)" "Bt.blocked with no adapter"
+  cc pressBtTile >/dev/null
+  for i in $(seq 10); do grep -qx 'unblock bluetooth' "$STUB/log" 2>/dev/null && break; sleep 0.3; done
+  grep -qx 'unblock bluetooth' "$STUB/log" && pass "tile toggle ran rfkill unblock bluetooth" || fail "stub rfkill not called to unblock: $(cat "$STUB/log" 2>/dev/null)"
+  for i in $(seq 16); do s=$(cc btSubtitle | tr -d '"'); [[ "$s" == "No adapter" ]] && break; sleep 0.5; done
+  assert_eq "No adapter" "$s" "after the unblock the tile no longer claims rfkill"
+  grep -qx 'block bluetooth' "$STUB/log" && fail "Hush ran rfkill block" || pass "never runs rfkill block"
+}
 t_log() { local e; e=$(grep -E 'ERROR|TypeError|ReferenceError|Unable to assign' "$LOG" || true); [[ -z "$e" ]] && pass "no QML errors" || fail "QML errors: $e"; }
-run_test up t_up; run_test pages t_pages; run_test networks t_networks; run_test keys t_keys; run_test log t_log
+run_test up t_up; run_test pages t_pages; run_test networks t_networks; run_test keys t_keys; run_test bt t_bt; run_test log t_log
 finish

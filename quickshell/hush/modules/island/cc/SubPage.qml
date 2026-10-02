@@ -7,6 +7,8 @@ import qs.config
 Item {
     id: page
     property string title: ""
+    // One muted line under the title (Bluetooth: "Blocked by rfkill", "On · <device>").
+    property string subtitle: ""
     property var model: []
     property bool busy: false
     property string emptyText: "Nothing found"
@@ -28,10 +30,18 @@ Item {
             Text { anchors.centerIn: parent; text: "arrow_back"; color: Colors.islandFg; font.family: Theme.fontIcon; font.pixelSize: 20 }
             MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: page.back(); Accessible.role: Accessible.Button; Accessible.name: "Back" }
         }
-        Text {
-            Layout.fillWidth: true; Layout.preferredHeight: 36
-            verticalAlignment: Text.AlignVCenter; text: page.title; color: Colors.islandFg
-            font.family: Theme.fontUi; font.pixelSize: 16; font.weight: Font.DemiBold
+        Column {
+            Layout.fillWidth: true; Layout.alignment: Qt.AlignVCenter
+            Text {
+                width: parent.width; text: page.title; color: Colors.islandFg
+                font.family: Theme.fontUi; font.pixelSize: 16; font.weight: Font.DemiBold
+            }
+            Text {
+                objectName: "subPageSubtitle"
+                visible: page.subtitle !== ""; width: parent.width; elide: Text.ElideRight
+                text: page.subtitle; color: Colors.islandFgVar
+                font.family: Theme.fontUi; font.pixelSize: 11
+            }
         }
         Rectangle {
             Layout.preferredWidth: 36; Layout.preferredHeight: 36; radius: 18; color: Colors.islandSurfaceHigh

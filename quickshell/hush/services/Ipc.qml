@@ -43,6 +43,11 @@ Singleton {
         function restClock(): string { return root.island ? root.island.restClock : "" }
         function batteryPercent(): int { return Battery.percent }
         function netConnected(): bool { return Net.connected }
+        // Bluetooth: the control center's toggle (lifts an rfkill block when the adapter is missing).
+        function btToggle(): void { Bt.toggle() }
+        function btEnabled(): bool { return Bt.enabled }
+        function btBlocked(): bool { return Bt.blocked }
+        function btSubtitle(): string { return Bt.subtitle }
         function goWorkspace(id: int): void { Hypr.go(id) }
         function reload(): void { Quickshell.reload(false) }
         // --- modal surfaces (launcher, wallpapers, settings) inside the island ---

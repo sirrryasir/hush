@@ -29,5 +29,25 @@ t_close() {
   assert_eq "rest" "$(shell_ipc islandState)" "toggle closes"
   local e; e=$(shell_log_errors); [[ -z "$e" ]] && pass "no errors in shell log" || fail "shell log errors: $e"
 }
-run_test "open" t_open; run_test "theme" t_theme; run_test "close" t_close
+# Live: block the radio, toggle Bluetooth over IPC (the tile's path), expect rfkill unblocked and
+# the adapter powered within 5 s, then restore the power state.
+t_bt() {
+  if ! command -v rfkill >/dev/null || ! rfkill -J 2>/dev/null | jq -e '[.[][] | select(.type == "bluetooth")] | length > 0' >/dev/null; then
+    pass "no bluetooth rfkill switch: skipped"; return; fi
+  local was i ok=0; was=$(shell_ipc btEnabled)
+  rfkill block bluetooth; sleep 1
+  for i in $(seq 10); do [[ "$(shell_ipc btSubtitle)" == "Blocked by rfkill" ]] && break; sleep 0.5; done
+  assert_eq "Blocked by rfkill" "$(shell_ipc btSubtitle)" "tile subtitle while rfkill-blocked"
+  shell_ipc btToggle >/dev/null
+  for i in $(seq 25); do
+    if ! rfkill -J | jq -e '[.[][] | select(.type == "bluetooth" and .soft == "blocked")] | length > 0' >/dev/null \
+      && [[ "$(shell_ipc btEnabled)" == "true" ]]; then ok=1; break; fi
+    sleep 0.2
+  done
+  (( ok )) && pass "toggle unblocked rfkill and powered the adapter in $((i * 200)) ms" || fail "after 5 s: $(rfkill -J | jq -c '[.[][] | select(.type == "bluetooth") | .soft]') enabled=$(shell_ipc btEnabled)"
+  rfkill unblock bluetooth
+  [[ "$was" == "false" && "$(shell_ipc btEnabled)" == "true" ]] && { shell_ipc btToggle >/dev/null; sleep 1; }
+  assert_eq "$was" "$(shell_ipc btEnabled)" "Bluetooth power restored ($was)"
+}
+run_test "open" t_open; run_test "bt" t_bt; run_test "theme" t_theme; run_test "close" t_close
 finish
