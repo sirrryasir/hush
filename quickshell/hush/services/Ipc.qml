@@ -8,9 +8,6 @@ Singleton {
     id: root
     // Modules register themselves here so IPC can reach them without import cycles.
     property var island: null
-    property var launcher: null
-    property var wallpapers: null
-    property var drawer: null
     // Islands by screen name. `island` (what IPC, OSD and notifications drive) is the one on the focused
     // monitor; an expanded island keeps the role until it collapses, so it never jumps between screens.
     property var islands: ({})
@@ -48,16 +45,31 @@ Singleton {
         function netConnected(): bool { return Net.connected }
         function goWorkspace(id: int): void { Hypr.go(id) }
         function reload(): void { Quickshell.reload(false) }
-        function toggleLauncher(): void { if (root.launcher) root.launcher.toggle() }
-        function showLauncher(mode: string): void { if (root.launcher) root.launcher.show(mode) }
-        function launcherVisible(): bool { return root.launcher ? root.launcher.visible : false }
-        function launcherQuery(q: string): void { if (root.launcher) root.launcher.setQuery(q) }
-        function launcherCount(): int { return root.launcher ? root.launcher.count : 0 }
-        function launcherFirst(): string { return root.launcher && root.launcher.first ? root.launcher.first.name : "" }
-        function toggleWallpapers(): void { if (root.wallpapers) root.wallpapers.toggle() }
-        function wallpapersVisible(): bool { return root.wallpapers ? root.wallpapers.visible : false }
-        function wallpapersCount(): int { return root.wallpapers ? root.wallpapers.count : 0 }
-        function wallpapersSelect(path: string): void { if (root.wallpapers) root.wallpapers.select(path) }
+        // --- modal surfaces (launcher, wallpapers, settings) inside the island ---
+        function toggleLauncher(): void { if (root.island) root.island.toggleSurface("launcher", { mode: "apps" }) }
+        function showLauncher(mode: string): void { if (root.island) root.island.openSurface("launcher", { mode: mode === "all" || !mode ? "apps" : mode }) }
+        function launcherVisible(): bool { return root.island ? root.island.state === "launcher" : false }
+        function launcherQuery(q: string): void { const l = root.surface("launcher"); if (l) l.setQuery(q) }
+        function launcherCount(): int { const l = root.surface("launcher"); return l ? l.count : 0 }
+        function launcherFirst(): string { const l = root.surface("launcher"); return l ? l.firstName : "" }
+        function toggleWallpapers(): void { if (root.island) root.island.toggleSurface("wallpapers") }
+        function wallpapersVisible(): bool { return root.island ? root.island.state === "wallpapers" : false }
+        function wallpapersCount(): int { const w = root.surface("wallpapers"); return w ? w.count : 0 }
+        // Picks the tile for path (the reveal grows from it); a path not in the grid applies directly.
+        function wallpapersSelect(path: string): string {
+            const w = root.surface("wallpapers")
+            const i = w ? w.files.indexOf(path) : -1
+            if (i >= 0) { w.pickIndex(i); return w.lastFrom }
+            Quickshell.execDetached([Paths.hush, "wall", path])
+            if (root.island) root.island.closeSurface()
+            return ""
+        }
+        function settings(): void { if (root.island) root.island.toggleSurface("settings") }
+        function settingsVisible(): bool { return root.island ? root.island.state === "settings" : false }
+        function settingsWarning(): string { const s = root.surface("settings"); return s ? s.warning : "" }
+        // Toasts and the notification center (toggleDrawer is the v1 name the keybinds still call).
+        function toggleDrawer(): void { if (root.island) root.island.toggleSurface("notifCenter") }
+        function toggleNotifications(): void { if (root.island) root.island.toggleSurface("notifCenter") }
         function toggleControlCenter(): void { if (root.island) root.island.toggleExpanded() }
         // --- hover and input (Task 6) ---
         function openSurface(name: string): void { if (root.island) root.island.openSurface(name) }
@@ -78,7 +90,6 @@ Singleton {
         // reverseMs later (0: stay open), timed in the shell so no IPC client start-up lands mid-capture.
         function morphProbe(delayMs: int, reverseMs: int): void { probeOpen.interval = Math.max(1, delayMs); probeClose.interval = Math.max(0, reverseMs); probeOpen.restart() }
         function islandStage(): string { return root.island ? root.island.shapeState + "/" + root.island.shownState + "/" + root.island.contentOpacity.toFixed(2) : "none" }
-        function toggleDrawer(): void { if (root.drawer) root.drawer.toggle() }
         function clearNotifications(): void { Notifs.clearAll() }
         function unread(): int { return Notifs.unread }
         function osd(kind: string): void { if (root.island) root.island.showOsd(kind) }
@@ -102,6 +113,8 @@ Singleton {
         function justPlugged(): bool { return Battery.justPlugged }
     }
     // --- end activity IPC ---
+    // The shown surface item of that name on the driven island, once loaded.
+    function surface(name) { return root.island ? root.island.surfaceItem(name) : null }
     function findNamed(item, name) {
         if (item.objectName === name) return item
         for (let i = 0; i < item.children.length; i++) { const f = findNamed(item.children[i], name); if (f) return f }

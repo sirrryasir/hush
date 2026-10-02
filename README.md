@@ -10,7 +10,7 @@
 
 ## What it is
 
-Hush is a quiet, Apple-calm desktop for Hyprland (0.55+, Lua config) on Arch. A single Quickshell shell provides the dynamic island (clock, media, OSD, notifications, control center), launcher, wallpaper grid and notification drawer. `hush theme <name>` picks a wallpaper, runs matugen and re-renders colors for the shell, Hyprland, kitty, Neovim, GTK, Qt, Kvantum, hyprlock, fastfetch and the browser theme in one pass.
+Hush is a quiet, Apple-calm desktop for Hyprland (0.55+, Lua config) on Arch. A single Quickshell shell provides the dynamic island (clock, media, OSD, notifications, control center), launcher, wallpaper grid, settings and notification center, all grown out of the island. `hush theme <name>` picks a wallpaper, runs matugen and re-renders colors for the shell, Hyprland, kitty, Neovim, GTK, Qt, Kvantum, hyprlock, fastfetch and the browser theme in one pass.
 
 <table>
   <tr>
@@ -29,7 +29,7 @@ Control center per theme: [dusk](assets/themes/dusk-cc.png), [ember](assets/them
 
 ## What's inside
 
-- `quickshell/hush/`: the shell (island, launcher, wallpaper grid, drawer, notification daemon)
+- `quickshell/hush/`: the shell (island and its surfaces: control center, launcher, wallpaper grid, settings, notification center; notification daemon)
 - `bin/hush`: the CLI; `bin/hush-wallgen`, `bin/hush-fonts`, `bin/hush-gtk`: helpers
 - `matugen/`: templates and per-target config fragments that render the theme
 - `themes/`: one folder per theme (`theme.toml` plus a generated wallpaper)

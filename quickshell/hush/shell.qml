@@ -4,17 +4,12 @@ import QtQuick
 import Quickshell
 import qs.config
 import qs.services
-import "modules/wallpapers"
 import "modules/island"
-import "modules/launcher"
-import "modules/drawer"
 
+// One island surface per screen; every panel and modal (control center, notifications, launcher,
+// wallpapers, settings) grows out of it, so hush maps no other layer.
 ShellRoot {
     id: root
-    Component.onCompleted: { void Ipc.island; console.log("hush shell up, mode=" + Colors.mode) }
+    Component.onCompleted: { void Ipc.island; void Notifs.count; console.log("hush shell up, mode=" + Colors.mode) }
     Variants { model: Quickshell.screens; delegate: IslandWindow {} }
-    Drawer {}
-    LauncherWindow {}
-    WallpapersWindow {}
-    // SLOT wallpapers
 }

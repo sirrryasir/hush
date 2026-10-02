@@ -26,7 +26,7 @@ Scope {
     readonly property bool raised: island.priority >= Priorities.osd
     readonly property bool revealed: !autohide || held || peeking || raised
     readonly property bool hidden: !island.surfaceOpen && (fullscreen || !revealed)
-    readonly property bool modalOpen: island.priority >= Priorities.modal
+    readonly property bool modalOpen: island.modalOpen
 
     function hoverChanged() {
         if (strip.hovered || pillHover.hovered) { grace.stop(); held = true }
@@ -47,6 +47,8 @@ Scope {
         color: "transparent"
         WlrLayershell.namespace: "hush-island"
         WlrLayershell.layer: WlrLayer.Top
+        // On demand while a surface is open: the focus grab below hands it the keyboard (typing reaches
+        // the launcher at once). Exclusive would make Hyprland clear the grab as soon as it starts.
         WlrLayershell.keyboardFocus: island.surfaceOpen ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
         // The pill's rect, empty while retracted; the full surface only while a modal surface is open.
         mask: Region {
@@ -54,12 +56,20 @@ Scope {
             Region { item: scope.modalOpen ? catcher : null }
         }
 
-        Item { id: catcher; anchors.fill: parent }
+        // Under a modal surface the whole island surface takes input; a click off the pill closes it.
+        MouseArea {
+            id: catcher
+            anchors.fill: parent
+            enabled: scope.modalOpen
+            acceptedButtons: Qt.AllButtons
+            onPressed: { island.mark("@catch"); island.closeSurface() }
+        }
 
         Island {
             id: island
             hidden: scope.hidden
             screenName: scope.modelData.name
+            screenOrigin: Qt.point(scope.modelData.x, scope.modelData.y)
             anchors.horizontalCenter: parent.horizontalCenter
             y: scope.hidden ? -height - 2 : scope.topGap
             Behavior on y { NumberAnimation { duration: Theme.durationNormal; easing.type: Easing.OutCubic } }

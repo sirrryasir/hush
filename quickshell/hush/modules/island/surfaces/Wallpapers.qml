@@ -15,15 +15,19 @@ Item {
     property var files: []
     readonly property int count: files.length
     readonly property alias currentIndex: grid.currentIndex
-    // Global (compositor) position of this item's top-left. The host sets it when it knows better;
-    // by default the window is assumed horizontally centred on its screen at the top.
-    property point origin: {
-        const w = Window.window
-        const s = w && w.screen ? w.screen : null
+    // Global (compositor) position of this item's top-left. A host that knows it sets `origin`;
+    // otherwise it is the window position of this item plus `screenOffset` (the window sits at its
+    // screen's top-left, as the island surface does), read at pick time so a mid-morph layout never sticks.
+    property var origin: null
+    property point screenOffset: Qt.point(0, 0)
+    function globalOrigin() {
+        if (origin) return origin
         const p = root.mapToItem(null, 0, 0)
-        return Qt.point((s ? s.x + (s.width - w.width) / 2 : 0) + p.x, (s ? s.y : 0) + p.y)
+        return Qt.point(screenOffset.x + p.x, screenOffset.y + p.y)
     }
     property string hushBin: Paths.hush
+    // The --from of the last pick, "X,Y" (tests read it).
+    property string lastFrom: ""
     signal close()
     signal picked(string path, point from)
 
@@ -32,9 +36,11 @@ Item {
         const it = grid.itemAtIndex(i)
         const c = it ? it.mapToItem(root, it.thumbCentre.x, it.thumbCentre.y)
                      : Qt.point(root.width / 2, root.height / 2)
-        const from = Qt.point(Math.round(root.origin.x + c.x), Math.round(root.origin.y + c.y))
-        apply.command = [root.hushBin, "wall", files[i], "--from", from.x + "," + from.y]
-        apply.running = true
+        const o = globalOrigin()
+        const from = Qt.point(Math.round(o.x + c.x), Math.round(o.y + c.y))
+        lastFrom = from.x + "," + from.y
+        // Detached: the host closes the surface on picked(), which destroys this item mid-transition.
+        Quickshell.execDetached([root.hushBin, "wall", files[i], "--from", from.x + "," + from.y])
         root.picked(files[i], from)
     }
     function focusCurrent() {
@@ -44,8 +50,6 @@ Item {
         grid.forceActiveFocus()
     }
     onFilesChanged: if (files.length) Qt.callLater(focusCurrent)
-
-    Process { id: apply; stderr: StdioCollector { onStreamFinished: if (text.length) console.log("wall err: " + text) } }
 
     Process {
         id: lister

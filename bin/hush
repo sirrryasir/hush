@@ -36,6 +36,7 @@ usage: hush <command>
   fallback             stop the Hush shell, start Waybar and SwayNC
   sddm sync            refresh ~/.cache/hush/sddm (wallpaper, colours, avatar) for the SDDM theme
   lock                 lock the screen with hyprlock (once)
+  settings             open (or close) the settings surface in the island
   shell <start|stop|restart|status|log>  manage the Hush Quickshell shell
   timer <N>m|<N>s|<N>h|stop  start a countdown shown at rest in the island, or cancel it
 EOF
@@ -480,7 +481,7 @@ main() {
   mkdir -p "$CACHE_DIR" "$STATE_DIR"
   # Serialize every mutating command: they share $RENDER and $MATUGEN_CFG.
   case "${1:-}" in
-    list|status|shell|timer|generated|track|lock|""|-h|--help|help|--version|version) ;; # shell does not render; it must not hold the lock
+    list|status|shell|timer|settings|generated|track|lock|""|-h|--help|help|--version|version) ;; # shell does not render; it must not hold the lock
     *) exec 9>"$CACHE_DIR/lock"; flock -w 30 9 || die "another hush is running" ;;
   esac
   case "${1:-}" in
@@ -497,6 +498,7 @@ main() {
     shell) cmd_shell "${2:-}" ;;
     timer) cmd_timer "${2:-}" ;;
     lock) pgrep -x hyprlock >/dev/null || exec hyprlock ;;
+    settings) qs -c hush ipc call hush settings >/dev/null || die "the shell is not running" ;;
     --version|version) cat "$HUSH_ROOT/VERSION" ;;
     ""|-h|--help|help) usage ;;
     *) usage; die "unknown command: $1" ;;

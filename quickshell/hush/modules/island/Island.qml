@@ -24,7 +24,7 @@ Item {
     // Surfaces that grow out of the pill (design 2.6); "expanded" is the control center. The last
     // three are modal: they take the keyboard and the whole island surface catches clicks.
     readonly property var panels: ["expanded", "mediaSurface", "calendar", "notifCenter"]
-    readonly property var modals: []
+    readonly property var modals: ["launcher", "wallpapers", "settings"]
     readonly property var surfaces: panels.concat(modals)
     readonly property bool surfaceOpen: surfaces.indexOf(state) >= 0
     readonly property bool modalOpen: modals.indexOf(state) >= 0
@@ -124,7 +124,7 @@ Item {
         case "notifs": toggleSurface("notifCenter"); break
         case "media": toggleSurface("mediaSurface"); break
         case "calendar": toggleSurface("calendar"); break
-        case "launcher": if (Svc.Ipc.launcher) Svc.Ipc.launcher.toggle(); break
+        case "launcher": toggleSurface("launcher"); break
         }
     }
     function click(button) {
@@ -218,6 +218,7 @@ Item {
     Component.onCompleted: {
         register("rest", restComp); register("hover", hoverComp); register("expanded", ccComp)
         register("mediaSurface", mediaSurfaceComp); register("calendar", calendarComp); register("notifCenter", notifCenterComp)
+        register("launcher", launcherComp); register("wallpapers", wallpapersComp); register("settings", settingsComp)
     }
     Component { id: restComp; Rest { island: islandRoot } }
     Component { id: hoverComp; HoverFace { island: islandRoot } }
@@ -228,10 +229,23 @@ Item {
         id: ccComp
         Surf.ControlCenter {
             onCloseRequested: islandRoot.closeSurface()
-            onOpenWallpapers: { islandRoot.closeSurface(); if (Svc.Ipc.wallpapers) Svc.Ipc.wallpapers.toggle() }
+            onOpenWallpapers: islandRoot.openSurface("wallpapers")
         }
     }
     Component { id: mediaSurfaceComp; Surf.Media {} }
     Component { id: calendarComp; Surf.Calendar {} }
     Component { id: notifCenterComp; Surf.NotificationCenter { host: Svc.Notifs } }
+    Component { id: launcherComp; Surf.Launcher { mode: islandRoot.launcherMode; onClose: islandRoot.closeSurface() } }
+    Component {
+        id: wallpapersComp
+        Surf.Wallpapers { screenOffset: islandRoot.screenOrigin; onClose: islandRoot.closeSurface(); onPicked: islandRoot.closeSurface() }
+    }
+    Component {
+        id: settingsComp
+        Surf.Settings {
+            warning: Svc.Notifs.passive ? "Another daemon owns org.freedesktop.Notifications; Hush notifications are off." : ""
+            onCloseRequested: islandRoot.closeSurface()
+            onOpenWallpapers: islandRoot.openSurface("wallpapers")
+        }
+    }
 }
