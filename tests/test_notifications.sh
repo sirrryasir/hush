@@ -46,6 +46,7 @@ t_single() {
   notify-send -a hushtest "Hello" "one line"; sleep 0.5
   assert_eq "notification" "$(state)" "a notification shows on the island"
   assert_eq "36" "$(notif_ipc islandHeight)" "one-line body keeps the island at 36"
+  assert_eq "false" "$(shell_ipc islandControlVisible criticalMarker)" "a normal card has no critical marker"
   grim "$EVI/notification.png" 2>/dev/null
   wait_state rest 140 && pass "island returns to rest after the hold" || fail "still $(state) after the hold"
   local g; g=$(gap notification rest)
@@ -65,6 +66,8 @@ t_critical() {
   sleep 6
   assert_eq "notification" "$(state)" "critical is sticky (6 s, no timeout)"
   assert_eq "Critical" "$(notif_ipc current)" "the sticky card is the critical one"
+  assert_eq "true" "$(shell_ipc islandControlVisible criticalMarker)" "the critical card wears the red marker"
+  grim "$EVI/notification-critical.png" 2>/dev/null
   shell_ipc clearNotifications >/dev/null; sleep 0.4
   assert_eq "rest" "$(state)" "clear all removes the sticky card"
 }

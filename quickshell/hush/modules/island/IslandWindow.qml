@@ -62,7 +62,9 @@ Scope {
             anchors.fill: parent
             enabled: scope.modalOpen
             acceptedButtons: Qt.AllButtons
-            onPressed: { island.mark("@catch"); island.closeSurface() }
+            // Same arming as the pill's buttons: a click in the first armMs after the surface opened
+            // (one meant for the old shape) does not dismiss it.
+            onPressed: { if (!island.armed) { island.mark("@catch-unarmed"); return } island.mark("@catch"); island.closeSurface() }
         }
 
         Island {
@@ -78,11 +80,19 @@ Scope {
 
         // A click outside an open surface closes it.
         HyprlandFocusGrab {
+            id: grab
             windows: [win]
             active: island.surfaceOpen
-            onCleared: { island.mark("@grab"); island.closeSurface() }
+            // While still arming, the clear is ignored and the grab re-taken (the compositor set
+            // active false; restoring the binding asks for a new grab).
+            onCleared: {
+                if (!island.armed && island.surfaceOpen) { island.mark("@grab-unarmed"); Qt.callLater(scope.regrab); return }
+                island.mark("@grab"); island.closeSurface()
+            }
         }
     }
+
+    function regrab() { grab.active = Qt.binding(() => island.surfaceOpen) }
 
     // Auto-hide reveal strip: 1 px along the top edge, only in auto-hide mode.
     PanelWindow {

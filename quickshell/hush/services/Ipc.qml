@@ -85,6 +85,11 @@ Singleton {
             const p = it.mapToItem(null, it.width / 2, it.height / 2)
             return Math.round(p.x) + " " + Math.round(p.y)
         }
+        // True when the named control exists in the shown state and is visible on screen.
+        function islandControlVisible(name: string): bool {
+            const it = root.island && root.island.item ? root.findNamed(root.island.item, name) : null
+            return !!it && it.visible
+        }
         // --- end hover and input ---
         // Morph probe for tests/test_morph.sh: open the control center after delayMs, reverse it
         // reverseMs later (0: stay open), timed in the shell so no IPC client start-up lands mid-capture.

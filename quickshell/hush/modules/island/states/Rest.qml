@@ -4,6 +4,7 @@ import qs.config
 import "../rest"
 
 // The island at rest (design 2.1): activity circle (collapses when empty), clock, status ring.
+// A playing player shows here as the circle (art + progress ring); there is no media capsule state.
 // The pill's width is this row's width on the 8 px grid, so an empty activity slot narrows it.
 StateBase {
     id: rest
@@ -17,7 +18,17 @@ StateBase {
 
     Row {
         anchors.centerIn: parent; spacing: rest.gap
-        ActivityCircle { id: activity; visible: shown; anchors.verticalCenter: parent.verticalCenter }
+        ActivityCircle {
+            id: activity; objectName: "activityCircle"
+            visible: shown; anchors.verticalCenter: parent.verticalCenter
+            // Media at rest: a click on the circle opens the media surface (middle click anywhere does too).
+            MouseArea {
+                anchors.fill: parent; anchors.margins: -5
+                enabled: activity.mode === "media"
+                Accessible.role: Accessible.Button; Accessible.name: "Now playing. Open media"
+                onClicked: if (rest.island) rest.island.openSurface("mediaSurface")
+            }
+        }
         Clock { id: clock; anchors.verticalCenter: parent.verticalCenter }
         StatusRing { id: ring; anchors.verticalCenter: parent.verticalCenter }
     }

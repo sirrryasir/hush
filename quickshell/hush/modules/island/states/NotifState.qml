@@ -1,11 +1,13 @@
 import QtQuick
 import Quickshell.Widgets
+import Quickshell.Services.Notifications
 import qs.config
 import qs.services
 
 // One notification on the island: app icon, summary, body. 520x36, or 520x56 when the
 // body does not fit beside the summary on one line. Hover pauses the hold (the island pauses its
-// arbiter); click runs the default action, else opens the notification center.
+// arbiter); click runs the default action, else opens the notification center. A critical one
+// (sticky, never times out) wears a red ring round its icon and a red dot (Colors.darkError).
 StateBase {
     id: card
     name: "notification"; priority: 3
@@ -14,6 +16,7 @@ StateBase {
     readonly property var shownN: island && island.payload ? island.payload.n : null
     onShownNChanged: if (shownN) n = shownN
     Component.onCompleted: if (shownN) n = shownN
+    readonly property bool critical: !!n && n.urgency === NotificationUrgency.Critical
     readonly property string summary: n ? n.summary : ""
     readonly property string body: n ? n.body.replace(/\s*\n+\s*/g, "  ") : ""
     // From the declared width, not this item's own: the item is sized from `size`, which depends on
@@ -37,8 +40,21 @@ StateBase {
         }
         Text {
             anchors.centerIn: parent; visible: !icon.visible
-            text: "notifications"; color: card.island ? card.island.fg : Colors.darkOnSurface
+            text: card.critical ? "priority_high" : "notifications"
+            color: card.critical ? Colors.darkError : (card.island ? card.island.fg : Colors.darkOnSurface)
             font.family: Theme.fontIcon; font.pixelSize: 18
+        }
+    }
+    // Critical marker: an error-coloured ring round the icon plus a dot on its shoulder.
+    Rectangle {
+        objectName: "criticalMarker"
+        visible: card.critical
+        anchors.centerIn: iconBox; width: 26; height: 26; radius: 13
+        color: "transparent"; border.width: 1.5; border.color: Colors.darkError
+        Rectangle {
+            width: 7; height: 7; radius: 3.5; color: Colors.darkError
+            border.width: 1; border.color: "#000000"
+            anchors.right: parent.right; anchors.top: parent.top; anchors.rightMargin: -1; anchors.topMargin: -1
         }
     }
     Text {
@@ -62,6 +78,8 @@ StateBase {
     }
     MouseArea {
         anchors.fill: parent
+        Accessible.role: Accessible.Button
+        Accessible.name: (card.critical ? "Critical notification: " : "Notification: ") + card.summary
         onClicked: {
             if (!card.island || !card.n) return
             if (Notifs.invokeDefault(card.n)) {

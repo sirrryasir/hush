@@ -32,7 +32,6 @@ Item {
     readonly property var moduleOf: ({ mediaSurface: "media", calendar: "calendar", notifCenter: "notifications",
         launcher: "launcher", wallpapers: "wallpapers", settings: "settings" })
     property var stateContent: ({})
-    property string restCenterText: Qt.formatDate(dateSrc.date, "ddd d MMM")
     // The clock text the rest state shows (tests read it over IPC).
     property string restClock: ""
     property real restWidth: 0
@@ -62,7 +61,9 @@ Item {
             declare("notification", Priorities.notification, { holdMs: Theme.notificationHoldMs })
             declare("osd", Priorities.osd, { holdMs: Theme.osdHoldMs, coalesce: true })
             declare("hover", Priorities.hover, {})
-            declare("media", Priorities.activity, {})
+            // "media" is the 1.1 s now-playing card on a track change (media at rest is the
+            // activity circle inside the rest state, not a state of its own).
+            declare("media", Priorities.osd, { holdMs: Theme.osdHoldMs, coalesce: true })
         }
     }
     readonly property var payload: arbiter.payload
@@ -156,9 +157,9 @@ Item {
         if (hover.hovered) { grace.stop(); if (state !== "hover") armHover() }
         else { dwell.stop(); hoverPending = false; grace.restart() }
     }
-    function armHover() { if (hoverAllowed && (state === "rest" || state === "media")) dwell.restart() }
+    function armHover() { if (hoverAllowed && state === "rest") dwell.restart() }
     function tryHover() {
-        if (!hover.hovered || !hoverAllowed || !(state === "rest" || state === "media")) return
+        if (!hover.hovered || !hoverAllowed || state !== "rest") return
         if (body.shrinking()) { hoverPending = true; shrinkPoll.restart(); return }
         arbiter.raise("hover")
     }
@@ -176,11 +177,11 @@ Item {
         // The hover face resumed from the queue with the pointer already gone: let the grace close it.
         if (state === "hover" && !hover.hovered) grace.restart()
         // After an OSD or notification the arbiter's hoverArm re-arms at once; anything else dwells.
-        if (hover.hovered && hoverAllowed && (state === "rest" || state === "media") && was !== "osd" && was !== "notification")
+        if (hover.hovered && hoverAllowed && state === "rest" && was !== "osd" && was !== "media" && was !== "notification")
             armHover()
         inStateChange = false
     }
-    function rearm() { if (hover.hovered && hoverAllowed && (state === "rest" || state === "media")) arbiter.raise("hover") }
+    function rearm() { if (hover.hovered && hoverAllowed && state === "rest") arbiter.raise("hover") }
     SystemClock { id: dateSrc; precision: SystemClock.Hours }
 
     // The shape springs to the staged surface's size; the content cross-fades inside it.

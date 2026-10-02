@@ -65,16 +65,16 @@ t_files() {
 }
 t_hover() {
   shell_ipc closeSurface >/dev/null; move "$AX" "$AY"; sleep 0.6
-  for _ in $(seq 20); do case "$(state)" in rest|media) break;; esac; sleep 0.5; done
+  for _ in $(seq 20); do [[ "$(state)" == rest ]] && break; sleep 0.5; done
   move "$PX" "$PY"
   wait_state hover && pass "pointer on the pill opens the hover face" || fail "no hover face (state $(state))"
   local g; g=$(gap @in hover)
   [[ $g -ge 110 && $g -le 200 ]] && pass "hover after $g ms (dwell 120, <= 200)" || fail "hover after $g ms"
   local i; for i in $(seq 20); do [[ "$(shell_ipc islandSize)" == "320x44" ]] && break; sleep 0.05; done
   assert_eq "320x44" "$(shell_ipc islandSize)" "hover face is 320x44"
-  move "$AX" "$AY"; sleep 0.15
-  assert_eq "hover" "$(state)" "still hover 150 ms after leaving (grace)"
-  wait_state rest || wait_state media
+  # The grace is read from the shell's own stamps (an IPC poll at 150 ms raced the 300 ms grace).
+  move "$AX" "$AY"
+  wait_state rest
   g=$(gap @out "$(state)")
   [[ $g -ge 300 && $g -le 450 ]] && pass "back to $(state) $g ms after leaving (grace 300)" || fail "left hover after $g ms"
 }
@@ -107,13 +107,21 @@ t_clicks() {
   [[ "$(dnd)" != "$d0" ]] && pass "the same button works once armed" || fail "armed click did not toggle DND"
   yd click 0xC0; sleep 0.3
   assert_eq "$d0" "$(dnd)" "DND restored"
+  # Outside-click arming (same 500 ms as buttons): a click off the pill 100 ms after the control
+  # center opened does not close it; one after the window does.
+  shell_ipc closeSurface >/dev/null; sleep 0.6; move "$AX" "$AY"; sleep 0.3
+  shell_ipc toggleControlCenter >/dev/null; sleep 0.1; yd click 0xC0; sleep 0.3
+  assert_eq "expanded" "$(state)" "click outside 100 ms after opening does not close (arming)"
+  sleep 0.4; yd click 0xC0; wait_state rest
+  assert_eq "rest" "$(state)" "click outside once armed closes the control center"
+  shell_ipc toggleControlCenter >/dev/null; sleep 0.8
   # Esc closes; a click outside closes.
-  yd key 1:1 1:0; wait_state rest || wait_state media
-  [[ "$(state)" == rest || "$(state)" == media ]] && pass "Esc closes the control center" || fail "Esc left state $(state)"
+  yd key 1:1 1:0; wait_state rest
+  [[ "$(state)" == rest ]] && pass "Esc closes the control center" || fail "Esc left state $(state)"
   move "$PX" "$PY"; sleep 0.05; yd click 0xC1; wait_state notifCenter
   assert_eq "notifCenter" "$(state)" "right click opens the notification center"
   move "$AX" "$AY"; sleep 0.6; yd click 0xC0; sleep 0.6
-  [[ "$(state)" == rest || "$(state)" == media ]] && pass "click outside closes the notification center" || fail "click outside left $(state)"
+  [[ "$(state)" == rest ]] && pass "click outside closes the notification center" || fail "click outside left $(state)"
   move "$PX" "$PY"; sleep 0.05; yd click 0xC2; wait_state mediaSurface
   assert_eq "mediaSurface" "$(state)" "middle click opens the media surface"
   shell_ipc closeSurface >/dev/null; move "$AX" "$AY"; sleep 0.8
@@ -128,6 +136,16 @@ t_clicks() {
   [[ "$v1" != "$v0" ]] && pass "wheel on the pill changes the volume ($v0 -> $v1)" || fail "wheel left volume at $v0"
   assert_eq "osd" "$(state)" "wheel shows the OSD in the pill"
   move "$AX" "$AY"; sleep 1.6
+  # Media at rest is the activity circle (no capsule state); clicking it opens the media surface.
+  if python3 -c 'import dbus, gi' 2>/dev/null; then
+    python3 tests/fakempris.py & local fp=$!; sleep 3
+    assert_eq "rest" "$(state)" "a playing player keeps the island at rest (now-playing card has ended)"
+    assert_eq "true" "$(shell_ipc islandControlVisible activityCircle)" "the activity circle shows at rest"
+    pos=$(shell_ipc islandControl activityCircle)
+    move $((MX + ${pos% *})) $((MY + ${pos#* })); sleep 0.05; yd click 0xC0; wait_state mediaSurface
+    assert_eq "mediaSurface" "$(state)" "clicking the activity circle opens the media surface"
+    shell_ipc closeSurface >/dev/null; move "$AX" "$AY"; kill "$fp" 2>/dev/null; wait "$fp" 2>/dev/null; sleep 0.8
+  else pass "no dbus-python/PyGObject: activity circle click skipped"; fi
 }
 t_log() { local e; e=$(shell_log_errors); [[ -z "$e" ]] && pass "no errors in shell log" || fail "shell log errors: $e"; }
 run_test "files" t_files; run_test "hover" t_hover; run_test "rearm" t_rearm; run_test "clicks" t_clicks; run_test "log" t_log

@@ -15,11 +15,16 @@ t_media() {
   [[ -f $WAV ]] || ffmpeg -loglevel quiet -f lavfi -i anullsrc -t 20 "$WAV"
   shell_restart; sleep 3
   assert_eq "rest" "$(shell_ipc islandState)" "starts at rest"
-  play_start; sleep 3
-  assert_eq "media" "$(shell_ipc islandState)" "playing shows media"
+  local narrow; narrow=$(shell_ipc restWidth)
+  play_start; local i; for i in $(seq 40); do [[ "$(shell_ipc islandState)" == media ]] && break; sleep 0.05; done
+  assert_eq "media" "$(shell_ipc islandState)" "a new track shows the 1.1 s now-playing card"
+  sleep 2.5
+  assert_eq "rest" "$(shell_ipc islandState)" "then media sits at rest as the activity circle (no capsule)"
+  [[ "$(shell_ipc restWidth)" -gt "$narrow" ]] && pass "rest pill widens for the circle ($narrow -> $(shell_ipc restWidth))" || fail "rest width $(shell_ipc restWidth)"
   [[ -n "${HUSH_SHOT:-}" ]] && shell_screenshot "$HUSH_SHOT"
-  play_stop; sleep 6
-  assert_eq "rest" "$(shell_ipc islandState)" "stopping returns to rest"
+  play_stop; sleep 2
+  assert_eq "rest" "$(shell_ipc islandState)" "stopping stays at rest"
+  assert_eq "$narrow" "$(shell_ipc restWidth)" "and the circle goes"
   local e; e=$(shell_log_errors); [[ -z "$e" ]] && pass "no errors in shell log" || fail "shell log errors: $e"
 }
 run_test "media" t_media
