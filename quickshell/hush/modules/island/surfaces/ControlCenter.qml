@@ -121,11 +121,11 @@ FocusScope {
             Layout.fillWidth: true; Layout.preferredHeight: 44; spacing: 10
             ThemeStrip { Layout.fillWidth: true; Layout.preferredHeight: 44 }
             Rectangle {
-                Layout.preferredWidth: 112; Layout.preferredHeight: 44; radius: 12; color: Colors.surface_container_high
+                Layout.preferredWidth: 112; Layout.preferredHeight: 44; radius: 12; color: Colors.islandSurfaceHigh
                 Row {
                     anchors.centerIn: parent; spacing: 6
-                    Text { anchors.verticalCenter: parent.verticalCenter; text: "wallpaper"; color: Colors.on_surface; font.family: Theme.fontIcon; font.pixelSize: 18 }
-                    Text { anchors.verticalCenter: parent.verticalCenter; text: "Wallpapers"; color: Colors.on_surface; font.family: Theme.fontUi; font.pixelSize: 12; font.weight: Font.Medium }
+                    Text { anchors.verticalCenter: parent.verticalCenter; text: "wallpaper"; color: Colors.islandFg; font.family: Theme.fontIcon; font.pixelSize: 18 }
+                    Text { anchors.verticalCenter: parent.verticalCenter; text: "Wallpapers"; color: Colors.islandFg; font.family: Theme.fontUi; font.pixelSize: 12; font.weight: Font.Medium }
                 }
                 MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: cc.openWallpapers() }
             }

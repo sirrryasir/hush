@@ -103,7 +103,7 @@ t_storm() {
 t_center() {
   shell_ipc toggleDrawer; wait_state notifCenter
   assert_eq "notifCenter" "$(state)" "toggleDrawer opens the notification center in the island"
-  assert_eq "480x300" "$(shell_ipc islandSize)" "center is 480x300" 
+  assert_eq "480x260" "$(shell_ipc islandSize)" "center is 480x260" 
   local other; other=$(hyprctl layers -j | python3 -c '
 import json,sys
 d=json.load(sys.stdin)

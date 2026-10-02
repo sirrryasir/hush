@@ -39,24 +39,24 @@ Item {
             Text {
                 width: parent.width - dndChip.width - clearChip.width - 16; height: parent.height
                 verticalAlignment: Text.AlignVCenter
-                text: "Notifications"; color: Colors.on_surface
+                text: "Notifications"; color: Colors.islandFg
                 font.family: Theme.fontUi; font.pixelSize: 15; font.weight: Font.DemiBold
             }
             Rectangle {
                 id: dndChip
                 width: dndRow.implicitWidth + 20; height: 28; radius: 14
-                color: center.dnd ? Colors.primary : (dndHit.containsMouse ? Colors.surface_container_highest : Colors.surface_container_high)
+                color: center.dnd ? Colors.islandPrimary : (dndHit.containsMouse ? Colors.islandSurfaceHighest : Colors.islandSurfaceHigh)
                 Row {
                     id: dndRow; anchors.centerIn: parent; spacing: 4
                     Text {
                         anchors.verticalCenter: parent.verticalCenter
                         text: center.dnd ? "notifications_off" : "notifications_paused"
-                        color: center.dnd ? Colors.on_primary : Colors.on_surface_variant
+                        color: center.dnd ? Colors.islandOnPrimary : Colors.islandFgVar
                         font.family: Theme.fontIcon; font.pixelSize: 16
                     }
                     Text {
                         anchors.verticalCenter: parent.verticalCenter
-                        text: "Do not disturb"; color: center.dnd ? Colors.on_primary : Colors.on_surface
+                        text: "Do not disturb"; color: center.dnd ? Colors.islandOnPrimary : Colors.islandFg
                         font.family: Theme.fontUi; font.pixelSize: 12; font.weight: Font.Medium
                     }
                 }
@@ -66,9 +66,9 @@ Item {
                 id: clearChip
                 width: clearText.implicitWidth + 20; height: 28; radius: 14
                 opacity: center.count > 0 ? 1 : 0.4
-                color: clearHit.containsMouse && center.count > 0 ? Colors.surface_container_highest : Colors.surface_container_high
+                color: clearHit.containsMouse && center.count > 0 ? Colors.islandSurfaceHighest : Colors.islandSurfaceHigh
                 Text {
-                    id: clearText; anchors.centerIn: parent; text: "Clear all"; color: Colors.on_surface
+                    id: clearText; anchors.centerIn: parent; text: "Clear all"; color: Colors.islandFg
                     font.family: Theme.fontUi; font.pixelSize: 12; font.weight: Font.Medium
                 }
                 MouseArea { id: clearHit; anchors.fill: parent; hoverEnabled: true; enabled: center.count > 0; onClicked: center.host.clearAll() }
@@ -96,13 +96,13 @@ Item {
                             width: parent.width; height: 22
                             Text {
                                 anchors.verticalCenter: parent.verticalCenter
-                                text: grp.open ? "expand_more" : "chevron_right"; color: Colors.on_surface_variant
+                                text: grp.open ? "expand_more" : "chevron_right"; color: Colors.islandFgVar
                                 font.family: Theme.fontIcon; font.pixelSize: 18
                             }
                             Text {
                                 x: 22; anchors.verticalCenter: parent.verticalCenter
                                 text: grp.modelData.app + "  ·  " + grp.modelData.items.length
-                                color: Colors.on_surface_variant
+                                color: Colors.islandFgVar
                                 font.family: Theme.fontUi; font.pixelSize: 12; font.weight: Font.Medium
                             }
                             MouseArea { anchors.fill: parent; onClicked: center.toggleGroup(grp.modelData.app) }
@@ -121,15 +121,16 @@ Item {
         }
 
         Column {
-            anchors.centerIn: parent; spacing: 6; visible: center.count === 0
+            x: (parent.width - width) / 2; y: head.height + 10 + (parent.height - head.height - 10 - height) / 2
+            spacing: 6; visible: center.count === 0
             Text {
                 anchors.horizontalCenter: parent.horizontalCenter
-                text: "notifications"; color: Colors.on_surface_variant; opacity: 0.5
+                text: "notifications"; color: Colors.islandFgVar; opacity: 0.5
                 font.family: Theme.fontIcon; font.pixelSize: 36
             }
             Text {
                 anchors.horizontalCenter: parent.horizontalCenter
-                text: "No notifications"; color: Colors.on_surface_variant
+                text: "No notifications"; color: Colors.islandFgVar
                 font.family: Theme.fontUi; font.pixelSize: 13
             }
         }

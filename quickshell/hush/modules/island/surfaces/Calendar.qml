@@ -46,7 +46,7 @@ Item {
             Text {
                 width: parent.width - 56; height: parent.height
                 verticalAlignment: Text.AlignVCenter
-                text: cal.monthTitle; color: Colors.on_surface
+                text: cal.monthTitle; color: Colors.islandFg
                 font.family: Theme.fontUi; font.pixelSize: 15; font.weight: Font.DemiBold
             }
             Repeater {
@@ -54,9 +54,9 @@ Item {
                 delegate: Rectangle {
                     required property var modelData
                     width: 28; height: 28; radius: 14
-                    color: hit.containsMouse ? Colors.surface_container_high : "transparent"
+                    color: hit.containsMouse ? Colors.islandSurfaceHigh : "transparent"
                     Text {
-                        anchors.centerIn: parent; text: modelData.g; color: Colors.on_surface_variant
+                        anchors.centerIn: parent; text: modelData.g; color: Colors.islandFgVar
                         font.family: Theme.fontIcon; font.pixelSize: 20
                     }
                     MouseArea { id: hit; anchors.fill: parent; hoverEnabled: true; onClicked: cal.shift(modelData.d) }
@@ -78,7 +78,7 @@ Item {
                 delegate: Text {
                     required property string modelData
                     width: grid.cw; height: 20; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter
-                    text: modelData; color: Colors.on_surface_variant; opacity: 0.7
+                    text: modelData; color: Colors.islandFgVar; opacity: 0.7
                     font.family: Theme.fontUi; font.pixelSize: 11; font.weight: Font.Medium
                 }
             }
@@ -94,11 +94,11 @@ Item {
                     width: grid.cw; height: cal.cellH
                     Rectangle {
                         anchors.centerIn: parent; width: Math.min(parent.width, parent.height) - 2; height: width; radius: width / 2
-                        color: Colors.primary; visible: parent.isToday
+                        color: Colors.islandPrimary; visible: parent.isToday
                     }
                     Text {
                         anchors.centerIn: parent; text: parent.d.getDate()
-                        color: parent.isToday ? Colors.on_primary : Colors.on_surface
+                        color: parent.isToday ? Colors.islandOnPrimary : Colors.islandFg
                         opacity: parent.isToday || parent.inMonth ? 1 : 0.32
                         font.family: Theme.fontUi; font.pixelSize: 13
                         font.weight: parent.isToday ? Font.DemiBold : Font.Normal
@@ -112,14 +112,14 @@ Item {
             visible: cal.hasUpcoming
             anchors.bottom: parent.bottom; width: parent.width; spacing: 1
             Text {
-                text: "Upcoming"; color: Colors.on_surface_variant; opacity: 0.7
+                text: "Upcoming"; color: Colors.islandFgVar; opacity: 0.7
                 font.family: Theme.fontUi; font.pixelSize: 11; font.weight: Font.Medium
             }
             Repeater {
                 model: cal.upcoming.slice(0, 3)
                 delegate: Text {
                     required property string modelData
-                    width: parent.width; elide: Text.ElideRight; text: modelData; color: Colors.on_surface
+                    width: parent.width; elide: Text.ElideRight; text: modelData; color: Colors.islandFg
                     font.family: Theme.fontUi; font.pixelSize: 12
                 }
             }

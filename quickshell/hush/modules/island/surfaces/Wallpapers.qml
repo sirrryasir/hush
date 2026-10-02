@@ -65,7 +65,7 @@ Item {
     GridView {
         id: grid
         anchors.fill: parent; anchors.margins: 16
-        cellWidth: 196; cellHeight: 99 + 24 + 8
+        cellWidth: 208; cellHeight: 112 + 24 + 8
         clip: true
         model: root.files
         keyNavigationEnabled: true
@@ -87,31 +87,30 @@ Item {
 
             ClippingRectangle {
                 id: thumb
-                x: 4; y: 3; width: 176; height: 99; radius: 14
-                color: Colors.surface_container_high
+                x: 4; y: 3; width: 200; height: 112; radius: 14
+                color: Colors.islandSurfaceHigh
                 Image {
                     anchors.fill: parent
                     source: Qt.resolvedUrl("file://" + encodeURI(cell.modelData).replace(/#/g, "%23"))
-                    sourceSize: Qt.size(352, 198)
+                    sourceSize: Qt.size(400, 224)
                     fillMode: Image.PreserveAspectCrop
                     asynchronous: true
                 }
                 Rectangle {
                     anchors.fill: parent; radius: 14; color: "transparent"
-                    border.width: cell.current ? 2 : (cell.sel ? 2 : 0)
-                    border.color: cell.current ? Colors.primary : Colors.on_surface
-                    opacity: cell.sel || cell.current ? 1 : 0
+                    border.width: cell.current || cell.sel ? 2 : 1
+                    border.color: cell.current ? Colors.islandPrimary : cell.sel ? Colors.islandFg : Colors.islandOutline
                 }
             }
             Text {
-                x: 4; y: 99 + 6; width: 176
+                x: 4; y: 112 + 8; width: 200
                 text: {
                     const parts = cell.modelData.split("/")
                     const base = parts.pop().replace(/\.[^.]+$/, "")
                     return base === "wallpaper" ? parts.pop() : base
                 }
                 elide: Text.ElideRight
-                color: cell.current ? Colors.primary : cell.sel ? Colors.on_surface : Colors.on_surface_variant
+                color: cell.current ? Colors.islandPrimary : cell.sel ? Colors.islandFg : Colors.islandFgVar
                 font.family: Theme.fontUi; font.pixelSize: 11
             }
             MouseArea {

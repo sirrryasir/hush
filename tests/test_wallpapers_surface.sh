@@ -11,7 +11,7 @@ t_wallpapers() {
   local up=0; for _ in $(seq 25); do sleep 0.3; [[ -n "$(hq size)" ]] && { up=1; break; }; done
   [[ $up == 1 ]] && pass "harness starts" || { fail "harness did not start"; kill "$pid" 2>/dev/null; rm -rf "$stub"; return; }
   hyprctl layers -j | grep -q '"namespace": "hush-harness-wallpapers"' && pass "layer present" || fail "layer missing"
-  assert_eq "620x340" "$(hq size)" "declared size 620x340"
+  assert_eq "656x320" "$(hq size)" "declared size 656x320"
   sleep 0.5
   local n; n=$(hq count)
   [[ "${n:-0}" -ge 6 ]] && pass "count >= 6 ($n)" || fail "count >= 6 (got '$n')"

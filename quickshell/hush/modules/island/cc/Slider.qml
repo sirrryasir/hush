@@ -17,7 +17,7 @@ Item {
         id: glyph
         anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter
         width: 20; horizontalAlignment: Text.AlignHCenter
-        text: root.icon; color: Colors.darkOnSurface
+        text: root.icon; color: Colors.islandFg
         font.family: Theme.fontIcon; font.pixelSize: 18
     }
     Item {
@@ -26,15 +26,15 @@ Item {
         anchors.verticalCenter: parent.verticalCenter; height: 16
         Rectangle {
             anchors.verticalCenter: parent.verticalCenter; width: parent.width; height: 6; radius: 3
-            color: Colors.surface_container_highest
+            color: Colors.islandSurfaceHighest
         }
         Rectangle {
             anchors.verticalCenter: parent.verticalCenter; height: 6; radius: 3
             width: root.shown * (track.width - 16) + 8
-            color: Colors.primary
+            color: Colors.islandPrimary
         }
         Rectangle {
-            width: 16; height: 16; radius: 8; color: Colors.primary
+            width: 16; height: 16; radius: 8; color: Colors.islandPrimary
             anchors.verticalCenter: parent.verticalCenter
             x: root.shown * (track.width - 16)
         }

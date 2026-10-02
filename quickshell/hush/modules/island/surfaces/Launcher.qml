@@ -121,14 +121,14 @@ FocusScope {
                 anchors { left: parent.left; leftMargin: 4; verticalCenter: parent.verticalCenter }
                 text: root.effectiveMode === "calc" ? "calculate" : root.effectiveMode === "clip" ? "content_paste"
                     : root.effectiveMode === "windows" ? "select_window" : "search"
-                font.family: Theme.fontIcon; font.pixelSize: 20; color: Colors.on_surface_variant
+                font.family: Theme.fontIcon; font.pixelSize: 20; color: Colors.islandFgVar
             }
             TextInput {
                 id: input
                 anchors { left: glyph.right; leftMargin: 10; right: parent.right; verticalCenter: parent.verticalCenter }
                 font.family: Theme.fontUi; font.pixelSize: Theme.textLauncher
-                color: Colors.on_surface
-                selectionColor: Colors.primary; selectedTextColor: Colors.on_primary
+                color: Colors.islandFg
+                selectionColor: Colors.islandPrimary; selectedTextColor: Colors.islandOnPrimary
                 clip: true
                 focus: true
                 onTextEdited: { root.query = text; root.currentIndex = 0 }
@@ -145,7 +145,7 @@ FocusScope {
                     anchors.fill: parent; verticalAlignment: Text.AlignVCenter
                     visible: input.text.length === 0
                     text: root.mode === "windows" ? "Switch to a window" : "Search apps, @ windows, = calc, ; clipboard"
-                    font: input.font; color: Colors.on_surface_variant
+                    font: input.font; color: Colors.islandFgVar
                 }
             }
         }
@@ -174,7 +174,7 @@ FocusScope {
             Text {
                 anchors.centerIn: parent; visible: list.count === 0
                 text: root.effectiveMode === "clip" ? (root.clipAvailable ? "Clipboard is empty" : "cliphist not installed") : "No matches"
-                font.family: Theme.fontUi; font.pixelSize: Theme.textLauncher; color: Colors.on_surface_variant
+                font.family: Theme.fontUi; font.pixelSize: Theme.textLauncher; color: Colors.islandFgVar
             }
         }
     }

@@ -11,7 +11,7 @@ Rectangle {
     readonly property var extraActions: notif && notif.actions ? notif.actions.filter(a => a.identifier !== "default") : []
     implicitHeight: content.implicitHeight + 20
     radius: 14
-    color: area.containsMouse ? Colors.surface_container_highest : Colors.surface_container_high
+    color: area.containsMouse ? Colors.islandSurfaceHighest : Colors.islandSurfaceHigh
 
     MouseArea {
         id: area
@@ -29,7 +29,7 @@ Rectangle {
         }
         Text {
             anchors.centerIn: parent; visible: !icon.visible
-            text: "notifications"; color: Colors.on_surface_variant
+            text: "notifications"; color: Colors.islandFgVar
             font.family: Theme.fontIcon; font.pixelSize: 20
         }
     }
@@ -43,7 +43,7 @@ Rectangle {
             width: parent.width
             text: card.notif ? card.notif.summary : ""
             elide: Text.ElideRight; maximumLineCount: 1; textFormat: Text.PlainText
-            color: Colors.on_surface
+            color: Colors.islandFg
             font.family: Theme.fontUi; font.pixelSize: 13; font.weight: Font.Medium
         }
         Text {
@@ -51,7 +51,7 @@ Rectangle {
             visible: text !== ""
             text: card.notif ? card.notif.body : ""
             wrapMode: Text.Wrap; elide: Text.ElideRight; maximumLineCount: 3; textFormat: Text.PlainText
-            color: Colors.on_surface_variant
+            color: Colors.islandFgVar
             font.family: Theme.fontUi; font.pixelSize: 12
         }
         Flow {
@@ -63,11 +63,11 @@ Rectangle {
                 delegate: Rectangle {
                     required property var modelData
                     width: actText.implicitWidth + 20; height: 26; radius: 13
-                    color: actArea.containsMouse ? Colors.secondary_container : Colors.surface_container
+                    color: actArea.containsMouse ? Colors.islandSecondaryContainer : Colors.islandSurface
                     Text {
                         id: actText
                         anchors.centerIn: parent; text: modelData.text
-                        color: Colors.on_secondary_container
+                        color: Colors.islandOnSecondaryContainer
                         font.family: Theme.fontUi; font.pixelSize: 12; font.weight: Font.Medium
                     }
                     MouseArea { id: actArea; anchors.fill: parent; hoverEnabled: true; onClicked: modelData.invoke() }
@@ -78,7 +78,7 @@ Rectangle {
 
     Text {
         anchors { right: parent.right; top: parent.top; rightMargin: 12; topMargin: 10 }
-        text: "close"; color: closeArea.containsMouse ? Colors.on_surface : Colors.on_surface_variant
+        text: "close"; color: closeArea.containsMouse ? Colors.islandFg : Colors.islandFgVar
         font.family: Theme.fontIcon; font.pixelSize: 18
         MouseArea { id: closeArea; anchors.fill: parent; anchors.margins: -6; hoverEnabled: true; onClicked: card.host.dismiss(card.notif) }
     }

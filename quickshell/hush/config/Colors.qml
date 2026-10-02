@@ -19,6 +19,25 @@ Singleton {
     readonly property color darkPrimary: dark.primary || primary
     readonly property color darkError: dark.error || error
 
+
+    // Island roles: the dark-scheme value of each key (the island is black in every theme), falling back
+    // to the live key until Colors.json carries a dark set. Plain properties so they cross-fade too.
+    property color islandFg: dark.on_surface || on_surface
+    property color islandFgVar: dark.on_surface_variant || on_surface_variant
+    property color islandSurface: dark.surface_container || surface_container
+    property color islandSurfaceHigh: dark.surface_container_high || surface_container_high
+    property color islandSurfaceHighest: dark.surface_container_highest || surface_container_highest
+    property color islandOutline: dark.outline || outline
+    property color islandPrimary: dark.primary || primary
+    property color islandOnPrimary: dark.on_primary || on_primary
+    property color islandPrimaryContainer: dark.primary_container || primary_container
+    property color islandOnPrimaryContainer: dark.on_primary_container || on_primary_container
+    property color islandSecondaryContainer: dark.secondary_container || secondary_container
+    property color islandOnSecondaryContainer: dark.on_secondary_container || on_secondary_container
+    property color islandError: dark.error || error
+    property color islandErrorContainer: dark.error_container || error_container
+    property color islandShadow: dark.shadow || shadow
+
     // Defaults are the harbor palette so the shell renders before Colors.json exists.
     property color primary: "#9cd1c1"
     property color on_primary: "#00382d"
@@ -125,6 +144,21 @@ Singleton {
     Behavior on tertiary_fixed_dim { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
     Behavior on on_tertiary_fixed { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
     Behavior on on_tertiary_fixed_variant { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on islandFg { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on islandFgVar { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on islandSurface { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on islandSurfaceHigh { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on islandSurfaceHighest { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on islandOutline { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on islandPrimary { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on islandOnPrimary { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on islandPrimaryContainer { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on islandOnPrimaryContainer { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on islandSecondaryContainer { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on islandOnSecondaryContainer { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on islandError { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on islandErrorContainer { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
+    Behavior on islandShadow { enabled: root.fade; ColorAnimation { duration: root.fadeMs } }
 
     function alpha(c, a) { return Qt.rgba(c.r, c.g, c.b, a) }
 

@@ -21,7 +21,7 @@ t_open() {
   shell_ipc toggleWallpapers; wait_state wallpapers
   assert_eq "true" "$(shell_ipc wallpapersVisible)" "toggleWallpapers opens the grid in the island"
   local i; for i in $(seq 20); do [[ "$(shell_ipc islandSize)" == "624x340" ]] && break; sleep 0.05; done
-  assert_eq "624x340" "$(shell_ipc islandSize)" "the pill grows to the grid (620x340 on the 8 px grid)"
+  assert_eq "656x320" "$(shell_ipc islandSize)" "the pill grows to the grid (656x320 on the 8 px grid)"
   wait_ipc wallpapersCount
   local n; n=$(shell_ipc wallpapersCount)
   [[ "$n" -ge 6 ]] && pass "wallpapersCount $n >= 6" || fail "wallpapersCount $n"
@@ -62,8 +62,8 @@ t_close() {
 t_settings() {
   bin/hush settings; wait_state settings
   assert_eq "true" "$(shell_ipc settingsVisible)" "hush settings opens the settings surface"
-  local i; for i in $(seq 20); do [[ "$(shell_ipc islandSize)" == "560x320" ]] && break; sleep 0.05; done
-  assert_eq "560x320" "$(shell_ipc islandSize)" "settings is 560x320"
+  local i; for i in $(seq 20); do [[ "$(shell_ipc islandSize)" == "560x288" ]] && break; sleep 0.05; done
+  assert_eq "560x288" "$(shell_ipc islandSize)" "settings is 560x288"
   grim "$EVI/settings.png" 2>/dev/null
   bin/hush settings; wait_state rest || wait_state media
   assert_eq "false" "$(shell_ipc settingsVisible)" "hush settings again closes it"

@@ -14,9 +14,9 @@ Rectangle {
 
     implicitHeight: 56
     radius: 14
-    color: checked ? Colors.primary : Colors.surface_container_high
+    color: checked ? Colors.islandPrimary : Colors.islandSurfaceHigh
     Behavior on color { ColorAnimation { duration: Theme.durationShort } }
-    readonly property color ink: checked ? Colors.on_primary : Colors.on_surface
+    readonly property color ink: checked ? Colors.islandOnPrimary : Colors.islandFg
 
     Row {
         anchors.fill: parent; anchors.leftMargin: 14; anchors.rightMargin: 12; spacing: 12

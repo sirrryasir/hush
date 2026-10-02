@@ -11,7 +11,7 @@ t_settings() {
   local up=0; for _ in $(seq 20); do sleep 0.3; [[ -n "$(hq size)" ]] && { up=1; break; }; done
   [[ $up == 1 ]] && pass "harness starts" || { fail "harness did not start"; kill "$pid" 2>/dev/null; return; }
   hyprctl layers -j | grep -q '"namespace": "hush-harness-settings"' && pass "layer hush-harness-settings present" || fail "layer missing"
-  assert_eq "560x320" "$(hq size)" "declared size 560x320"
+  assert_eq "560x288" "$(hq size)" "declared size 560x288"
   assert_eq "$(tr -d '[:space:]' < VERSION)" "$(hq version)" "About reads VERSION"
   hq previewWidth 200 >/dev/null; sleep 0.2
   assert_eq "200" "$(hq shownWidth)" "drag previews without writing"

@@ -15,7 +15,7 @@ Item {
     Rectangle {
         anchors.fill: parent
         radius: 12
-        color: row.selected ? Colors.alpha(Colors.primary, 0.16) : "transparent"
+        color: row.selected ? Colors.alpha(Colors.islandPrimary, 0.16) : "transparent"
     }
     IconImage {
         id: icon
@@ -32,7 +32,7 @@ Item {
         text: row.entry ? row.entry.hint : ""
         font.family: Theme.fontUi
         font.pixelSize: 12
-        color: Colors.on_surface_variant
+        color: Colors.islandFgVar
     }
     Text {
         anchors { left: icon.right; leftMargin: 12; right: hint.left; rightMargin: 12; verticalCenter: parent.verticalCenter }
@@ -40,7 +40,7 @@ Item {
         text: row.entry ? row.entry.name : ""
         font.family: Theme.fontUi
         font.pixelSize: Theme.textLauncher
-        color: row.selected ? Colors.primary : Colors.on_surface
+        color: row.selected ? Colors.islandPrimary : Colors.islandFg
     }
     MouseArea {
         anchors.fill: parent

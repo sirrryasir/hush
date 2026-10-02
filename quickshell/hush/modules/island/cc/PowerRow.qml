@@ -23,7 +23,7 @@ Row {
     Text {
         visible: row.armed !== ""
         anchors.verticalCenter: parent.verticalCenter
-        text: "again to confirm"; color: Colors.error
+        text: "again to confirm"; color: Colors.islandError
         font.family: Theme.fontUi; font.pixelSize: 12
     }
     Repeater {
@@ -33,10 +33,10 @@ Row {
             required property var modelData
             readonly property bool isArmed: row.armed === modelData.id
             width: 32; height: 32; radius: 16
-            color: isArmed ? Colors.error_container : Colors.surface_container_high
+            color: isArmed ? Colors.islandErrorContainer : Colors.islandSurfaceHigh
             Text {
                 anchors.centerIn: parent; text: btn.modelData.glyph
-                color: btn.isArmed ? Colors.error : Colors.on_surface
+                color: btn.isArmed ? Colors.islandError : Colors.islandFg
                 font.family: Theme.fontIcon; font.pixelSize: 18
             }
             MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: row.press(btn.modelData) }

@@ -24,30 +24,30 @@ Item {
         anchors.left: parent.left; anchors.right: parent.right; anchors.top: parent.top
         height: 36; spacing: 8
         Rectangle {
-            Layout.preferredWidth: 36; Layout.preferredHeight: 36; radius: 18; color: Colors.surface_container_high
-            Text { anchors.centerIn: parent; text: "arrow_back"; color: Colors.on_surface; font.family: Theme.fontIcon; font.pixelSize: 20 }
+            Layout.preferredWidth: 36; Layout.preferredHeight: 36; radius: 18; color: Colors.islandSurfaceHigh
+            Text { anchors.centerIn: parent; text: "arrow_back"; color: Colors.islandFg; font.family: Theme.fontIcon; font.pixelSize: 20 }
             MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: page.back() }
         }
         Text {
             Layout.fillWidth: true; Layout.preferredHeight: 36
-            verticalAlignment: Text.AlignVCenter; text: page.title; color: Colors.darkOnSurface
+            verticalAlignment: Text.AlignVCenter; text: page.title; color: Colors.islandFg
             font.family: Theme.fontUi; font.pixelSize: 16; font.weight: Font.DemiBold
         }
         Rectangle {
-            Layout.preferredWidth: 36; Layout.preferredHeight: 36; radius: 18; color: Colors.surface_container_high
+            Layout.preferredWidth: 36; Layout.preferredHeight: 36; radius: 18; color: Colors.islandSurfaceHigh
             Text {
-                id: rg; anchors.centerIn: parent; text: "refresh"; color: Colors.on_surface; font.family: Theme.fontIcon; font.pixelSize: 20
+                id: rg; anchors.centerIn: parent; text: "refresh"; color: Colors.islandFg; font.family: Theme.fontIcon; font.pixelSize: 20
                 RotationAnimator on rotation { running: page.busy; from: 0; to: 360; duration: 900; loops: Animation.Infinite; onRunningChanged: if (!running) rg.rotation = 0 }
             }
             MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: page.refresh() }
         }
         Rectangle {
             visible: page.switchable
-            Layout.preferredWidth: 44; Layout.preferredHeight: 36; radius: 18; color: page.switchOn ? Colors.primary : Colors.surface_container_highest
+            Layout.preferredWidth: 44; Layout.preferredHeight: 36; radius: 18; color: page.switchOn ? Colors.islandPrimary : Colors.islandSurfaceHighest
             Rectangle {
                 width: 24; height: 24; radius: 12; y: 6
                 x: page.switchOn ? parent.width - width - 6 : 6
-                color: page.switchOn ? Colors.on_primary : Colors.on_surface_variant
+                color: page.switchOn ? Colors.islandOnPrimary : Colors.islandFgVar
                 Behavior on x { NumberAnimation { duration: Theme.durationShort } }
             }
             MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: page.switched() }
@@ -64,8 +64,8 @@ Item {
             id: row
             required property var modelData
             width: list.width; height: 40; radius: 12
-            color: modelData.active ? Colors.primary_container : Colors.surface_container_high
-            readonly property color ink: modelData.active ? Colors.on_primary_container : Colors.on_surface
+            color: modelData.active ? Colors.islandPrimaryContainer : Colors.islandSurfaceHigh
+            readonly property color ink: modelData.active ? Colors.islandOnPrimaryContainer : Colors.islandFg
             Text {
                 id: lead; anchors.left: parent.left; anchors.leftMargin: 14; anchors.verticalCenter: parent.verticalCenter
                 text: modelData.icon; color: row.ink; font.family: Theme.fontIcon; font.pixelSize: 20
@@ -85,7 +85,7 @@ Item {
         }
         Text {
             anchors.centerIn: parent; visible: list.count === 0
-            text: page.busy ? "Scanning..." : page.emptyText; color: Colors.darkOnSurface; opacity: 0.7
+            text: page.busy ? "Scanning..." : page.emptyText; color: Colors.islandFg; opacity: 0.7
             font.family: Theme.fontUi; font.pixelSize: 13
         }
     }

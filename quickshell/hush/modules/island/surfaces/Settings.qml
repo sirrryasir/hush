@@ -44,7 +44,7 @@ FocusScope {
     }
 
     component Label: Text {
-        color: Colors.on_surface; font.family: Theme.fontUi; font.pixelSize: 12
+        color: Colors.islandFg; font.family: Theme.fontUi; font.pixelSize: 12
         verticalAlignment: Text.AlignVCenter
     }
     component Chip: Rectangle {
@@ -52,10 +52,10 @@ FocusScope {
         property string text; property bool on: false
         signal clicked()
         implicitWidth: lbl.implicitWidth + 24; implicitHeight: 26; radius: 13
-        color: on ? Colors.primary : (ma.containsMouse ? Colors.surface_container_high : Colors.surface_container)
+        color: on ? Colors.islandPrimary : (ma.containsMouse ? Colors.islandSurfaceHigh : Colors.islandSurface)
         Text {
             id: lbl; anchors.centerIn: parent; text: chip.text
-            color: chip.on ? Colors.on_primary : Colors.on_surface
+            color: chip.on ? Colors.islandOnPrimary : Colors.islandFg
             font.family: Theme.fontUi; font.pixelSize: 12; font.weight: Font.Medium
         }
         MouseArea { id: ma; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: chip.clicked() }
@@ -65,10 +65,10 @@ FocusScope {
         property bool on: false
         signal toggled(bool v)
         implicitWidth: 38; implicitHeight: 22; radius: 11
-        color: on ? Colors.primary : Colors.surface_container_highest
+        color: on ? Colors.islandPrimary : Colors.islandSurfaceHighest
         Rectangle {
             width: 16; height: 16; radius: 8; y: 3; x: sw.on ? 19 : 3
-            color: sw.on ? Colors.on_primary : Colors.on_surface_variant
+            color: sw.on ? Colors.islandOnPrimary : Colors.islandFgVar
             Behavior on x { NumberAnimation { duration: Theme.durationShort } }
         }
         MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: sw.toggled(!sw.on) }
@@ -76,21 +76,21 @@ FocusScope {
     component Row2: Item {
         property string title
         default property alias content: slot.data
-        Layout.fillWidth: true; Layout.preferredHeight: 30
-        Label { text: parent.title; width: 120; height: parent.height; color: Colors.on_surface }
+        Layout.fillWidth: true; Layout.preferredHeight: parent && parent.rowH ? parent.rowH : 30
+        Label { text: parent.title; width: 120; height: parent.height; color: Colors.islandFg }
         Item { id: slot; x: 124; width: parent.width - 124; height: parent.height }
     }
     component Slide: Item {
         id: sl
         property string key; property real from: 0; property real to: 100; property string unit: "px"
         readonly property real cur: { const v = key ? root.value(key) : from; return v === undefined ? from : v }
-        height: 30
-        Rectangle { id: track; x: 0; y: 13; width: parent.width - 54; height: 4; radius: 2; color: Colors.surface_container_highest
-            Rectangle { width: Math.max(0, Math.min(1, (sl.cur - sl.from) / (sl.to - sl.from))) * parent.width; height: 4; radius: 2; color: Colors.primary }
-            Rectangle { x: Math.max(0, Math.min(1, (sl.cur - sl.from) / (sl.to - sl.from))) * parent.width - 7; y: -5; width: 14; height: 14; radius: 7; color: Colors.primary }
+        height: 30; anchors.verticalCenter: parent ? parent.verticalCenter : undefined
+        Rectangle { id: track; x: 0; y: 13; width: parent.width - 54; height: 4; radius: 2; color: Colors.islandSurfaceHighest
+            Rectangle { width: Math.max(0, Math.min(1, (sl.cur - sl.from) / (sl.to - sl.from))) * parent.width; height: 4; radius: 2; color: Colors.islandPrimary }
+            Rectangle { x: Math.max(0, Math.min(1, (sl.cur - sl.from) / (sl.to - sl.from))) * parent.width - 7; y: -5; width: 14; height: 14; radius: 7; color: Colors.islandPrimary }
         }
         Label { x: parent.width - 48; width: 48; height: parent.height; horizontalAlignment: Text.AlignRight
-            text: Math.round(sl.cur) + " " + sl.unit; color: Colors.on_surface_variant; font.features: { "tnum": 1 } }
+            text: Math.round(sl.cur) + " " + sl.unit; color: Colors.islandFgVar; font.features: { "tnum": 1 } }
         function at(mx) { return Math.round(sl.from + Math.max(0, Math.min(1, mx / track.width)) * (sl.to - sl.from)) }
         MouseArea {
             anchors.fill: parent; anchors.rightMargin: 54; cursorShape: Qt.PointingHandCursor
@@ -104,12 +104,12 @@ FocusScope {
         property string key; property var options: []
         readonly property string cur: String(Cfg.Settings.island[key])
         property bool open: false
-        height: 30; width: 140
+        height: 30; width: 140; anchors.verticalCenter: parent ? parent.verticalCenter : undefined
         Rectangle {
-            anchors.fill: parent; radius: 8; color: Colors.surface_container
+            anchors.fill: parent; radius: 8; color: Colors.islandSurface
             Label { x: 10; width: parent.width - 30; height: parent.height; text: dd.cur }
             Text { anchors.right: parent.right; anchors.rightMargin: 6; anchors.verticalCenter: parent.verticalCenter
-                text: "expand_more"; color: Colors.on_surface_variant; font.family: Theme.fontIcon; font.pixelSize: 18 }
+                text: "expand_more"; color: Colors.islandFgVar; font.family: Theme.fontIcon; font.pixelSize: 18 }
             MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: dd.open = !dd.open }
         }
         Column {
@@ -118,7 +118,7 @@ FocusScope {
                 model: dd.options
                 delegate: Rectangle {
                     required property string modelData
-                    width: dd.width; height: 26; color: hov.containsMouse ? Colors.surface_container_highest : Colors.surface_container_high
+                    width: dd.width; height: 26; color: hov.containsMouse ? Colors.islandSurfaceHighest : Colors.islandSurfaceHigh
                     Label { x: 10; height: parent.height; text: parent.modelData; font.weight: parent.modelData === dd.cur ? Font.DemiBold : Font.Normal }
                     MouseArea { id: hov; anchors.fill: parent; hoverEnabled: true
                         onClicked: { Cfg.Settings.set("island." + dd.key, parent.modelData); dd.open = false } }
@@ -135,9 +135,9 @@ FocusScope {
             delegate: Rectangle {
                 required property var modelData
                 width: 120; height: 32; radius: 10
-                color: root.page === modelData.id ? Colors.surface_container_high : "transparent"
+                color: root.page === modelData.id ? Colors.islandSurfaceHigh : "transparent"
                 Text { x: 8; anchors.verticalCenter: parent.verticalCenter; text: modelData.glyph
-                    color: root.page === modelData.id ? Colors.primary : Colors.on_surface_variant; font.family: Theme.fontIcon; font.pixelSize: 18 }
+                    color: root.page === modelData.id ? Colors.islandPrimary : Colors.islandFgVar; font.family: Theme.fontIcon; font.pixelSize: 18 }
                 Label { x: 34; height: parent.height; text: modelData.label; font.weight: root.page === modelData.id ? Font.DemiBold : Font.Normal }
                 MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: root.page = modelData.id }
             }
@@ -145,10 +145,11 @@ FocusScope {
     }
 
     Item {
-        x: 148; y: 14; width: parent.width - 160; height: parent.height - 28
+        x: 148; y: 14; width: parent.width - 160; height: parent.height - 28 - (root.warning !== "" ? 24 : 0)
 
         ColumnLayout {
-            visible: root.page === "island"; width: parent.width; spacing: 2
+            visible: root.page === "island"; width: parent.width; height: parent.height; spacing: 0
+            readonly property real rowH: Math.min(44, height / 6)
             Row2 { title: "Mode"
                 Row { spacing: 6; anchors.verticalCenter: parent.verticalCenter
                     Repeater { model: ["reserve", "overlay", "autohide"]
@@ -162,7 +163,8 @@ FocusScope {
         }
 
         ColumnLayout {
-            visible: root.page === "behaviour"; width: parent.width; spacing: 2
+            visible: root.page === "behaviour"; width: parent.width; height: parent.height; spacing: 0
+            readonly property real rowH: Math.min(44, height / 7)
             Row2 { title: "Hover face"; Switch { anchors.verticalCenter: parent.verticalCenter; on: !!Cfg.Settings.island.hoverFace; onToggled: v => Cfg.Settings.set("island.hoverFace", v) } }
             Row2 { title: "Live activities"; Switch { anchors.verticalCenter: parent.verticalCenter; on: !!Cfg.Settings.island.liveActivities; onToggled: v => Cfg.Settings.set("island.liveActivities", v) } }
             Row2 { title: "Reduced motion"; Switch { anchors.verticalCenter: parent.verticalCenter; on: !!Cfg.Settings.island.reducedMotion; onToggled: v => Cfg.Settings.set("island.reducedMotion", v) } }
@@ -173,7 +175,8 @@ FocusScope {
         }
 
         ColumnLayout {
-            visible: root.page === "modules"; width: parent.width; spacing: 2
+            visible: root.page === "modules"; width: parent.width; height: parent.height; spacing: 0
+            readonly property real rowH: Math.min(44, height / 6)
             Repeater {
                 model: ["media", "notifications", "calendar", "launcher", "wallpapers", "settings"]
                 delegate: Row2 {
@@ -186,17 +189,17 @@ FocusScope {
         }
 
         ColumnLayout {
-            visible: root.page === "theme"; width: parent.width; spacing: 10
+            visible: root.page === "theme"; width: parent.width; spacing: 14
             Label { text: "Theme"; font.weight: Font.DemiBold }
-            ThemeStrip { Layout.fillWidth: true; Layout.preferredHeight: 44 }
+            ThemeStrip { Layout.fillWidth: true; Layout.preferredHeight: 72 }
             Chip { text: "Wallpapers"; onClicked: root.openWallpapers() }
         }
 
         ColumnLayout {
-            visible: root.page === "about"; width: parent.width; spacing: 6
+            visible: root.page === "about"; width: parent.width; spacing: 8
             Label { text: "Hush"; font.pixelSize: 20; font.weight: Font.DemiBold }
-            Label { text: "Version " + root.version; color: Colors.on_surface_variant }
-            Label { text: "A quiet shell for Hyprland and Quickshell."; color: Colors.on_surface_variant }
+            Label { text: "Version " + root.version; color: Colors.islandFgVar }
+            Label { text: "A quiet shell for Hyprland and Quickshell."; color: Colors.islandFgVar }
         }
     }
 
@@ -205,7 +208,7 @@ FocusScope {
         objectName: "settingsWarning"
         visible: root.warning !== ""
         x: 148; y: parent.height - 30; height: 20; spacing: 6
-        Text { anchors.verticalCenter: parent.verticalCenter; text: "warning"; color: Colors.error; font.family: Theme.fontIcon; font.pixelSize: 16 }
-        Label { height: parent.height; width: root.width - 148 - 34; text: root.warning; color: Colors.error; elide: Text.ElideRight }
+        Text { anchors.verticalCenter: parent.verticalCenter; text: "warning"; color: Colors.islandError; font.family: Theme.fontIcon; font.pixelSize: 16 }
+        Label { height: parent.height; width: root.width - 148 - 34; text: root.warning; color: Colors.islandError; elide: Text.ElideRight }
     }
 }

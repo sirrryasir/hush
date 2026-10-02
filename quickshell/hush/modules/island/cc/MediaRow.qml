@@ -12,7 +12,7 @@ Item {
 
     ClippingRectangle {
         id: artBox
-        width: 44; height: 44; radius: 10; color: Colors.surface_container_high
+        width: 44; height: 44; radius: 10; color: Colors.islandSurfaceHigh
         Image {
             id: art
             anchors.fill: parent; fillMode: Image.PreserveAspectCrop
@@ -21,7 +21,7 @@ Item {
         }
         Text {
             anchors.centerIn: parent; visible: art.status !== Image.Ready
-            text: "music_note"; color: Colors.on_surface
+            text: "music_note"; color: Colors.islandFg
             font.family: Theme.fontIcon; font.pixelSize: 22
         }
     }
@@ -29,12 +29,12 @@ Item {
         anchors.left: artBox.right; anchors.leftMargin: 12; anchors.right: controls.left; anchors.rightMargin: 12
         anchors.verticalCenter: parent.verticalCenter
         Text {
-            width: parent.width; text: Svc.Media.title; elide: Text.ElideRight; color: Colors.darkOnSurface
+            width: parent.width; text: Svc.Media.title; elide: Text.ElideRight; color: Colors.islandFg
             font.family: Theme.fontUi; font.pixelSize: Theme.textControl; font.weight: Font.Medium
         }
         Text {
             width: parent.width; text: Svc.Media.artist; visible: text !== ""; elide: Text.ElideRight
-            color: Colors.darkOnSurface; opacity: 0.7
+            color: Colors.islandFg; opacity: 0.7
             font.family: Theme.fontUi; font.pixelSize: 12
         }
     }
@@ -50,7 +50,7 @@ Item {
             delegate: Text {
                 required property var modelData
                 width: 32; height: 32; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter
-                text: modelData.g; color: Colors.darkOnSurface
+                text: modelData.g; color: Colors.islandFg
                 font.family: Theme.fontIcon; font.pixelSize: 24
                 MouseArea { anchors.fill: parent; onClicked: Svc.Media[modelData.f]() }
             }

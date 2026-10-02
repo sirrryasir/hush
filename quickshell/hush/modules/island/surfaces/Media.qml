@@ -16,7 +16,7 @@ Item {
     readonly property real length: Svc.Media.length
     readonly property real position: scrub.pressed ? scrub.drag : Svc.Media.position
     readonly property bool canSeek: player !== null && player.canSeek && player.positionSupported && length > 0
-    readonly property color tint: Colors.darkPrimary
+    readonly property color tint: Colors.islandPrimary
 
     // settings modules.media.cava: explicit true/false wins, otherwise on when cava is installed.
     property bool cavaInstalled: false
@@ -40,21 +40,21 @@ Item {
     }
 
     // Card: dark base washed with the accent.
-    Rectangle {
-        anchors.fill: parent; color: "#000000"
+    ClippingRectangle {
+        anchors.fill: parent; color: "#000000"; radius: Sizes.radiusExpanded
         Rectangle { anchors.fill: parent; color: root.tint; opacity: 0.16 }
         Rectangle {
             anchors.fill: parent
             gradient: Gradient {
-                GradientStop { position: 0; color: Colors.alpha(Colors.shadow, 0) }
-                GradientStop { position: 1; color: Colors.alpha(Colors.shadow, 0.6) }
+                GradientStop { position: 0; color: Colors.alpha(Colors.islandShadow, 0) }
+                GradientStop { position: 1; color: Colors.alpha(Colors.islandShadow, 0.6) }
             }
         }
     }
 
     ClippingRectangle {
         id: artBox
-        x: 16; y: 16; width: 88; height: 88; radius: 14; color: Colors.primary_container
+        x: 16; y: 16; width: 88; height: 88; radius: 14; color: Colors.islandPrimaryContainer
         Image {
             id: art
             anchors.fill: parent; fillMode: Image.PreserveAspectCrop
@@ -63,10 +63,10 @@ Item {
         }
         // Accent tint over the art: multiply-like darkening plus an overlay wash.
         Rectangle { anchors.fill: parent; color: root.tint; opacity: art.visible ? 0.28 : 0 }
-        Rectangle { anchors.fill: parent; color: Colors.primary_container; opacity: art.visible ? 0.12 : 0 }
+        Rectangle { anchors.fill: parent; color: Colors.islandPrimaryContainer; opacity: art.visible ? 0.12 : 0 }
         Text {
             anchors.centerIn: parent; visible: !art.visible
-            text: "music_note"; color: Colors.on_primary_container
+            text: "music_note"; color: Colors.islandOnPrimaryContainer
             font.family: Theme.fontIcon; font.pixelSize: 36
         }
     }
@@ -75,11 +75,11 @@ Item {
         x: 120; y: 20; width: root.width - 120 - 20; spacing: 2
         Text {
             width: parent.width; text: Svc.Media.title || "Nothing playing"; elide: Text.ElideRight
-            color: Colors.darkOnSurface; font.family: Theme.fontUi; font.pixelSize: 16; font.weight: Font.DemiBold
+            color: Colors.islandFg; font.family: Theme.fontUi; font.pixelSize: 16; font.weight: Font.DemiBold
         }
         Text {
             width: parent.width; text: Svc.Media.artist; visible: text !== ""; elide: Text.ElideRight
-            color: Colors.darkOnSurface; opacity: 0.7; font.family: Theme.fontUi; font.pixelSize: 13
+            color: Colors.islandFg; opacity: 0.7; font.family: Theme.fontUi; font.pixelSize: 13
         }
     }
 
@@ -107,19 +107,19 @@ Item {
         readonly property bool pressed: ma.pressed
         property real drag: 0
         readonly property real frac: root.length > 0 ? Math.min(1, Math.max(0, root.position / root.length)) : 0
-        Rectangle { id: track; y: 6; width: parent.width; height: 4; radius: 2; color: Colors.darkOnSurface; opacity: 0.2 }
+        Rectangle { id: track; y: 6; width: parent.width; height: 4; radius: 2; color: Colors.islandFg; opacity: 0.2 }
         Rectangle { y: 6; width: parent.width * scrub.frac; height: 4; radius: 2; color: root.tint }
         Rectangle {
             x: parent.width * scrub.frac - width / 2; y: 3; width: 10; height: 10; radius: 5
-            color: Colors.darkOnSurface; visible: root.canSeek
+            color: Colors.islandFg; visible: root.canSeek
         }
         Text {
-            y: 14; text: root.fmt(root.position); color: Colors.darkOnSurface; opacity: 0.6
+            y: 14; text: root.fmt(root.position); color: Colors.islandFg; opacity: 0.6
             font.family: Theme.fontUi; font.pixelSize: 10; font.features: { "tnum": 1 }
         }
         Text {
             y: 14; anchors.right: parent.right; text: root.length > 0 ? root.fmt(root.length) : ""
-            color: Colors.darkOnSurface; opacity: 0.6; font.family: Theme.fontUi; font.pixelSize: 10; font.features: { "tnum": 1 }
+            color: Colors.islandFg; opacity: 0.6; font.family: Theme.fontUi; font.pixelSize: 10; font.features: { "tnum": 1 }
         }
         MouseArea {
             id: ma
@@ -142,10 +142,10 @@ Item {
             delegate: Rectangle {
                 required property var modelData
                 width: modelData.big ? 44 : 36; height: width; radius: width / 2; anchors.verticalCenter: parent.verticalCenter
-                color: modelData.big ? root.tint : (btn.containsMouse ? Colors.alpha(Colors.darkOnSurface, 0.13) : "transparent")
+                color: modelData.big ? root.tint : (btn.containsMouse ? Colors.alpha(Colors.islandFg, 0.13) : "transparent")
                 Text {
                     anchors.centerIn: parent; text: modelData.g
-                    color: modelData.big ? Colors.on_primary : Colors.darkOnSurface
+                    color: modelData.big ? Colors.islandOnPrimary : Colors.islandFg
                     font.family: Theme.fontIcon; font.pixelSize: modelData.big ? 28 : 24
                 }
                 MouseArea { id: btn; anchors.fill: parent; hoverEnabled: true; onClicked: Svc.Media[modelData.f]() }
