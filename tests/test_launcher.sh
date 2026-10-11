@@ -102,6 +102,44 @@ print(m['x'], m['y'], round(m['width']/m['scale']))")
   [[ "$(state)" == rest || "$(state)" == media ]] && pass "a click off the pill closes the launcher" || fail "click off left $(state)"
   hyprctl dispatch "hl.dsp.cursor.move({ x = $((MX + MW / 2)), y = $((MY + 500)) })" >/dev/null
 }
+# Clipboard through the real bind path (Super+V runs this exec_cmd), right after a restart and on each
+# monitor: the list is read on every open (it used to load once, never when opened straight in clip mode).
+t_clip_live() {
+  if ! command -v cliphist >/dev/null || [[ "$(cliphist list 2>/dev/null | grep -c .)" == 0 ]]; then pass "cliphist absent or empty: skipped"; return; fi
+  local orig m i n; orig=$(focused_monitor)
+  shell_restart; sleep 1
+  for m in $(hyprctl monitors -j | python3 -c 'import json,sys;print(" ".join(m["name"] for m in json.load(sys.stdin)))'); do
+    hyprctl dispatch "hl.dsp.focus({ monitor = \"$m\" })" >/dev/null; sleep 0.5
+    hyprctl dispatch 'hl.dsp.exec_cmd("qs -c hush ipc call hush showLauncher clip")' >/dev/null
+    wait_state launcher 60
+    for i in $(seq 40); do n=$(shell_ipc launcherCount); [[ "$n" -gt 0 ]] && break; sleep 0.05; done
+    [[ "$n" -gt 0 ]] && pass "$m: Super+V path lists $n clipboard entries" || fail "$m: clipboard list empty ($n)"
+    assert_eq "$m" "$(shell_ipc islandScreen)" "$m: opens on the focused monitor"
+    shell_ipc closeSurface >/dev/null; wait_state rest 40 || wait_state media 40
+  done
+  hyprctl dispatch "hl.dsp.focus({ monitor = \"$orig\" })" >/dev/null
+  shell_ipc showLauncher apps >/dev/null; wait_state launcher; wait_ipc launcherCount
+  shell_ipc launcherQuery ";" >/dev/null; sleep 0.5
+  n=$(shell_ipc launcherCount); [[ "$n" -gt 0 ]] && pass "; prefix lists $n entries" || fail "; prefix lists nothing"
+  shell_ipc closeSurface >/dev/null; sleep 0.4
+}
+# One shell per session: a second `qs -c hush` (a restart that never stopped the first) ends the older
+# instance, so no second island maps under the first one's exclusive zone (the launcher then drew as a
+# box under a stray rest pill).
+t_single() {
+  local before after layers i
+  before=$(pgrep -f "$HUSH_PROC" | head -1)
+  (setsid qs -c hush >>"$HUSH_LOG" 2>&1 </dev/null &)
+  for i in $(seq 40); do after=$(pgrep -f "$HUSH_PROC" | tr '\n' ' '); [[ "$after" != *"$before"* && -n "$after" ]] && break; sleep 0.25; done
+  assert_eq "1" "$(pgrep -f "$HUSH_PROC" | wc -l)" "a second qs -c hush leaves one shell running"
+  [[ "$after" != *"$before"* ]] && pass "the older instance ($before) ended, the newer ($after) stays" || fail "older instance still alive: $after"
+  layers=$(hyprctl layers -j | python3 -c '
+import json,sys
+d=json.load(sys.stdin); print(sum(1 for m in d.values() for lv in m["levels"].values() for l in lv if l["namespace"]=="hush-island"))')
+  assert_eq "$(hyprctl monitors -j | python3 -c 'import json,sys;print(len(json.load(sys.stdin)))')" "$layers" "one hush-island layer per monitor"
+  for i in $(seq 40); do [[ "$(shell_ipc ping 2>/dev/null)" == pong ]] && break; sleep 0.25; done
+  shell_restart
+}
 t_log() { local e; e=$(shell_log_errors); [[ -z "$e" ]] && pass "no errors in shell log" || fail "shell log errors: $e"; }
 run_test "open" t_open
 run_test "search" t_search
@@ -110,5 +148,7 @@ run_test "island" t_island
 run_test "keyboard" t_keyboard
 run_test "switch" t_switch
 run_test "click off" t_click_off
+run_test "clip live" t_clip_live
+run_test "single instance" t_single
 run_test "log" t_log
 finish

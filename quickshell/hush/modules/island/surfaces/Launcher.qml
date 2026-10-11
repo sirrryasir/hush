@@ -28,6 +28,8 @@ FocusScope {
     readonly property string firstName: count > 0 ? results[0].name : ""
     readonly property string currentName: count > 0 && currentIndex < count ? results[currentIndex].name : ""
     readonly property bool clipAvailable: clip.available
+    readonly property bool clipLoaded: clip.loaded
+    readonly property int clipLines: clip.lines.length
 
     function setQuery(q) { query = q; currentIndex = 0; input.text = q }
     function move(d) { if (count > 0) currentIndex = (currentIndex + d + count) % count }
@@ -145,7 +147,8 @@ FocusScope {
                 Text {
                     anchors.fill: parent; verticalAlignment: Text.AlignVCenter
                     visible: input.text.length === 0
-                    text: root.mode === "windows" ? "Switch to a window" : "Search apps, @ windows, = calc, ; clipboard"
+                    text: root.mode === "windows" ? "Switch to a window" : root.mode === "clip" ? "Search the clipboard"
+                        : root.mode === "calc" ? "Calculate" : "Search apps, @ windows, = calc, ; clipboard"
                     font: input.font; color: Colors.islandFgVar
                 }
             }
@@ -157,6 +160,7 @@ FocusScope {
         }
         ListView {
             id: list
+            objectName: "resultList"
             anchors { left: parent.left; right: parent.right; top: rule.bottom; topMargin: 6; bottom: parent.bottom }
             clip: true
             model: root.results
@@ -173,8 +177,10 @@ FocusScope {
                 onHovered: root.currentIndex = index
             }
             Text {
+                objectName: "emptyText"
                 anchors.centerIn: parent; visible: list.count === 0
-                text: root.effectiveMode === "clip" ? (root.clipAvailable ? "Clipboard is empty" : "cliphist not installed") : "No matches"
+                text: root.effectiveMode !== "clip" ? "No matches" : !root.clipLoaded ? "Loading clipboard" : !root.clipAvailable ? "cliphist not installed"
+                    : root.clipLines === 0 ? "Clipboard is empty" : "No matches"
                 font.family: Theme.fontUi; font.pixelSize: Theme.textLauncher; color: Colors.islandFgVar
             }
         }
