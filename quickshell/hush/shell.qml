@@ -19,8 +19,11 @@ ShellRoot {
     // under the old rest pill. The newest instance wins: it ends every older one (ties: higher pid).
     function retireOlder(out) {
         const nl = out.indexOf("\n"), me = parseInt(out.slice(0, nl))
+        const blank = out.indexOf("\n\n", nl)
+        const skip = out.slice(nl + 1, blank).split("\n").filter(l => l.startsWith("skip ")).map(l => parseInt(l.slice(5)))
         let list = []
-        try { list = JSON.parse(out.slice(nl + 1)) } catch (e) { return }
+        try { list = JSON.parse(out.slice(blank + 2)) } catch (e) { return }
+        list = list.filter(i => skip.indexOf(i.pid) < 0)
         const mine = list.find(i => i.pid === me)
         if (!mine) return
         for (const i of list) {
@@ -33,7 +36,11 @@ ShellRoot {
     }
     Process {
         running: true
-        command: ["sh", "-c", "echo $PPID; qs list -c hush -j 2>/dev/null"]
+        // Only instances on this compositor count: a nested Hyprland (tests) may run its own shell.
+        command: ["sh", "-c", "echo $PPID; mine=$(tr '\\0' '\\n' </proc/$PPID/environ | grep -E '^(WAYLAND_DISPLAY|HYPRLAND_INSTANCE_SIGNATURE)='); "
+            + "qs list -c hush -j 2>/dev/null | grep -o '\"pid\": *[0-9]*' | grep -o '[0-9]*$' | while read -r p; do "
+            + "[ \"$(tr '\\0' '\\n' </proc/$p/environ 2>/dev/null | grep -E '^(WAYLAND_DISPLAY|HYPRLAND_INSTANCE_SIGNATURE)=')\" = \"$mine\" ] || echo \"skip $p\"; done; "
+            + "echo; qs list -c hush -j 2>/dev/null"]
         stdout: StdioCollector { onStreamFinished: root.retireOlder(text) }
     }
 }
