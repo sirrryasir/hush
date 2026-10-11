@@ -6,6 +6,40 @@ All notable changes to Hush are documented here. The format follows
 
 ## [Unreleased]
 
+Draft of the 0.2.0 entry; `VERSION` is bumped and the date set at release.
+
+### Added
+
+- Island v2: one fixed full-width layer per monitor with a live input mask and a spring morph.
+  Rest pill (clock, activity circle, status ring), hover face, configurable click and scroll
+  mapping, outside-click arming.
+- Surfaces grown from the island: control center (Wi-Fi password entry, Bluetooth pairing,
+  in-place sub-pages), media with spectrum, calendar, notification center, launcher (apps,
+  windows, calculator, clipboard with previews), wallpaper grid and settings.
+- Priority arbiter with a resuming queue for OSDs and notifications; sticky critical marker.
+- Live activities at rest: recording, countdown (`hush timer`), now playing; mic and camera use.
+- Modes `reserve`, `overlay`, `autohide`; fullscreen retract, reveal and OSD overlay;
+  keyboard navigation with slider steps; reduced motion.
+- Settings surface with live preview and a composer for the rest pill, hover face and control
+  center; hot-reloaded `settings.json` with defaults.
+- Theming: circle-reveal wallpaper transition (`--from`), shell colour cross-fade.
+- Island-native lock (hyprlock) and login (SDDM greeter, `sddm/install.sh`, `hush sddm sync`)
+  from one layout spec; `hush face`.
+- CLI: `hush lock`, `face`, `settings`, `timer`, `volume`, `brightness`, `plugins`, `overview`;
+  optional GloView and dynamic-cursors plugins.
+- Brand kit (icon, wordmark, README header, social images).
+
+### Fixed
+
+- Readable light themes in the island, hyprlock, Neovim, kitty ANSI black and p10k.
+- No volume OSD when the default sink switches; scroll to brightness; Media `canSeek` guard.
+- Single-instance rule counts only this compositor; Bluetooth unblocks rfkill when needed.
+
+### Changed
+
+- README rewritten; setup and lock screen details moved to `docs/setup.md` and
+  `docs/lockscreen.md`.
+
 ## [0.1.0] - 2026-10-02
 
 First release, extracted from the author's dotfiles into its own repository.
