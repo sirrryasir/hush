@@ -4,16 +4,16 @@
     <source media="(prefers-color-scheme: light)" srcset="assets/brand/social/readme-header-light.svg" />
     <img src="assets/brand/social/readme-header-light.svg" alt="Hush" width="600" />
   </picture>
-  <p>A quiet Hyprland shell: one black island that everything grows out of.</p>
+  <p>Dynamic island shell for Hyprland, built on Quickshell.</p>
 </div>
 
 ![Hush demo](assets/demo/hush-demo.gif)
 
 Full-quality recording: [assets/demo/hush-demo.mp4](assets/demo/hush-demo.mp4)
 
-Hush is a Quickshell desktop shell for Hyprland. One pill at the top of each monitor is the
-clock, OSD, notifications, control center, launcher, wallpaper grid and settings. `hush theme`
-recolours the shell and every app it templates in one pass; lock and login use the same island.
+Hush replaces the bar, launcher, notification daemon and control center with one pill at the
+top of each monitor. Six themes recolour the shell and the applications it templates; the
+lock and login screens use the same island.
 
 <table>
   <tr>
