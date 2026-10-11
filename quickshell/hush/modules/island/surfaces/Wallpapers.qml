@@ -5,7 +5,7 @@ import Quickshell.Widgets
 import qs.config
 import qs.config as Cfg
 
-// Wallpapers surface (design 2.6): a grid of every theme wallpaper plus images found in the
+// Wallpapers surface: a grid of every theme wallpaper plus images found in the
 // directories of HUSH_WALL_DIRS (colon-separated). Hover or arrows move the highlight; Enter or a
 // click runs `hush wall <path> --from X,Y` with X,Y the tile's centre in global pixels, so the
 // circle reveal grows from the tile. Esc emits `close`.

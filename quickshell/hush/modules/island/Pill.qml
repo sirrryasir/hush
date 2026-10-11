@@ -1,7 +1,7 @@
 import QtQuick
 import qs.config
 
-// The island's black shape (design 2.5). Width, height and radius follow their targets through
+// The island's black shape. Width, height and radius follow their targets through
 // SpringAnimation Behaviors: a new target retargets the running spring (velocity is kept, nothing
 // restarts). `calm` picks the slow open spring, otherwise the quick one; reduced motion swaps in a
 // damping-1 spring that settles in about 80 ms. Target widths sit on the 8 px grid.
@@ -21,7 +21,7 @@ Rectangle {
     readonly property bool moving: Math.abs(width - Sizes.snap(target.width)) > 0.5
         || Math.abs(height - target.height) > 0.5
 
-    // True while the shape is still getting smaller (no hover glance may start then, design 2.2).
+    // True while the shape is still getting smaller (no hover glance may start then).
     // A function, not a binding: the hover face it gates retargets this very shape.
     function shrinking() { return width > Sizes.snap(target.width) + 0.5 || height > target.height + 0.5 }
 

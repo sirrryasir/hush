@@ -1,7 +1,7 @@
 import QtQuick
 import qs.config
 
-// Staged content for the pill (design 2.5). When `target` changes the pill's shape and its content
+// Staged content for the pill. When `target` changes the pill's shape and its content
 // move in order: opening (the new size is larger) starts the shell at once while the old content
 // fades out; closing fades the content out first and only then hands the shell its new size. New
 // content fades in once the shell has been moving for contentInDelayMs. A retarget mid-sequence
@@ -22,7 +22,7 @@ Item {
     property double shellAt: 0
     property bool opening: true
     signal itemLoaded(var item)
-    // Arming (design 2.2): for armMs after one of armStates becomes the target, every click and
+    // Arming: for armMs after one of armStates becomes the target, every click and
     // scroll on the pill is swallowed, so a tap meant for the old shape never lands on a new button.
     property var armStates: []
     property bool armed: true

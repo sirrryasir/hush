@@ -5,7 +5,7 @@ import Quickshell.Hyprland
 import qs.config
 import "launcher"
 
-// Launcher surface (design 2.6): a search field over a result list, 520x300 inside the island.
+// Launcher surface: a search field over a result list, 520x300 inside the island.
 // Modes: "apps" (apps and windows merged, the default), "windows", "calc" and "clip", chosen by the
 // `mode` property or by a prefix typed in the field ("=" calc, ";" clipboard, "@" windows).
 // Up/Down/Tab/Ctrl+N/P move, Enter runs, Esc emits close(). The Hyprland focus grab belongs to the

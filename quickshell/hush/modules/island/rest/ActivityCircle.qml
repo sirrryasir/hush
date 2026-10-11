@@ -3,7 +3,7 @@ import QtQuick.Effects
 import qs.config
 import qs.services
 
-// Left slot of the rest pill (design 2.1). Priority: recording dot (pulsing red, 1 Hz), countdown ring
+// Left slot of the rest pill. Priority: recording dot (pulsing red, 1 Hz), countdown ring
 // with mm:ss, then album art in a circle with a thin progress ring while a player is playing (a
 // music-note glyph when it has no art). `shown` is false when there is nothing to show; the parent
 // then collapses the slot so the pill narrows. The recording/timer/media inputs are plain properties

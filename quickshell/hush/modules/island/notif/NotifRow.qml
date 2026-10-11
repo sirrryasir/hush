@@ -2,8 +2,8 @@ import QtQuick
 import Quickshell.Widgets
 import qs.config
 
-// One notification in the center: icon, summary, body, inline actions, dismiss. Same visuals as the
-// v1 drawer card; talks to `host` (the notification service, or a fake in the harness).
+// One notification in the center: icon, summary, body, inline actions, dismiss. Talks to
+// `host` (the notification service, or a fake in the harness).
 Rectangle {
     id: card
     property var host: null

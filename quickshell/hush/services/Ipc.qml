@@ -81,7 +81,7 @@ Singleton {
         function toggleDrawer(): void { if (root.island) root.island.toggleSurface("notifCenter") }
         function toggleNotifications(): void { if (root.island) root.island.toggleSurface("notifCenter") }
         function toggleControlCenter(): void { if (root.island) root.island.toggleExpanded() }
-        // --- hover and input (Task 6) ---
+        // --- hover and input ---
         function openSurface(name: string): void { if (root.island) root.island.openSurface(name) }
         function closeSurface(): void { if (root.island) root.island.closeSurface() }
         function islandClick(button: string): void { if (root.island) root.island.click(button === "right" ? Qt.RightButton : button === "middle" ? Qt.MiddleButton : Qt.LeftButton) }
@@ -101,7 +101,7 @@ Singleton {
             return !!it && it.visible
         }
         // --- end hover and input ---
-        // --- modes, fullscreen overlay, keyboard (Task 16) ---
+        // --- modes, fullscreen overlay, keyboard ---
         function osdOverlayVisible(): bool { return root.island ? root.island.overlayOsd : false }
         // The keyboard-focused control's objectName (or its class when unnamed), "" when none.
         function islandFocus(): string {
@@ -127,7 +127,7 @@ Singleton {
         function theme(name: string): void { root.setTheme(name) }
         function ccThemeCount(): int { return root.themeNames.length }
         function ccSetTheme(name: string): void { root.setTheme(name) }
-        // --- settings (Task 1) ---
+        // --- settings ---
         function settingsGet(key: string): string { const v = Settings.get(key); return v === undefined ? "" : JSON.stringify(v) }
         function settingsSet(key: string, json: string): void { try { Settings.set(key, JSON.parse(json)) } catch (e) { console.warn("settingsSet: bad json for " + key) } }
         // --- layout composer ---
@@ -161,7 +161,7 @@ Singleton {
         }
         // --- end settings ---
     }
-    // --- activity IPC (Task 15) ---
+    // --- activity IPC ---
     IpcHandler {
         target: "activity"
         function timerStart(sec: int): void { Countdown.start(sec, "") }

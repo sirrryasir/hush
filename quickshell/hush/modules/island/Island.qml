@@ -21,7 +21,7 @@ Item {
         QQ.State { name: "mediaSurface" }, QQ.State { name: "calendar" }, QQ.State { name: "notifCenter" },
         QQ.State { name: "launcher" }, QQ.State { name: "wallpapers" }, QQ.State { name: "settings" }
     ]
-    // Surfaces that grow out of the pill (design 2.6); "expanded" is the control center. The last
+    // Surfaces that grow out of the pill; "expanded" is the control center. The last
     // three are modal: they take the keyboard and the whole island surface catches clicks.
     readonly property var panels: ["expanded", "mediaSurface", "calendar", "notifCenter"]
     readonly property var modals: ["launcher", "wallpapers", "settings"]
@@ -49,7 +49,7 @@ Item {
     // Launcher mode for the next open ("apps", "windows", "calc", "clip").
     property string launcherMode: "apps"
 
-    // The single source of truth for what the pill shows (design 2.3). The island state mirrors
+    // The single source of truth for what the pill shows. The island state mirrors
     // arbiter.current (a critical notification shows as "notification"); nothing assigns `state`
     // except syncState().
     readonly property Arbiter arbiter: Arbiter {
@@ -122,7 +122,7 @@ Item {
     function toggleSurface(name, opts) { arbiter.current === name ? closeSurface() : openSurface(name, opts) }
     // Super+Backspace and IPC: open the control center, or close whatever surface is open.
     function toggleExpanded() { surfaceCurrent ? closeSurface() : openSurface("expanded") }
-    // Click mapping (design 2.2, Settings.island.click*): cc | notifs | media | calendar | launcher | none.
+    // Click mapping (Settings.island.click*): cc | notifs | media | calendar | launcher | none.
     function act(action) {
         switch (action) {
         case "cc": toggleSurface("expanded"); break
@@ -148,7 +148,7 @@ Item {
     // The surface item, once it is the one shown (Loader is asynchronous), else null.
     function surfaceItem(name) { return state === name && surface.shown === name ? surface.item : null }
 
-    // --- hover (design 2.2) ---
+    // --- hover ---
     // Dwell before the face opens, grace before it closes. A glance never starts while the pill is
     // still shrinking (it waits for the spring); when a transient (OSD, notification) ends with the
     // pointer still inside, the face re-arms at once, without dwell or re-entry.
@@ -196,7 +196,7 @@ Item {
     }
     function rearm() { if (hover.hovered && hoverAllowed && state === "rest") arbiter.raise("hover") }
 
-    // --- keyboard navigation inside surfaces (Task 16) ---
+    // --- keyboard navigation inside surfaces ---
     // Tab / Shift+Tab walk the open surface's controls in reading order, the arrows move to the
     // nearest control in that direction, Enter or Space clicks it, Esc steps back / closes. A ring
     // in the primary colour marks the control. Controls are the surface's enabled, visible
@@ -323,7 +323,7 @@ Item {
                 lastShape = shape
             }
         }
-        // Keyboard focus ring (Task 16): drawn over the focused control, inside the pill's clip.
+        // Keyboard focus ring: drawn over the focused control, inside the pill's clip.
         Rectangle {
             objectName: "focusRing"
             visible: islandRoot.navTarget !== null && islandRoot.surfaceOpen && islandRoot.navTarget.visible

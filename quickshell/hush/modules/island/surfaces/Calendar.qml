@@ -3,7 +3,7 @@ import Quickshell
 import Quickshell.Io
 import qs.config
 
-// Calendar surface (design 2.6): a month grid (Monday first) with today in the primary colour,
+// Calendar surface: a month grid (Monday first) with today in the primary colour,
 // other-month days muted, prev/next month navigation, and an "Upcoming" list from
 // `khal list today 7d` when khal is installed (the list is hidden otherwise).
 Item {

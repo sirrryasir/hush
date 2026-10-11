@@ -5,7 +5,7 @@ import qs.config
 import qs.services as Svc
 import "../rest"
 
-// The hover face (design 2.2), 320x44: chips in layout.hover order (default: this monitor's
+// The hover face, 320x44: chips in layout.hover order (default: this monitor's
 // workspaces as dots with the active one drawn as a pill, the date, the media title while something
 // plays, Bluetooth, Wi-Fi, battery; optional volume, brightness, timer, recording). A dot goes to
 // its workspace and the date opens the calendar; the active dot or a long press opens the GloView

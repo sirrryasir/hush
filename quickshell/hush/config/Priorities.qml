@@ -1,7 +1,7 @@
 pragma Singleton
 import QtQml
 
-// Island arbitration priorities (design 2.3). Higher wins; the Arbiter queues lower transients.
+// Island arbitration priorities. Higher wins; the Arbiter queues lower transients.
 QtObject {
     readonly property int modal: 90         // launcher, wallpapers, settings
     readonly property int expanded: 80      // control center, media, notifications, calendar

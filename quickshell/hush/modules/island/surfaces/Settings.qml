@@ -6,7 +6,7 @@ import qs.config
 import qs.config as Cfg
 import qs.modules.island.cc
 
-// Settings surface (design 2.6): 560x336 GUI over the Settings singleton. A page rail on the left
+// Settings surface: 560x336 GUI over the Settings singleton. A page rail on the left
 // (Island, Behaviour, Modules, Theme, About). Sliders preview while dragging (`preview` overrides,
 // `previewed` signal for the host pill) and write Cfg.Settings.set only on release.
 FocusScope {

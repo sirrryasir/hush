@@ -3,7 +3,7 @@ import Quickshell
 import qs.config
 import "../rest"
 
-// The island at rest (design 2.1): activity circle (collapses when empty), clock, status ring.
+// The island at rest: activity circle (collapses when empty), clock, status ring.
 // layout.rest (Composer) picks the sides: left "activity" | "none", right "status" | "none"; the
 // clock is always the centre.
 // A playing player shows here as the circle (art + progress ring); there is no media capsule state.

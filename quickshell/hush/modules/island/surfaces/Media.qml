@@ -4,7 +4,7 @@ import Quickshell.Widgets
 import qs.config
 import qs.services as Svc
 
-// Media surface (design 2.6): accent-tinted art, title and artist, a scrubber that seeks over MPRIS,
+// Media surface: accent-tinted art, title and artist, a scrubber that seeks over MPRIS,
 // prev/play/next and an optional cava strip. cava runs only while this item is visible; hiding or
 // destroying the surface stops it.
 Item {

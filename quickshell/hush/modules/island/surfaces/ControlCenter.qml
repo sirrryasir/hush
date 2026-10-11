@@ -9,7 +9,7 @@ import qs.config as Cfg
 import qs.services as Svc
 import "../cc"
 
-// Control center surface (design 2.6), 560x304 on a 12 px grid: the media mini-card (or, with nothing
+// Control center surface, 560x304 on a 12 px grid: the media mini-card (or, with nothing
 // playing or layout.cc.media off, the notifications summary in the same 44 px row), tiles from
 // layout.cc.tiles (Composer; Wi-Fi opens an in-place page with a password field, Bluetooth one with
 // pair / connect / forget), volume and brightness, battery and the power row, theme strip plus a

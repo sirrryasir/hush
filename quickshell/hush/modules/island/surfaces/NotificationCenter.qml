@@ -2,7 +2,7 @@ import QtQuick
 import qs.config
 import qs.modules.island.notif
 
-// Notification center surface (design 2.6): notifications grouped by app (each group collapsible),
+// Notification center surface: notifications grouped by app (each group collapsible),
 // inline actions, per-notification dismiss, Clear all, a Do-not-disturb toggle, and a scrolling list.
 // `host` is the notification service (Notifs: list, dnd, dismiss, clearAll, invokeDefault, iconSource);
 // the shell wiring sets `host: Notifs`, the harness passes a fake so it never owns the D-Bus server.

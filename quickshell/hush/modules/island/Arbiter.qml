@@ -1,6 +1,6 @@
 import QtQml
 
-// The island's single source of truth for what is shown (design 2.3). Pure QML: no
+// The island's single source of truth for what is shown. Pure QML: no
 // Quickshell imports, so tests/qml/tst_arbiter.qml runs it under plain qmltestrunner.
 //
 //   declare(name, priority, { sticky, holdMs, coalesce })

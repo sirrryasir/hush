@@ -2,7 +2,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 
-// Declared island sizes per state (design 2.5): the pill morphs to these before the state's content
+// Declared island sizes per state: the pill morphs to these before the state's content
 // loads, so the shape never waits on a layout. Widths sit on the 8 px grid (snap()); a state item may
 // still report a different `size` (a tall notification) and the pill follows it once that item shows.
 Singleton {

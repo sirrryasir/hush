@@ -6,7 +6,7 @@ import qs.config
 import qs.services
 import "states"
 
-// One island surface per screen (design 2.4): full width, fixed height, never resized. Only the
+// One island surface per screen: full width, fixed height, never resized. Only the
 // input mask follows the pill, so no configure round-trip ever paints a stretched frame and
 // transparent pixels never take clicks. The island on the focused monitor is the one IPC, OSD and
 // notifications drive (Ipc.pick); an expanded island keeps that role until it collapses.
