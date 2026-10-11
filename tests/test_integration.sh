@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 source "$(dirname "$0")/lib.sh"
 cd "$(dirname "$0")/.."
-EVD="${HUSH_EVIDENCE_DIR:-assets/evidence}"; mkdir -p "$EVD"
+EVD="${HUSH_EVIDENCE_DIR:-$HOME/.cache/hush/evidence}"; mkdir -p "$EVD"
 t_all_themes() {
   bin/hush theme fog >/dev/null  # prime with a different theme so the first change is observable
   for t in harbor ember moss dusk paper fog; do

@@ -23,7 +23,7 @@ shell_log_errors() {
 # The sandbox (tests/sandbox.sh) points HUSH_EVIDENCE_DIR at its own directory: its headless outputs
 # are not the desktop the evidence images document.
 shell_screenshot() {
-  local d="${HUSH_EVIDENCE_DIR:-$HUSH_ROOT/assets/evidence}"
+  local d="${HUSH_EVIDENCE_DIR:-$HOME/.cache/hush/evidence}"
   hyprctl dispatch 'hl.dsp.dpms({ action = "on" })' >/dev/null; sleep 1; mkdir -p "$d"; grim "$d/$1.png"
 }
 # Idle CPU % of the shell over 10 s from /proc (utime+stime delta / wall time; no bc needed).

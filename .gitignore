@@ -3,7 +3,5 @@ hyprlock/colors.conf
 # sddm bundle: fonts copied by install.sh, `current` links to the cache
 sddm/hush/current
 sddm/hush/fonts/*.ttf
-# screenshots from live tests (until they all use ~/.cache/hush/evidence)
-assets/evidence/
 __pycache__/
 .superpowers/
