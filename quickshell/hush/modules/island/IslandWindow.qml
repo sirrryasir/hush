@@ -113,7 +113,6 @@ Scope {
     // Reveal strip: 1 px along the top edge in auto-hide mode, and over a fullscreen window (the
     // Overlay layer, so a fullscreen client never covers it).
     PanelWindow {
-        id: stripWin
         visible: scope.stripActive
         screen: scope.modelData
         anchors { top: true; left: true; right: true }
@@ -129,7 +128,6 @@ Scope {
     // Fullscreen OSD overlay: the retracted island's OSD (volume, brightness, mic) as a lone pill on
     // the Overlay layer, mapped only while it shows (the arbiter's 1.1 s hold); input passes through.
     PanelWindow {
-        id: osdWin
         visible: scope.osdOverlay
         screen: scope.modelData
         anchors { top: true }

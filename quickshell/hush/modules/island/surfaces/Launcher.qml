@@ -1,7 +1,6 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
-import Quickshell.Hyprland
 import qs.config
 import "launcher"
 
@@ -44,7 +43,6 @@ FocusScope {
         return true
     }
     function move(d) { if (count > 0) currentIndex = (currentIndex + d + count) % count }
-    function focusInput() { input.forceActiveFocus() }
     function activate(i) {
         const item = results[i === undefined ? currentIndex : i]
         if (!item) return

@@ -11,7 +11,6 @@ Singleton {
     readonly property string path: Quickshell.env("HOME") + "/.config/hush/Colors.json"
     property bool loaded: false
     property string mode: "dark"
-    readonly property bool isDark: mode === "dark"
     property var base16: ({})
     // The same keys in their dark-scheme values; the island draws on black even in light themes.
     property var dark: ({})

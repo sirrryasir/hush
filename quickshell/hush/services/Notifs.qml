@@ -3,7 +3,6 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import Quickshell.Services.Notifications
-import qs.config
 
 // The notification daemon. Incoming notifications land in `list` (newest first, what the
 // notification center shows) and in `toasts` (waiting for, or showing on, the island). Each toast

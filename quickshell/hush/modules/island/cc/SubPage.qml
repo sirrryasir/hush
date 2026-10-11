@@ -12,7 +12,6 @@ Item {
     property var model: []
     property bool busy: false
     property string emptyText: "Nothing found"
-    property string footer: ""
     // Trailing switch (the radio on/off), shown when `switchable`.
     property bool switchable: false
     property bool switchOn: false

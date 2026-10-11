@@ -86,7 +86,6 @@ Rectangle {
     }
     // Password field, in place under the row.
     Item {
-        id: ask
         visible: row.asking
         anchors { left: parent.left; right: parent.right; top: top.bottom; leftMargin: 12; rightMargin: 8 }
         height: 36

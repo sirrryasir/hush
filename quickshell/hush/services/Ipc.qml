@@ -77,17 +77,13 @@ Singleton {
         function settings(): void { if (root.island) root.island.toggleSurface("settings") }
         function settingsVisible(): bool { return root.island ? root.island.state === "settings" : false }
         function settingsWarning(): string { const s = root.surface("settings"); return s ? s.warning : "" }
-        // Toasts and the notification center (toggleDrawer is the v1 name the keybinds still call).
+        // Toasts and the notification center.
         function toggleDrawer(): void { if (root.island) root.island.toggleSurface("notifCenter") }
-        function toggleNotifications(): void { if (root.island) root.island.toggleSurface("notifCenter") }
         function toggleControlCenter(): void { if (root.island) root.island.toggleExpanded() }
         // --- hover and input ---
         function openSurface(name: string): void { if (root.island) root.island.openSurface(name) }
         function closeSurface(): void { if (root.island) root.island.closeSurface() }
-        function islandClick(button: string): void { if (root.island) root.island.click(button === "right" ? Qt.RightButton : button === "middle" ? Qt.MiddleButton : Qt.LeftButton) }
-        function islandArmed(): bool { return root.island ? root.island.armed : true }
         function islandHistory(): string { return root.island ? JSON.stringify(root.island.history) : "[]" }
-        function islandHovered(): bool { return root.island ? root.island.pointerInside : false }
         // Window-local centre "x y" of a named control in the shown surface (tests click it), or "".
         function islandControl(name: string): string {
             const it = root.island && root.island.item ? root.findNamed(root.island.item, name) : null
@@ -108,8 +104,6 @@ Singleton {
             const t = root.island ? root.island.navTarget : null
             return t && t.visible ? (t.objectName || String(t).split("(")[0]) : ""
         }
-        // How many controls the keyboard can reach in the shown surface.
-        function islandNavCount(): int { return root.island ? root.island.navCandidates().length : 0 }
         function islandFocusRing(): bool {
             const r = root.island ? root.findNamed(root.island, "focusRing") : null
             return !!r && r.visible
@@ -148,17 +142,6 @@ Singleton {
         }
         function layoutHover(): string { return Composer.hoverShown.join(",") }
         function layoutTiles(): string { return Composer.tilesShown.map(t => t.id + ":" + t.size).join(",") }
-        // Keyboard-focus the composer row control "section|id|role" (tests start a key sequence there).
-        function islandNavKey(key: string): bool {
-            const it = root.island && root.island.item && root.island.item.controlFor ? root.island.item.controlFor(key) : null
-            if (it) root.island.setNav(it)
-            return !!it
-        }
-        // Settings surface page and Modules section (tests).
-        function settingsPage(page: string, section: string): void {
-            const s = root.surface("settings"); if (!s) return
-            s.page = page; if (section) s.modulesSection = section
-        }
         // --- end settings ---
     }
     // --- activity IPC ---

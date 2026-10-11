@@ -23,7 +23,6 @@ Singleton {
     }
 
     Process {
-        id: finder
         command: ["sh", "-c", "ls -d \"${HUSH_BACKLIGHT_DIR:-/sys/class/backlight}\"/*/ 2>/dev/null | head -1"]
         running: true
         stdout: StdioCollector {

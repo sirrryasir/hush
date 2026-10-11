@@ -54,7 +54,6 @@ Item {
     }
 
     ClippingRectangle {
-        id: artBox
         x: 16; y: 16; width: 88; height: 88; radius: 14; color: Colors.islandPrimaryContainer
         Image {
             id: art

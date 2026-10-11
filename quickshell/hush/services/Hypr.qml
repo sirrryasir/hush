@@ -7,20 +7,9 @@ Singleton {
     id: root
 
     readonly property int focusedId: Hyprland.focusedWorkspace ? Hyprland.focusedWorkspace.id : 1
-    readonly property string activeTitle: Hyprland.activeToplevel ? Hyprland.activeToplevel.title : ""
-    readonly property string activeClass: {
-        const t = Hyprland.activeToplevel;
-        if (!t || !t.lastIpcObject) return "";
-        return t.lastIpcObject.class || "";
-    }
     // Sorted list of {id, name, active, occupied, monitor}: ids 1..5 plus any others that exist.
     property var workspaces: []
     readonly property string focusedMonitorName: Hyprland.focusedMonitor ? Hyprland.focusedMonitor.name : ""
-    // True while the focused monitor's active workspace has a fullscreen window (the island retracts).
-    readonly property bool fullscreenOnFocused: {
-        const m = Hyprland.focusedMonitor
-        return !!(m && m.activeWorkspace && m.activeWorkspace.hasFullscreen)
-    }
 
     function rebuild() {
         const byId = {};

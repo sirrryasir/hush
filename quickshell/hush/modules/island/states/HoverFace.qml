@@ -46,7 +46,6 @@ StateBase {
             delegate: Loader {
                 required property string modelData
                 objectName: modelData === "_spacer" ? "" : "hoverChip_" + modelData
-                readonly property string chipId: modelData
                 sourceComponent: face.chipComps[modelData] || null
                 visible: item !== null && item.shown !== false
                 Layout.fillWidth: modelData === "media" || modelData === "_spacer"

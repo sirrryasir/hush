@@ -86,7 +86,6 @@ Item {
         if (inStateChange) { Qt.callLater(syncState); return }
         state = s
     }
-    readonly property bool pointerInside: hover.hovered
     readonly property bool armed: surface.armed
 
     width: body.width; height: body.height
@@ -293,7 +292,6 @@ Item {
         }
         if (done) event.accepted = true
     }
-    SystemClock { id: dateSrc; precision: SystemClock.Hours }
 
     // The shape springs to the staged surface's size; the content cross-fades inside it.
     Pill {

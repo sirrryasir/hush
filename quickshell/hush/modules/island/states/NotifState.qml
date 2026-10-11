@@ -68,7 +68,6 @@ StateBase {
         font.family: Theme.fontUi; font.pixelSize: Theme.textIsland; font.weight: Font.Medium
     }
     Text {
-        id: bodyText
         x: card.tall ? summaryText.x : summaryText.x + summaryText.width + 10
         y: card.tall ? summaryText.y + summaryText.height + 2 : (parent.height - height) / 2
         width: card.tall ? card.textWidth : Math.max(0, card.textWidth - summaryText.width - 10)

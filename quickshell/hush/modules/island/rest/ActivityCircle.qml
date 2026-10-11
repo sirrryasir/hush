@@ -52,7 +52,6 @@ Item {
     Item { id: ringBox; x: 0; width: 24; height: 24 }
 
     Item {
-        id: disc
         visible: root.mode === "media"
         anchors.centerIn: ringBox; width: 18; height: 18
         Image {

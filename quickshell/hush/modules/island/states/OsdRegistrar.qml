@@ -1,5 +1,4 @@
 import QtQuick
-import qs.config
 import qs.services
 
 // Registers the osd state and turns service change signals into arbiter raises on the driven island.
