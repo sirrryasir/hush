@@ -13,8 +13,8 @@ cleanup() { collapse; [[ -n "$FP" ]] && kill "$FP" 2>/dev/null
   if [[ $HAD == 1 ]]; then cp "$BAK" "$F"; else rm -f "$F"; fi; rm -f "$BAK"; }
 trap cleanup EXIT
 shell_alive || { fail "shell not running"; exit 1; }
-pgrep -x hyprlock >/dev/null && { echo "  SKIP session locked"; exit 0; }
-PID=$(pgrep -f "$HUSH_PROC" | head -1)
+session_pgrep -x hyprlock >/dev/null && { echo "  SKIP session locked"; exit 0; }
+PID=$(session_pgrep -f "$HUSH_PROC" | head -1)
 rss_kb() { awk '/VmRSS/{print $2}' /proc/$PID/status; }
 # sample SECONDS -> "cpu% ctxt/s"
 sample() { python3 - "$PID" "$1" <<'PY'
@@ -29,7 +29,7 @@ print('%.2f %.1f' % ((cpu()-a)/hz/dt*100, (cs()-c)/dt))
 PY
 }
 lt() { python3 -c "import sys;sys.exit(0 if float('$1')<float('$2') else 1)"; }
-cava_n() { pgrep -fc 'hush-cava\.conf' || true; }
+cava_n() { session_pgrep -f 'hush-cava\.conf' | wc -l; }
 settle() { for _ in $(seq 30); do case "$(shell_ipc islandState)" in rest) return;; esac; sleep 0.5; done; }
 
 collapse; settle; sleep 2

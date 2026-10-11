@@ -10,6 +10,22 @@ test_matugen_cfg() {
   { cat "$HUSH_ROOT/matugen/config.toml.head"; local f; for f in "$@"; do echo; cat "$HUSH_ROOT/matugen/config.d/$f.toml"; done; } \
     | sed -e "s|@HUSH_ROOT@|$HUSH_ROOT|g" -e "s|@CONFIG@|$out|g"
 }
+# pgrep/pkill limited to this session (processes with our XDG_RUNTIME_DIR), as in bin/hush: the sandbox
+# (tests/sandbox.sh) shares the process table with the desktop it runs on, and a bare pkill -x mpv or
+# pgrep -f '^qs -c hush$' would reach the live session's processes.
+session_pgrep() { # pgrep-args...; prints the pids, fails when there are none
+  local p out=""
+  for p in $(pgrep "$@"); do
+    if [[ -z "${XDG_RUNTIME_DIR:-}" ]] || tr '\0' '\n' </proc/"$p"/environ 2>/dev/null | grep -qxF "XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR"; then
+      out+="$p"$'\n'
+    fi
+  done
+  [[ -n "$out" ]] && printf '%s' "$out"
+}
+session_pkill() { # [-SIGNAL] pgrep-args...
+  local sig=-TERM pids; [[ "$1" == -[A-Z0-9]* ]] && { sig=$1; shift; }
+  pids=$(session_pgrep "$@") && kill "$sig" $pids 2>/dev/null
+}
 _HUSH_TEST_FAILS=0
 _HUSH_TEST_COUNT=0
 pass() { printf '  \033[32mPASS\033[0m %s\n' "$1"; }

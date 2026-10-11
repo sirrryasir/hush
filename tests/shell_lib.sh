@@ -4,7 +4,7 @@
 HUSH_LOG="$HOME/.cache/hush/shell.log"
 HUSH_PROC='^qs -c hush$'
 shell_restart() { "$HUSH_ROOT/bin/hush" shell restart >/dev/null; }
-shell_alive() { pgrep -f "$HUSH_PROC" >/dev/null; }
+shell_alive() { session_pgrep -f "$HUSH_PROC" >/dev/null; }
 shell_has_layer() { hyprctl layers -j | grep -q "\"namespace\": \"$1\""; }
 shell_ipc() { qs -c hush ipc call hush "$@"; }
 # Prints log lines since the last restart that look like problems; returns 1 if it printed any.
@@ -20,13 +20,18 @@ shell_log_errors() {
   [[ -z "$hits" ]] && return 0
   printf '%s\n' "$hits"; return 1
 }
-shell_screenshot() { hyprctl dispatch 'hl.dsp.dpms({ action = "on" })' >/dev/null; sleep 1; mkdir -p "$HUSH_ROOT/assets/evidence"; grim "$HUSH_ROOT/assets/evidence/$1.png"; }
+# The sandbox (tests/sandbox.sh) points HUSH_EVIDENCE_DIR at its own directory: its headless outputs
+# are not the desktop the evidence images document.
+shell_screenshot() {
+  local d="${HUSH_EVIDENCE_DIR:-$HUSH_ROOT/assets/evidence}"
+  hyprctl dispatch 'hl.dsp.dpms({ action = "on" })' >/dev/null; sleep 1; mkdir -p "$d"; grim "$d/$1.png"
+}
 # Idle CPU % of the shell over 10 s from /proc (utime+stime delta / wall time; no bc needed).
 # Other work may restart the shell mid-sample, so retry up to six times when the pid vanishes.
 shell_cpu_idle() {
   local pid out
   for _ in 1 2 3 4 5 6; do
-    pid=$(pgrep -f "$HUSH_PROC" | head -1)
+    pid=$(session_pgrep -f "$HUSH_PROC" | head -1)
     out=$(python3 -c "
 import os,time
 def t(): f=open('/proc/$pid/stat').read().rsplit(')',1)[1].split(); return int(f[11])+int(f[12])

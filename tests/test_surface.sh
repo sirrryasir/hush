@@ -2,10 +2,9 @@
 # Island v2 surface (design 2.4): one full-width, fixed-height layer per monitor whose geometry never
 # changes; only the input mask follows the pill. Clicks 2 px outside the pill reach the window below,
 # a click on the pill does not; a fullscreen window retracts the pill. Runs on every monitor.
-source "$(dirname "$0")/lib.sh"; source "$(dirname "$0")/shell_lib.sh"
+source "$(dirname "$0")/lib.sh"; source "$(dirname "$0")/shell_lib.sh"; source "$(dirname "$0")/lib/input.sh"
 cd "$(dirname "$0")/.."
 A=hush-surface-probe-a; B=hush-surface-probe-b
-SOCK="${XDG_RUNTIME_DIR:-/tmp}/hush-test-ydotool.sock"; YPID=""
 F="$HOME/.config/hush/settings.json"; BAK=$(mktemp)
 if [[ -f "$F" ]]; then cp "$F" "$BAK"; HAD=1; else HAD=0; fi
 mon_json() { hyprctl monitors -j; }
@@ -28,15 +27,15 @@ m=next(m for m in json.load(sys.stdin) if m['name']=='$1')
 print(m['x'], m['y'], round(m['width']/m['scale']), round(m['height']/m['scale']), m['reserved'][1])"; }
 cleanup() {
   local c; for c in $A $B; do hyprctl dispatch "hl.dsp.window.close({ window = \"class:$c\" })" >/dev/null 2>&1; done
-  [[ -n "$YPID" ]] && kill "$YPID" 2>/dev/null; rm -f "$SOCK"
+  input_stop
   if [[ $HAD == 1 ]]; then cp "$BAK" "$F"; else rm -f "$F"; fi; rm -f "$BAK"
   [[ "$(shell_ipc islandState 2>/dev/null)" == expanded ]] && shell_ipc toggleControlCenter >/dev/null 2>&1
   hyprctl dispatch "hl.dsp.focus({ monitor = \"$ORIG_MON\" })" >/dev/null 2>&1
 }
 trap cleanup EXIT
-click() { # x y [settle]: warp the pointer and left-click through a private ydotoold
+click() { # x y [settle]: warp the pointer and left-click (tests/lib/input.sh)
   hyprctl dispatch "hl.dsp.cursor.move({ x = $1, y = $2 })" >/dev/null; sleep "${3:-0.3}"
-  YDOTOOL_SOCKET="$SOCK" ydotool click 0xC0 >/dev/null 2>&1; sleep 0.5
+  input_click; sleep 0.5
 }
 spawn() { # class x y w h: a floating kitty at a fixed rect (never touches other windows)
   hyprctl dispatch "hl.dsp.exec_cmd(\"kitty --class $1\")" >/dev/null
@@ -81,8 +80,7 @@ t_constant() {
   assert_eq "$before" "$(layers)" "layer geometry unchanged after collapse"
 }
 t_mask() {
-  if ! [[ -w /dev/uinput ]] || ! command -v ydotoold >/dev/null; then pass "no writable uinput/ydotoold: click checks skipped"; return; fi
-  rm -f "$SOCK"; ydotoold -p "$SOCK" >/dev/null 2>&1 & YPID=$!; sleep 1.5
+  input_start || { pass "$(input_why): click checks skipped"; return; }
   local m mx my mw mh r sz pw ph px py
   for m in $(mons | tr ' ' '\n' | head -2); do
     hyprctl dispatch "hl.dsp.focus({ monitor = \"$m\" })" >/dev/null; sleep 0.6

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 source "$(dirname "$0")/lib.sh"; source "$(dirname "$0")/shell_lib.sh"
 cd "$(dirname "$0")/.."
-mkdir -p assets/evidence
+mkdir -p "${HUSH_EVIDENCE_DIR:-assets/evidence}"
 primary_json() { python3 -c "import json;print(json.load(open('$HOME/.config/hush/Colors.json'))['primary'])"; }
 wait_ipc() { local i; for i in $(seq 1 25); do [[ "$(shell_ipc "$1")" == "$2" ]] && return 0; sleep 0.2; done; return 1; }
 wait_state() { local i; for i in $(seq 1 20); do [[ "$(shell_ipc islandState)" == "$1" ]] && return 0; sleep 0.3; done; return 1; }
@@ -36,7 +36,7 @@ t_perf() {
   sleep 3
   local c; c=$(shell_cpu_idle)
   echo "  idle cpu: ${c}% (kitty open, mpv ${pl:+playing}${pl:-absent})" | tee "$HOME/.cache/hush/last-cpu.txt"
-  [[ -n "$pl" ]] && kill "$pl" 2>/dev/null; pkill -f '^kitty --class perf-prob[e]' 2>/dev/null
+  [[ -n "$pl" ]] && kill "$pl" 2>/dev/null; session_pkill -f '^kitty --class perf-prob[e]' 2>/dev/null
   python3 -c "import sys; sys.exit(0 if float('$c') < 1.0 else 1)" && pass "idle cpu ${c}% < 1%" || fail "idle cpu ${c}%"
 }
 t_health() {

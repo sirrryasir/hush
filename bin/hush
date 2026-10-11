@@ -8,6 +8,22 @@ CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 THEMES="$HUSH_ROOT/themes"
 STATE_DIR="$HOME/.config/hush"
 CACHE_DIR="$HOME/.cache/hush"
+HUSH_PROC='^qs -c hush$' # anchored: never match a shell whose command line mentions qs
+# pgrep/pkill limited to this session (processes with our XDG_RUNTIME_DIR): tests/sandbox.sh runs a
+# second session on the same process table, and neither may signal the other's shell, kitty or bar.
+session_pgrep() { # pgrep-args...; prints the pids, fails when there are none
+  local p out=""
+  for p in $(pgrep "$@"); do
+    if [[ -z "${XDG_RUNTIME_DIR:-}" ]] || tr '\0' '\n' </proc/"$p"/environ 2>/dev/null | grep -qxF "XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR"; then
+      out+="$p"$'\n'
+    fi
+  done
+  [[ -n "$out" ]] && printf '%s' "$out"
+}
+session_pkill() { # [-SIGNAL] pgrep-args...
+  local sig=-TERM pids; [[ "$1" == -[A-Z0-9]* ]] && { sig=$1; shift; }
+  pids=$(session_pgrep "$@") && kill "$sig" $pids 2>/dev/null
+}
 STATE="$STATE_DIR/state.json"
 MATUGEN_CFG="$CACHE_DIR/matugen.toml"
 RENDER="$CACHE_DIR/render"
@@ -238,14 +254,14 @@ reload_consumers() { # theme mode
   if command -v hyprctl >/dev/null && [[ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]]; then
     hyprctl reload >/dev/null 2>&1 || echo "hush: hyprctl reload failed" >&2
   fi
-  pkill -USR1 -x kitty 2>/dev/null || true
+  session_pkill -USR1 -x kitty 2>/dev/null || true
   # fastfetch shows the Breath mark through kitty graphics; matugen renders the tinted SVG, kitty wants PNG.
   local ff="$CONFIG_HOME/fastfetch"
   if [[ -s "$ff/hush-logo.svg" ]] && command -v rsvg-convert >/dev/null; then
     { rsvg-convert -w 512 "$ff/hush-logo.svg" -o "$ff/hush-logo.png.tmp" && mv -f "$ff/hush-logo.png.tmp" "$ff/hush-logo.png"; } \
       || echo "hush: fastfetch logo render failed (continuing)" >&2
   fi
-  pkill -SIGUSR2 -x waybar 2>/dev/null || true
+  session_pkill -USR2 -x waybar 2>/dev/null || true
   if command -v gsettings >/dev/null; then
     if [[ "$mode" == "light" ]]; then
       gsettings set org.gnome.desktop.interface color-scheme 'prefer-light' || echo "hush: gsettings failed (continuing)" >&2
@@ -449,7 +465,7 @@ cmd_check() {
   while read -r out; do
     [[ -s "$out" ]] || { echo "hush check: missing output $out"; rc=1; }
   done < <(outputs)
-  if pgrep -x waybar >/dev/null && pgrep -f "$HUSH_PROC" >/dev/null; then
+  if session_pgrep -x waybar >/dev/null && session_pgrep -f "$HUSH_PROC" >/dev/null; then
     echo "hush check: warning: waybar and the Hush shell are both running"
   fi
   [[ $rc -eq 0 ]] && echo "hush check: ok"
@@ -518,19 +534,18 @@ cmd_plugins() {
 
 cmd_fallback() {
   cmd_shell stop >/dev/null || true
-  pgrep -x waybar >/dev/null || (waybar -c "$HOME/.config/waybar/minimal-config.jsonc" -s "$HOME/.config/waybar/minimal-style.css" >/dev/null 2>&1 9>&- &)
-  pgrep -x swaync >/dev/null || (swaync >/dev/null 2>&1 9>&- &)
+  session_pgrep -x waybar >/dev/null || (waybar -c "$HOME/.config/waybar/minimal-config.jsonc" -s "$HOME/.config/waybar/minimal-style.css" >/dev/null 2>&1 9>&- &)
+  session_pgrep -x swaync >/dev/null || (swaync >/dev/null 2>&1 9>&- &)
   echo "hush: fallback bar and notifications started"
 }
 
-HUSH_PROC='^qs -c hush$' # anchored: never match a shell whose command line mentions qs
 
 cmd_shell() {
   local log="$CACHE_DIR/shell.log"; mkdir -p "$CACHE_DIR"
   case "${1:-}" in
     start)
-      pgrep -f "$HUSH_PROC" >/dev/null && { echo "hush shell: already running"; return 0; }
-      pkill -x waybar 2>/dev/null || true; pkill -x swaync 2>/dev/null || true # fallback bar must not coexist
+      session_pgrep -f "$HUSH_PROC" >/dev/null && { echo "hush shell: already running"; return 0; }
+      session_pkill -x waybar 2>/dev/null || true; session_pkill -x swaync 2>/dev/null || true # fallback bar must not coexist
       if [[ -f "$log" ]]; then wc -l < "$log"; else echo 0; fi > "$CACHE_DIR/shell.restart-marker"
       (setsid nohup qs -c hush >>"$log" 2>&1 </dev/null 9>&- &)
       local i out; for i in $(seq 1 40); do
@@ -540,17 +555,17 @@ cmd_shell() {
       done
       echo "hush shell: did not answer ping within 10 s (see $log)" >&2; return 1 ;;
     stop)
-      pkill -f "$HUSH_PROC" 2>/dev/null || true
-      local i; for i in $(seq 1 20); do pgrep -f "$HUSH_PROC" >/dev/null || break; sleep 0.1; done
-      if pgrep -f "$HUSH_PROC" >/dev/null; then # ignored SIGTERM: escalate
-        pkill -KILL -f "$HUSH_PROC" 2>/dev/null || true
-        for i in $(seq 1 20); do pgrep -f "$HUSH_PROC" >/dev/null || break; sleep 0.1; done
+      session_pkill -f "$HUSH_PROC" 2>/dev/null || true
+      local i; for i in $(seq 1 20); do session_pgrep -f "$HUSH_PROC" >/dev/null || break; sleep 0.1; done
+      if session_pgrep -f "$HUSH_PROC" >/dev/null; then # ignored SIGTERM: escalate
+        session_pkill -KILL -f "$HUSH_PROC" 2>/dev/null || true
+        for i in $(seq 1 20); do session_pgrep -f "$HUSH_PROC" >/dev/null || break; sleep 0.1; done
       fi
-      if pgrep -f "$HUSH_PROC" >/dev/null; then echo "hush shell: could not stop" >&2; return 1; fi
+      if session_pgrep -f "$HUSH_PROC" >/dev/null; then echo "hush shell: could not stop" >&2; return 1; fi
       echo "hush shell: stopped" ;;
     restart) cmd_shell stop || return 1; cmd_shell start ;; # stop guarantees a fresh start and marker
     status)
-      if pgrep -f "$HUSH_PROC" >/dev/null; then echo "alive"; else echo "dead"; fi
+      if session_pgrep -f "$HUSH_PROC" >/dev/null; then echo "alive"; else echo "dead"; fi
       { hyprctl layers -j 2>/dev/null || true; } | { grep -oE '"namespace": "hush-[a-z-]+"' || true; } | sort -u ;;
     log) tail -n 50 "$log" ;;
     *) die "usage: hush shell start|stop|restart|status|log" ;;
@@ -618,7 +633,7 @@ main() {
     timer) cmd_timer "${2:-}" ;;
     volume) shift; cmd_volume "$@" ;;
     brightness) shift; cmd_brightness "$@" ;;
-    lock) pgrep -x hyprlock >/dev/null || { lock_layout || true; exec hyprlock; } ;;
+    lock) session_pgrep -x hyprlock >/dev/null || { lock_layout || true; exec hyprlock; } ;;
     face) shift; cmd_face "$@" ;;
     settings) qs -c hush ipc call hush settings >/dev/null || die "the shell is not running" ;;
     --version|version) cat "$HUSH_ROOT/VERSION" ;;

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 source "$(dirname "$0")/lib.sh"
 cd "$(dirname "$0")/.."
-mkdir -p assets/evidence
+EVD="${HUSH_EVIDENCE_DIR:-assets/evidence}"; mkdir -p "$EVD"
 t_all_themes() {
   bin/hush theme fog >/dev/null  # prime with a different theme so the first change is observable
   for t in harbor ember moss dusk paper fog; do
@@ -17,7 +17,7 @@ t_all_themes() {
     local gs; gs=$(gsettings get org.gnome.desktop.interface color-scheme)
     if [[ "$want" == "light" ]]; then assert_eq "'prefer-light'" "$gs" "$t sets GTK light"; else assert_eq "'prefer-dark'" "$gs" "$t sets GTK dark"; fi
     hyprctl dispatch dpms on >/dev/null; sleep 2
-    grim "assets/evidence/task12-$t.png" && pass "$t screenshot" || fail "$t screenshot"
+    grim "$EVD/task12-$t.png" && pass "$t screenshot" || fail "$t screenshot"
   done
   bin/hush theme harbor >/dev/null
 }

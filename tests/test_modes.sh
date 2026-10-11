@@ -8,10 +8,9 @@
 #   keyboard: Tab puts a visible focus ring on a control, Enter clicks it, Esc closes.
 # Timings come from the island's own history stamps (@shown/@hidden, shell wall clock), so IPC
 # latency never counts. Every fullscreen check runs on each monitor (skipped beyond one).
-source "$(dirname "$0")/lib.sh"; source "$(dirname "$0")/shell_lib.sh"
+source "$(dirname "$0")/lib.sh"; source "$(dirname "$0")/shell_lib.sh"; source "$(dirname "$0")/lib/input.sh"
 cd "$(dirname "$0")/.."
 K=hush-modes-probe
-SOCK="${XDG_RUNTIME_DIR:-/tmp}/hush-test-ydotool-modes.sock"; YPID=""
 F="$HOME/.config/hush/settings.json"; BAK=$(mktemp)
 if [[ -f "$F" ]]; then cp "$F" "$BAK"; HAD=1; else HAD=0; fi
 mon_json() { hyprctl monitors -j; }
@@ -25,7 +24,6 @@ ORIG_MON=$(focused); ORIG_WS=$(hyprctl activeworkspace -j | jq .id)
 O_DND=$(qs -c hush ipc call notifs dndOn 2>/dev/null)
 state() { shell_ipc islandState; }
 move() { hyprctl dispatch "hl.dsp.cursor.move({ x = $1, y = $2 })" >/dev/null; }
-yd() { YDOTOOL_SOCKET="$SOCK" ydotool "$@" >/dev/null 2>&1; }
 now() { date +%s%3N; }
 # Shell time of the first "$1" mark at or after epoch-ms $2 (-1 if none).
 mark_at() { shell_ipc islandHistory | python3 -c "
@@ -40,7 +38,7 @@ print(' '.join(sorted({k for k,v in d.items() for l in v if l['namespace']=='$2'
 has_layer() { [[ -n "$(layer_level "$1" "$2")" ]]; }
 cleanup() {
   hyprctl dispatch "hl.dsp.window.close({ window = \"class:$K\" })" >/dev/null 2>&1
-  [[ -n "$YPID" ]] && kill "$YPID" 2>/dev/null; rm -f "$SOCK"
+  input_stop
   shell_ipc closeSurface >/dev/null 2>&1
   [[ -n "$O_DND" && "$(qs -c hush ipc call notifs dndOn 2>/dev/null)" != "$O_DND" ]] && qs -c hush ipc call notifs toggleDnd >/dev/null
   if [[ $HAD == 1 ]]; then cp "$BAK" "$F"; else rm -f "$F"; fi; rm -f "$BAK"
@@ -66,7 +64,7 @@ print(c['address'] if c else '', 1 if c and c['grouped'] else 0)"; }
 gone() { local i; for i in $(seq 30); do hyprctl clients -j | grep -q "$K" || return 0; sleep 0.2; done; }
 
 shell_alive || { fail "shell not running"; exit 1; }
-if pgrep -x hyprlock >/dev/null; then echo "  SKIP session locked (hyprlock takes the pointer)"; exit 0; fi
+if session_pgrep -x hyprlock >/dev/null; then echo "  SKIP session locked (hyprlock takes the pointer)"; exit 0; fi
 
 t_settings() {
   assert_eq "true" "$(shell_ipc settingsGet island.fullscreenReveal)" "island.fullscreenReveal defaults to true"
@@ -168,31 +166,30 @@ t_keyboard() {
   # activeFocusItem null). A lone PanelWindow with the same grab/OnDemand setup still activates, so
   # the trigger inside hush is not isolated yet. Re-enable once the island takes keys cold.
   pass "keyboard checks skipped: island not activated before first pointer enter (Qt 6.12)"; return
-  if ! [[ -w /dev/uinput ]] || ! command -v ydotoold >/dev/null; then pass "no writable uinput/ydotoold: keyboard checks skipped"; return; fi
-  rm -f "$SOCK"; ydotoold -p "$SOCK" >/dev/null 2>&1 & YPID=$!; sleep 1.5
+  input_start || { pass "$(input_why): keyboard checks skipped"; return; }
   local m mx my mw mh r; m=$(focused); read -r mx my mw mh r <<<"$(mon_geom "$m")"
   move $((mx + mw / 2)) $((my + mh / 2)); sleep 0.3
   # Control center: Tab focuses a control with a visible ring; Tab again moves on; arrows move.
   shell_ipc openSurface expanded >/dev/null; wait_state expanded; sleep 0.8
   assert_eq "" "$(shell_ipc islandFocus)" "no focus ring before the keyboard is used"
-  yd key 15:1 15:0; sleep 0.2
+  input_key Tab; sleep 0.2
   local f1 f2; f1=$(shell_ipc islandHistory | grep -c '@nav')
   [[ -n "$(shell_ipc islandFocus)" ]] && pass "Tab focuses a control ($(shell_ipc islandFocus))" || fail "Tab focused nothing"
   assert_eq "true" "$(shell_ipc islandFocusRing)" "the focus ring is visible"
   grim -o "$m" "$HOME/.cache/hush/evidence/keyboard-focus-ring.png" 2>/dev/null
-  yd key 15:1 15:0; sleep 0.15; yd key 108:1 108:0; sleep 0.15; yd key 106:1 106:0; sleep 0.15
+  input_key Tab; sleep 0.15; input_key Down; sleep 0.15; input_key Right; sleep 0.15
   f2=$(shell_ipc islandHistory | grep -o '@nav' | wc -l)
   [[ $f2 -ge 3 ]] && pass "Tab and the arrows move the focus ($f2 moves)" || fail "focus moved $f2 times"
-  yd key 1:1 1:0; wait_state rest && pass "Esc closes the control center" || fail "Esc left $(state)"
+  input_key Escape; wait_state rest && pass "Esc closes the control center" || fail "Esc left $(state)"
   # Notification center, empty: the DND button is the only control; Enter clicks it.
   shell_ipc clearNotifications >/dev/null
   shell_ipc openSurface notifCenter >/dev/null; wait_state notifCenter; sleep 0.8
   local d0; d0=$(qs -c hush ipc call notifs dndOn)
-  yd key 15:1 15:0; sleep 0.15; yd key 28:1 28:0; sleep 0.3
+  input_key Tab; sleep 0.15; input_key Return; sleep 0.3
   [[ "$(qs -c hush ipc call notifs dndOn)" != "$d0" ]] && pass "Enter clicks the focused control (DND toggled)" || fail "Enter did nothing"
-  yd key 57:1 57:0; sleep 0.3
+  input_key space; sleep 0.3
   assert_eq "$d0" "$(qs -c hush ipc call notifs dndOn)" "Space clicks it again (DND restored)"
-  yd key 1:1 1:0; wait_state rest && pass "Esc closes the notification center" || fail "Esc left $(state)"
+  input_key Escape; wait_state rest && pass "Esc closes the notification center" || fail "Esc left $(state)"
 }
 t_log() { local e; e=$(shell_log_errors); [[ -z "$e" ]] && pass "no errors in shell log" || fail "shell log errors: $e"; }
 run_test "settings" t_settings; run_test "modes" t_modes; run_test "fullscreen" t_fullscreen

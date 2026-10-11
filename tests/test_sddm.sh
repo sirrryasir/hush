@@ -9,7 +9,7 @@ cd "$(dirname "$0")/.."
 T=sddm/hush
 EVID="$HOME/.cache/hush/evidence"
 R=$(mktemp -d)
-trap 'pkill -f "sddm-greeter-qt6 --test-mode --theme $R" 2>/dev/null; nested_stop 2>/dev/null; rm -rf "$R"' EXIT
+trap 'session_pkill -f "sddm-greeter-qt6 --test-mode --theme $R" 2>/dev/null; nested_stop 2>/dev/null; rm -rf "$R"' EXIT
 
 t_theme() {
   assert_file $T/Main.qml "Main.qml present"
@@ -163,7 +163,7 @@ t_greeter() {
   shot sessions
   (( $(tests/sddmshot.py menu "$R/sessions.ppm") >= 60 )) && pass "Tab, Return: session list opens upward" || fail "session list did not open"
   nest wtype -k Escape; sleep 0.4
-  pkill -f "sddm-greeter-qt6 --test-mode --theme $R"
+  session_pkill -f "sddm-greeter-qt6 --test-mode --theme $R"
   nested_stop
   evidence idle typing checking after-error sessions; [[ -f "$R/error.ppm" ]] && evidence error
 }

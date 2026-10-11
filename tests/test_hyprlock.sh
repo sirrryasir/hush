@@ -8,7 +8,7 @@ source "$(dirname "$0")/nested.sh"
 cd "$(dirname "$0")/.."
 EVID="$HOME/.cache/hush/evidence"
 R=$(mktemp -d)
-trap 'nested_stop 2>/dev/null; pkill -f "hyprlock -c $R" 2>/dev/null; rm -rf "$R"' EXIT
+trap 'nested_stop 2>/dev/null; session_pkill -f "hyprlock -c $R" 2>/dev/null; rm -rf "$R"' EXIT
 GEN=lockscreen/gen.py
 
 render_theme() { # theme -> $R/$t/hyprlock/colors.conf, wall.conf
@@ -140,7 +140,7 @@ t_nested() {
       (( inside <= idle + 10 )) && pass "no fail text in the pill (max luminance $inside, idle placeholder $idle)" || fail "text in the pill on failure (luminance $inside > idle $idle)"
       grep -qi 'wrong password' "$cfg" "$R/$t/layout.conf" && fail "config still says wrong password" || pass "no 'wrong password' text configured"
     fi
-    pkill -f "hyprlock -c $R" ; sleep 0.5
+    session_pkill -f "hyprlock -c $R" ; sleep 0.5
   done
   nested_stop
 }

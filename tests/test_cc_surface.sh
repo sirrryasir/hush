@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Control-center surface in its own harness (tests/harness/cc.qml); never touches the live shell.
-source "$(dirname "$0")/lib.sh"
+source "$(dirname "$0")/lib.sh"; source "$(dirname "$0")/lib/input.sh"
 cd "$(dirname "$0")/.."
 export HUSH_ROOT="$PWD"
 export QS_DISABLE_CRASH_HANDLER=1
@@ -104,15 +104,14 @@ t_layout() {
   cc pressOpenNotifs >/dev/null; assert_eq "1" "$(cc notifRequests)" "Open asks for the notification center"
 }
 # Keyboard sliders: Left/Right = one step, Shift = ten, committed. The harness stands in for the island's
-# navigator (live wiring: Island.navAdjust); keys go through a private ydotoold (skipped without uinput).
+# navigator (live wiring: Island.navAdjust); keys go through tests/lib/input.sh (skipped without uinput on the live desktop).
 # The sink volume is real, so it is saved and restored.
 t_keys() {
-  if ! [[ -w /dev/uinput ]] || ! command -v ydotoold >/dev/null || ! command -v wpctl >/dev/null; then pass "no writable uinput/ydotoold/wpctl: keyboard slider check skipped"; return; fi
-  local sock="${XDG_RUNTIME_DIR:-/tmp}/hush-test-ydotool-cc.sock" ypid ov om
+  command -v wpctl >/dev/null || { pass "no wpctl: keyboard slider check skipped"; return; }
+  local ov om
   ov=$(wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null) || { pass "no default sink: keyboard slider check skipped"; return; }
   om=0; [[ "$ov" == *MUTED* ]] && om=1; ov=$(awk '{print $2}' <<<"$ov")
-  rm -f "$sock"; ydotoold -p "$sock" >/dev/null 2>&1 & ypid=$!; sleep 1.5
-  yd() { YDOTOOL_SOCKET="$sock" ydotool "$@" >/dev/null 2>&1; }
+  input_start || { pass "$(input_why): keyboard slider check skipped"; return; }
   wpctl set-mute @DEFAULT_AUDIO_SINK@ 0; wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.5; sleep 0.6
   assert_eq "true" "$(cc armSlider)" "the volume slider exposes stepAdjust"
   local g x y w h; g=$(hyprctl layers -j | python3 -c "
@@ -123,19 +122,19 @@ for o in json.load(sys.stdin).values():
       if l['namespace']=='hush-harness-cc': print(l['x'],l['y'],l['w'],l['h'])")
   read -r x y w h <<<"$g"
   hyprctl dispatch "hl.dsp.cursor.move({ x = $((x + w / 2)), y = $((y + h - 4)) })" >/dev/null; sleep 0.2
-  YDOTOOL_SOCKET="$sock" ydotool click 0xC0 >/dev/null 2>&1; sleep 0.3
+  input_click; sleep 0.3
   local v0 v1; v0=$(cc sliderValue)
-  yd key 106:1 106:0; sleep 0.5
+  input_key Right; sleep 0.5
   assert_eq "1" "$(cc adjusts)" "Right reaches the slider"; assert_eq "1" "$(cc lastStep)" "Right is one step"
   v1=$(cc sliderValue)
   python3 -c "import sys; sys.exit(0 if abs(($v1)-($v0)-0.05)<0.011 else 1)" && pass "Right raised the volume by one step (0.05: $v0 -> $v1)" || fail "volume $v0 -> $v1 after Right"
-  yd key 105:1 105:0; sleep 0.5
+  input_key Left; sleep 0.5
   assert_eq "-1" "$(cc lastStep)" "Left is minus one step"
-  yd key 42:1 105:1 105:0 42:0; sleep 0.5
+  input_key shift+Left; sleep 0.5
   assert_eq "-10" "$(cc lastStep)" "Shift+Left is ten steps"
   assert_eq "0.00" "$(cc sliderValue)" "the value clamps at 0"
   assert_eq "3" "$(cc adjusts)" "every key committed once"
-  kill "$ypid" 2>/dev/null; rm -f "$sock"
+  input_stop
   wpctl set-volume @DEFAULT_AUDIO_SINK@ "$ov"; wpctl set-mute @DEFAULT_AUDIO_SINK@ "$om"
 }
 t_bt() {

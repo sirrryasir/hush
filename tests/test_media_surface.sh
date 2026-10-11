@@ -7,7 +7,7 @@ cd "$(dirname "$0")/.."
 HP=""; FP=""
 cleanup() { [[ -n "$HP" ]] && kill "$HP" 2>/dev/null; [[ -n "$FP" ]] && kill "$FP" 2>/dev/null; true; }
 trap cleanup EXIT
-cava_pids() { pgrep -f 'hush-cava\.conf'; }
+cava_pids() { session_pgrep -f 'hush-cava\.conf'; }
 layer() { hyprctl layers -j | python3 -c "
 import json,sys
 for m in json.load(sys.stdin).values():

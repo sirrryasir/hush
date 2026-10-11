@@ -7,7 +7,7 @@ mkdir -p "$T/cfg"; cp "$HUSH_ROOT/tests/harness/activity.qml" "$T/cfg/shell.qml"
 ln -s "$HUSH_ROOT/quickshell/hush/services" "$T/cfg/services"; ln -s "$HUSH_ROOT/quickshell/hush/config" "$T/cfg/config"
 QS=(qs -p "$T/cfg/shell.qml")
 SLEEPER=
-cleanup() { [[ -n $SLEEPER ]] && kill "$SLEEPER" 2>/dev/null; pkill -f "qs -p $T/cfg" 2>/dev/null
+cleanup() { [[ -n $SLEEPER ]] && kill "$SLEEPER" 2>/dev/null; session_pkill -f "qs -p $T/cfg" 2>/dev/null
   if [[ -f $T/timer.bak ]]; then cp "$T/timer.bak" "$TJ"; else rm -f "$TJ"; fi; rm -rf "$T"; }
 trap cleanup EXIT
 start() { "${QS[@]}" >"$LOG" 2>&1 & for _ in $(seq 40); do "${QS[@]}" ipc call activity timerRemaining >/dev/null 2>&1 && return; sleep 0.25; done; }
@@ -18,7 +18,7 @@ t_timer() {
   local r; r=$(a timerRemaining)
   [[ $r -ge 57 && $r -le 59 ]] && pass "timer remaining counts down ($r)" || fail "timer remaining ($r)"
   assert_file "$TJ" "timer persisted to timer.json"
-  pkill -f "qs -p $T/cfg"; sleep 0.5; start
+  session_pkill -f "qs -p $T/cfg"; sleep 0.5; start
   r=$(a timerRemaining)
   [[ $r -ge 55 && $r -le 59 ]] && pass "timer survives a restart ($r)" || fail "timer after restart ($r)"
   a timerStop >/dev/null; sleep 0.3

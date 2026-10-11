@@ -7,7 +7,7 @@ play_start() {
   else cvlc --intf dummy --no-video --aout dummy "$WAV" >/dev/null 2>&1 & fi
   PLAYER_PID=$!
 }
-play_stop() { kill "$PLAYER_PID" 2>/dev/null; pkill -x mpv 2>/dev/null; pkill -x vlc 2>/dev/null; true; }
+play_stop() { kill "$PLAYER_PID" 2>/dev/null; session_pkill -x mpv 2>/dev/null; session_pkill -x vlc 2>/dev/null; true; }
 t_media() {
   if ! command -v ffmpeg >/dev/null || ! { command -v mpv >/dev/null || command -v cvlc >/dev/null; }; then
     echo "SKIPPED: need ffmpeg and mpv (or vlc)"; return 0

@@ -31,7 +31,7 @@ cleanup() {
 trap cleanup EXIT
 
 shell_alive || { fail "shell not running"; exit 1; }
-if pgrep -x hyprlock >/dev/null; then echo "  SKIP session locked (hyprlock takes the pointer)"; exit 0; fi
+if session_pgrep -x hyprlock >/dev/null; then echo "  SKIP session locked (hyprlock takes the pointer)"; exit 0; fi
 
 # Pointer onto the pill, then wait for the hover face's chips (the morph swaps the state item in).
 hover_on() {

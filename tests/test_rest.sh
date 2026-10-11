@@ -7,7 +7,7 @@ width() { shell_ipc restWidth; }
 settle() { sleep 0.3; width; }
 t_rest() {
   shell_restart; sleep 3
-  pkill -f tests/fakempris.py 2>/dev/null; sleep 1
+  session_pkill -f tests/fakempris.py 2>/dev/null; sleep 1
   assert_eq "rest" "$(shell_ipc islandState)" "island at rest"
   local narrow; narrow=$(settle)
   [[ "$narrow" -le 112 ]] && pass "pill is narrow with no media (${narrow}px)" || fail "pill not narrow with no media (${narrow}px)"

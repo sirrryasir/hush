@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
 # Live test of the launcher, a modal surface inside the island (priority 90), driven over IPC (the
-# keybinds call toggleLauncher / showLauncher), wtype for the keyboard, and a private ydotoold for a
-# click off the pill (skipped without a writable uinput).
-source "$(dirname "$0")/lib.sh"; source "$(dirname "$0")/shell_lib.sh"
+# keybinds call toggleLauncher / showLauncher), wtype for the keyboard, and tests/lib/input.sh for a
+# click off the pill (skipped without a writable uinput on the live desktop).
+source "$(dirname "$0")/lib.sh"; source "$(dirname "$0")/shell_lib.sh"; source "$(dirname "$0")/lib/input.sh"
 cd "$(dirname "$0")/.."
 EVI="$HOME/.cache/hush/evidence"; mkdir -p "$EVI"
-SOCK="${XDG_RUNTIME_DIR:-/tmp}/hush-test-ydotool-launcher.sock"; YPID=""
 state() { shell_ipc islandState; }
 wait_state() { local i; for i in $(seq "${2:-40}"); do [[ "$(state)" == "$1" ]] && return 0; sleep 0.05; done; return 1; }
 # Poll an IPC getter until it answers non-empty/non-zero (the surface item loads asynchronously).
@@ -16,7 +15,7 @@ import json,sys
 d=json.load(sys.stdin)
 print(" ".join(sorted({l["namespace"] for m in d.values() for lv in m["levels"].values() for l in lv if l["namespace"].startswith("hush")})))'; }
 active() { hyprctl activewindow -j | python3 -c 'import json,sys;print(json.load(sys.stdin).get("address",""))'; }
-cleanup() { [[ -n "$YPID" ]] && kill "$YPID" 2>/dev/null; rm -f "$SOCK"; shell_ipc closeSurface >/dev/null 2>&1; }
+cleanup() { input_stop; shell_ipc closeSurface >/dev/null 2>&1; }
 trap cleanup EXIT
 
 t_open() {
@@ -89,16 +88,15 @@ print(cs[0]["address"], cs[0]["title"]) if cs else print("")' "$orig")
   hyprctl dispatch "hl.dsp.focus({ window = \"address:$orig\" })" >/dev/null; sleep 0.3
 }
 t_click_off() {
-  if ! [[ -w /dev/uinput ]] || ! command -v ydotoold >/dev/null; then pass "no writable uinput/ydotoold: click-off skipped"; return; fi
   read -r MX MY MW < <(hyprctl monitors -j | python3 -c "
 import json,sys
 m=next(m for m in json.load(sys.stdin) if m['focused'])
 print(m['x'], m['y'], round(m['width']/m['scale']))")
-  rm -f "$SOCK"; ydotoold -p "$SOCK" >/dev/null 2>&1 & YPID=$!; sleep 1.5
+  input_start || { pass "$(input_why): click-off skipped"; return; }
   shell_ipc toggleLauncher; wait_state launcher; sleep 0.7
   # Inside the island surface (top 360 px) but off the 520 px pill: the modal catcher takes it.
   hyprctl dispatch "hl.dsp.cursor.move({ x = $((MX + 40)), y = $((MY + 100)) })" >/dev/null; sleep 0.1
-  YDOTOOL_SOCKET="$SOCK" ydotool click 0xC0 >/dev/null 2>&1; sleep 0.5
+  input_click; sleep 0.5
   [[ "$(state)" == rest || "$(state)" == media ]] && pass "a click off the pill closes the launcher" || fail "click off left $(state)"
   hyprctl dispatch "hl.dsp.cursor.move({ x = $((MX + MW / 2)), y = $((MY + 500)) })" >/dev/null
 }
@@ -128,10 +126,10 @@ t_clip_live() {
 # box under a stray rest pill).
 t_single() {
   local before after layers i
-  before=$(pgrep -f "$HUSH_PROC" | head -1)
+  before=$(session_pgrep -f "$HUSH_PROC" | head -1)
   (setsid qs -c hush >>"$HUSH_LOG" 2>&1 </dev/null &)
-  for i in $(seq 40); do after=$(pgrep -f "$HUSH_PROC" | tr '\n' ' '); [[ "$after" != *"$before"* && -n "$after" ]] && break; sleep 0.25; done
-  assert_eq "1" "$(pgrep -f "$HUSH_PROC" | wc -l)" "a second qs -c hush leaves one shell running"
+  for i in $(seq 40); do after=$(session_pgrep -f "$HUSH_PROC" | tr '\n' ' '); [[ "$after" != *"$before"* && -n "$after" ]] && break; sleep 0.25; done
+  assert_eq "1" "$(session_pgrep -f "$HUSH_PROC" | wc -l)" "a second qs -c hush leaves one shell running"
   [[ "$after" != *"$before"* ]] && pass "the older instance ($before) ended, the newer ($after) stays" || fail "older instance still alive: $after"
   layers=$(hyprctl layers -j | python3 -c '
 import json,sys

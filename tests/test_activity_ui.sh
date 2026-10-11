@@ -5,7 +5,7 @@ cd "$HUSH_ROOT"
 EV="$HOME/.cache/hush/evidence"; mkdir -p "$EV"
 QS=(qs -p tests/harness/activity_ui.qml)
 LOG=$(mktemp)
-cleanup() { pkill -f "qs -p tests/harness/activity_ui.qml" 2>/dev/null; rm -f "$LOG"; }
+cleanup() { session_pkill -f "qs -p tests/harness/activity_ui.qml" 2>/dev/null; rm -f "$LOG"; }
 trap cleanup EXIT
 h() { "${QS[@]}" ipc call activityui "$@"; }
 shot() { # name: grim the harness layer

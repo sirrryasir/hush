@@ -18,7 +18,7 @@ trap cleanup EXIT
 
 shell_alive || { fail "shell not running"; exit 1; }
 # A lock screen covers every layer, so frames would only show it; nothing to measure.
-if pgrep -x hyprlock >/dev/null; then echo "  SKIP session locked (hyprlock covers the island)"; exit 0; fi
+if session_pgrep -x hyprlock >/dev/null; then echo "  SKIP session locked (hyprlock covers the island)"; exit 0; fi
 for f in quickshell/hush/modules/island/Pill.qml quickshell/hush/modules/island/SurfaceLoader.qml quickshell/hush/config/Sizes.qml; do
   assert_file "$f" "$(basename "$f") exists"
 done

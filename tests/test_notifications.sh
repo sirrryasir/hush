@@ -36,7 +36,7 @@ cleanup() { move "$AX" "$AY"; shell_ipc closeSurface >/dev/null 2>&1; shell_ipc 
 trap cleanup EXIT
 
 t_daemon() {
-  pkill -x swaync 2>/dev/null; sleep 0.3
+  session_pkill -x swaync 2>/dev/null; sleep 0.3
   move "$AX" "$AY"; shell_restart; sleep 3
   assert_eq "qs" "$(owner)" "hush owns org.freedesktop.Notifications"
   assert_eq "false" "$(notif_ipc passive)" "not passive while it owns the name"
