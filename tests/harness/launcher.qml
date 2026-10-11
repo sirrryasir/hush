@@ -67,6 +67,12 @@ ShellRoot {
         function closed(): bool { return win.closed }
         function select(i: int): void { root.lau.currentIndex = i }
         function current(): string { return root.lau.currentName }
+        function deleteCurrent(): bool { return root.lau.removeCurrent() }
         function emptyText(): string { const t = root.find(root.lau, "emptyText"); return t && t.visible ? t.text : "" }
+        function rowName(i: int): string { const r = root.rowAt(i); return r ? r.entry.name : "" }
+        function rowDesc(i: int): string { const r = root.rowAt(i); return r ? r.desc : "" }
+        function rowGlyph(i: int): string { const r = root.rowAt(i); return r ? r.glyph : "" }
+        function rowThumbReady(i: int): bool { const r = root.rowAt(i); const t = r ? root.find(r, "rowThumb") : null; return !!t && t.status === Image.Ready }
+        function thumbDir(): string { return root.lau ? root.lau.clipThumbDir : "" }
     }
 }

@@ -36,6 +36,7 @@ t_launcher() {
   assert_eq "true" "$(hq wantsKeyboard)" "wantsKeyboard"
   hq setQuery kitty >/dev/null; sleep 0.5
   hq first | grep -qi kitty && pass "kitty query: first result is $(hq first)" || fail "first result: $(hq first)"
+  local d; d=$(hq rowDesc 0); [[ -n "$d" && "$d" != *"No running"* ]] && pass "app row carries a description ($d)" || fail "app row has no description"
   hq setQuery "=2*21" >/dev/null; sleep 1
   assert_eq "calc" "$(hq mode)" "= switches to calc mode"
   assert_eq "42" "$(hq first)" "=2*21 gives 42"
@@ -43,7 +44,7 @@ t_launcher() {
   assert_eq "3" "$(wait_count 3)" "; lists the three stub entries"
   assert_eq "clip" "$(hq mode)" "; switches to clip mode"
   hq setQuery ";WOR" >/dev/null; sleep 0.3
-  [[ "$(hq first)" == *"hello world"* ]] && pass "; filter is case-insensitive" || fail "; filter: $(hq first)"
+  assert_eq "hello world" "$(hq first)" "; filter is case-insensitive"
 }
 # Opened straight in clip mode (Super+V) the list must load: it used to wait for a mode change.
 t_clip_open() {
@@ -55,6 +56,26 @@ t_clip_open() {
   assert_eq "4" "$(wait_count 4)" "a reopen reads the history again (new entry shows)"
   assert_eq "new entry" "$(hq first)" "newest entry first"
   local n; n=$(grep -c '^list' "$STUB/log"); (( n >= 2 )) && pass "cliphist list ran on each open ($n)" || fail "cliphist list ran $n time(s)"
+}
+t_clip_rows() {
+  sleep 0.5
+  assert_eq "Image" "$(hq rowName 1)" "image entry is named Image"
+  assert_eq "image" "$(hq rowGlyph 1)" "image entry has the image glyph"
+  local i; for i in $(seq 30); do [[ "$(hq rowThumbReady 1)" == true ]] && break; sleep 0.1; done
+  assert_eq "true" "$(hq rowThumbReady 1)" "image entry shows a decoded thumbnail"
+  grep -q '^decode 3' "$STUB/log" && pass "thumbnail came from cliphist decode 3" || fail "no decode call: $(cat "$STUB/log")"
+  assert_eq "blob:x" "$(hq rowName 2)" "NULs stripped from text"
+  assert_eq "hello world" "$(hq rowName 3)" "whitespace collapsed to one line"
+  assert_eq "content_paste" "$(hq rowGlyph 3)" "text entries use the clipboard glyph"
+  local dir; dir=$(hq thumbDir | tr -d '"')
+  [[ -s "$dir/3" ]] && pass "thumbnail cached in $dir" || fail "no cached thumbnail in $dir"
+  hq select 2 >/dev/null; assert_eq "blob:x" "$(hq current)" "selected the NUL entry"
+  assert_eq "true" "$(hq deleteCurrent)" "Delete removes the selected entry"
+  assert_eq "3" "$(wait_count 3)" "list shrinks by one"
+  grep -q '^delete 2$' "$STUB/log" && pass "cliphist delete got entry 2" || fail "delete log: $(grep delete "$STUB/log")"
+  sleep 0.6; assert_eq "3" "$(hq count)" "history re-read after the delete still has 3"
+  hq reopen apps >/dev/null; sleep 0.6
+  [[ ! -e "$dir" ]] && pass "thumbnail cache removed on close" || fail "cache dir left behind: $dir"
   : >"$STUB/db"; hq reopen clip >/dev/null; sleep 0.8
   assert_eq "Clipboard is empty" "$(hq emptyText)" "an empty history says so"
   local e; e=$(grep -iE "error|binding loop|TypeError|ReferenceError" "$HLOG" | head -3)
@@ -62,4 +83,5 @@ t_clip_open() {
 }
 run_test "launcher surface" t_launcher
 run_test "clip opens in clip mode" t_clip_open
+run_test "clip rows" t_clip_rows
 finish

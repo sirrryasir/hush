@@ -30,8 +30,19 @@ FocusScope {
     readonly property bool clipAvailable: clip.available
     readonly property bool clipLoaded: clip.loaded
     readonly property int clipLines: clip.lines.length
+    readonly property var clipThumbs: clip.thumbs
+    readonly property string clipThumbDir: clip.thumbDir
+    readonly property var current: count > 0 && currentIndex < count ? results[currentIndex] : null
 
     function setQuery(q) { query = q; currentIndex = 0; input.text = q }
+    // Delete on a clipboard row removes that entry from the history and keeps the cursor in place.
+    function removeCurrent() {
+        const item = current
+        if (!item || !item.remove) return false
+        item.remove()
+        if (currentIndex >= count) currentIndex = Math.max(0, count - 1)
+        return true
+    }
     function move(d) { if (count > 0) currentIndex = (currentIndex + d + count) % count }
     function focusInput() { input.forceActiveFocus() }
     function activate(i) {
@@ -139,6 +150,7 @@ FocusScope {
                     const ctrl = event.modifiers & Qt.ControlModifier
                     if (event.key === Qt.Key_Escape) root.close()
                     else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) root.activate()
+                    else if (event.key === Qt.Key_Delete && root.current && root.current.remove) root.removeCurrent()
                     else if (event.key === Qt.Key_Down || event.key === Qt.Key_Tab || (ctrl && event.key === Qt.Key_N)) root.move(1)
                     else if (event.key === Qt.Key_Up || event.key === Qt.Key_Backtab || (ctrl && event.key === Qt.Key_P)) root.move(-1)
                     else return
@@ -147,7 +159,7 @@ FocusScope {
                 Text {
                     anchors.fill: parent; verticalAlignment: Text.AlignVCenter
                     visible: input.text.length === 0
-                    text: root.mode === "windows" ? "Switch to a window" : root.mode === "clip" ? "Search the clipboard"
+                    text: root.mode === "windows" ? "Switch to a window" : root.mode === "clip" ? "Search the clipboard, Delete removes"
                         : root.mode === "calc" ? "Calculate" : "Search apps, @ windows, = calc, ; clipboard"
                     font: input.font; color: Colors.islandFgVar
                 }
@@ -172,6 +184,7 @@ FocusScope {
                 required property int index
                 width: list.width
                 entry: modelData
+                thumbs: root.clipThumbs
                 selected: index === root.currentIndex
                 onClicked: root.activate(index)
                 onHovered: root.currentIndex = index

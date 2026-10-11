@@ -11,7 +11,9 @@ QtObject {
             out.push({
                 kind: "app", remember: true,
                 icon: e.icon, name: e.name,
-                hint: e.genericName || "",
+                // Description line under the name: the entry's Comment, else its GenericName.
+                desc: e.comment || e.genericName || "",
+                hint: "",
                 keywords: [e.genericName, e.id].concat(e.keywords || []).join(" "),
                 run: () => e.execute()
             })
