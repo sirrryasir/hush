@@ -91,7 +91,16 @@ t_modes() {
   assert_eq "0" "$(mon_geom "$m" | cut -d' ' -f5)" "auto-hide: reserves nothing"
   assert_eq "3" "$(layer_level "$m" hush-island-reveal)" "auto-hide: reveal strip on the Overlay layer"
   # Workspace change reveals for motion.revealMs, then hides.
-  local other=$((ORIG_WS == 9 ? 8 : 9)) t0 ts th
+  # A workspace no monitor shows (focusing one already active on another monitor only moves the
+  # focus there, no workspace changes), bound to this monitor when a rule says so.
+  local other t0 ts th
+  other=$(python3 -c "
+import json,subprocess as sp
+j=lambda *a: json.loads(sp.run(['hyprctl',*a,'-j'],capture_output=True,text=True).stdout)
+act={m['activeWorkspace']['id'] for m in j('monitors')}
+home={r['workspaceString']:r.get('monitor','') for r in j('workspacerules')}
+free=[i for i in range(9,0,-1) if i not in act]
+print(next((i for i in free if home.get(str(i))=='$m'), free[0]))")
   t0=$(now); hyprctl dispatch "hl.dsp.focus({ workspace = $other })" >/dev/null
   ts=$(wait_mark @shown "$t0" 20)
   [[ $ts != -1 ]] && pass "auto-hide: workspace change reveals the pill ($((ts - t0)) ms)" || fail "auto-hide: no reveal on workspace change"
