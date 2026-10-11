@@ -37,8 +37,7 @@ Draft of the 0.2.0 entry; `VERSION` is bumped and the date set at release.
 
 ### Changed
 
-- README rewritten; setup and lock screen details moved to `docs/setup.md` and
-  `docs/lockscreen.md`.
+- README rewritten; configuration reference in `docs/configuration.md`.
 
 ## [0.1.0] - 2026-10-02
 

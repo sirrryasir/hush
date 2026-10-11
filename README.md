@@ -11,12 +11,9 @@
 
 Full-quality recording: [assets/demo/hush-demo.mp4](assets/demo/hush-demo.mp4)
 
-## What it is
-
-Hush is a desktop shell for Hyprland, written in Quickshell. A single pill at the top of each
-monitor is the clock, the OSD, the notification card, the control center, the launcher, the
-wallpaper grid and the settings. `hush theme <name>` recolours the shell and every app it
-templates in one pass. Lock and login screens use the same island.
+Hush is a Quickshell desktop shell for Hyprland. One pill at the top of each monitor is the
+clock, OSD, notifications, control center, launcher, wallpaper grid and settings. `hush theme`
+recolours the shell and every app it templates in one pass; lock and login use the same island.
 
 <table>
   <tr>
@@ -37,7 +34,7 @@ Control center per theme: [dusk](assets/themes/dusk-cc.png), [ember](assets/them
 
 - **Island**: a narrow pill at rest (clock, activity circle, status ring); hover face with workspaces, date and track; configurable left, right and middle click and scroll; control center, media, calendar, notification center, launcher (apps, windows, calculator, clipboard), wallpaper grid and settings grow out of the pill; a priority arbiter with a resuming queue for OSDs and notifications; `reserve`, `overlay` and `autohide` modes; fullscreen retract and reveal; full keyboard navigation.
 - **Theming**: six themes; `hush theme` recolours the shell, Hyprland, kitty, Neovim, GTK, Qt/Kvantum, hyprlock, SDDM, fastfetch and the browser; circle-reveal wallpaper transition from the island; shell colours cross-fade; WCAG contrast gates in the tests.
-- **Lock and login**: island-native hyprlock and SDDM greeter from one layout spec; `hush face` sets the avatar for both. See [docs/lockscreen.md](docs/lockscreen.md).
+- **Lock and login**: island-native hyprlock and SDDM greeter from one layout spec; `hush face` sets the avatar.
 - **Settings**: a settings surface with live preview, a composer for the rest pill, hover face and control center, all stored in `~/.config/hush/settings.json`.
 - **Plugins** (optional): GloView overview and dynamic-cursors (shake to find), coloured from the theme.
 - **Live activities**: recording, countdown timer and now playing shown at rest; mic and camera use in the status ring.
@@ -56,8 +53,7 @@ sudo ~/hush/sddm/install.sh   # optional login screen; the only step that needs 
 `install.sh` symlinks the shell, matugen, hyprlock and `hush*` into `~/.config` and
 `~/.local/bin`, installs fonts, enables the git hooks and applies `harbor`. It never uses sudo
 and never overwrites a real file: anything in the way moves to `~/.cache/hush/backup-<timestamp>/`.
-Start the shell from autostart with `hush reload` then `hush shell start`. Full list and the
-blur layer rule: [docs/setup.md](docs/setup.md).
+Autostart `hush reload` then `hush shell start`. Blur rule, modes and links: [docs/configuration.md](docs/configuration.md).
 
 ## Use
 
@@ -106,7 +102,7 @@ Settings rows move with Shift+Up and Shift+Down.
 
 Settings live in `~/.config/hush/settings.json` (defaults: `quickshell/hush/config/settings.default.json`),
 hot-reloaded. `hush settings` opens the GUI; Settings, Modules composes the rest pill, hover face and
-control center. Keys, modes, click mapping and environment variables: [docs/setup.md](docs/setup.md).
+control center. Keys, modes, click mapping, environment: [docs/configuration.md](docs/configuration.md).
 
 Add a theme:
 
@@ -114,24 +110,17 @@ Add a theme:
 2. Run `hush-wallgen` to generate its wallpaper.
 3. Run `hush theme <name>`.
 
-Plugins: `hush plugins install`, then load `~/.config/hush/plugins.lua` from `hyprland.lua` ([docs/setup.md](docs/setup.md#plugins)).
-
-## Testing
-
-`bash tests/sandbox.sh` runs the suite in a nested Hyprland without touching your session.
-`bash tests/run_all.sh` runs everything against the live shell. Details: [docs/testing.md](docs/testing.md).
-Design notes for contributors: [docs/design.md](docs/design.md); brand files: [docs/brand.md](docs/brand.md).
+Plugins: `hush plugins install`, then load `~/.config/hush/plugins.lua` from `hyprland.lua` ([docs/configuration.md](docs/configuration.md#plugins)).
 
 ## Contributing
 
-- Conventional Commits: `type(scope): subject`, at most 72 characters, types
-  `feat fix perf refactor docs test chore build ci style revert`, `!` for a breaking change.
-- One coherent change per commit, with a body that says why (optional for `docs` and `chore`).
-  Tests green first; squash fixups before pushing.
-- `install.sh` enables the `commit-msg` hook (enforces the above) and `pre-commit`
-  (personal-data scan, `hush check`). No user names, home paths or monitor names in the tree.
-- Releases at milestones only: bump `VERSION` and `CHANGELOG.md` in `chore(release): X.Y.Z`,
-  then an annotated `vX.Y.Z` tag.
+- Tests: `bash tests/sandbox.sh` runs the suite in a nested Hyprland without touching your
+  session; `bash tests/run_all.sh` drives the live shell; `tests/test_<name>.sh` runs one.
+- Conventional Commits, 72-character subject, one coherent change per commit with a body that
+  says why. The hooks `install.sh` enables check the format, scan for personal data and run
+  `hush check`. No user names, home paths or monitor names in the tree.
+- Releases at milestones: `chore(release): X.Y.Z` bumps `VERSION` and `CHANGELOG.md`, then an
+  annotated tag.
 
 ## Credits
 
