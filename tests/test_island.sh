@@ -36,7 +36,7 @@ print(' '.join(sorted({'%d' % l['h'] for mon in json.load(sys.stdin).values() fo
   sleep 1; local rest; rest=$(shell_ipc islandSize)
   [[ "$rest" =~ ^[0-9]+x36$ ]] && pass "pill is ${rest} at rest" || fail "pill at rest is $rest"
   shell_ipc toggleControlCenter
-  assert_eq "560x320" "$(settle 560x320)" "pill springs to 560x320 expanded"
+  assert_eq "560x304" "$(settle 560x304)" "pill springs to 560x304 expanded"
   shell_ipc toggleControlCenter
   assert_eq "$rest" "$(settle "$rest")" "pill springs back to $rest"
 }

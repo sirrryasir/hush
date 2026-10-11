@@ -337,6 +337,7 @@ Item {
         Surf.ControlCenter {
             onCloseRequested: islandRoot.closeSurface()
             onOpenWallpapers: islandRoot.openSurface("wallpapers")
+            onOpenNotifications: islandRoot.openSurface("notifCenter")
         }
     }
     Component { id: mediaSurfaceComp; Surf.Media {} }

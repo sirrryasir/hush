@@ -14,7 +14,7 @@ Singleton {
     readonly property size osd: Qt.size(304, 36)
     readonly property size notification: Qt.size(520, 36)
     readonly property size notificationTall: Qt.size(520, 56)
-    readonly property size expanded: Qt.size(560, 320)
+    readonly property size expanded: Qt.size(560, 304)
     readonly property size calendar: Qt.size(360, 300)
     readonly property size wallpapers: Qt.size(656, 320)
     readonly property size settings: Qt.size(560, 288)

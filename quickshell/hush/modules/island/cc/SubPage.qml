@@ -16,6 +16,10 @@ Item {
     // Trailing switch (the radio on/off), shown when `switchable`.
     property bool switchable: false
     property bool switchOn: false
+    // Row delegate for the list (a Component whose root takes `required property var modelData`);
+    // null uses the plain icon / label / trailing-text row.
+    property Component delegate: null
+    readonly property alias listView: list
     signal back()
     signal switched()
     signal rowClicked(var row)
@@ -67,10 +71,14 @@ Item {
     ListView {
         id: list
         anchors.left: parent.left; anchors.right: parent.right; anchors.bottom: parent.bottom
-        anchors.top: head.bottom; anchors.topMargin: 10
+        anchors.top: head.bottom; anchors.topMargin: 12
         clip: true; spacing: 4; model: page.model
         boundsBehavior: Flickable.StopAtBounds
-        delegate: Rectangle {
+        delegate: page.delegate || defaultRow
+    }
+    Component {
+        id: defaultRow
+        Rectangle {
             id: row
             required property var modelData
             width: list.width; height: 40; radius: 12
@@ -93,10 +101,10 @@ Item {
             }
             MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: page.rowClicked(row.modelData); Accessible.role: Accessible.Button; Accessible.name: row.modelData.label }
         }
-        Text {
-            anchors.centerIn: parent; visible: list.count === 0
-            text: page.busy ? "Scanning..." : page.emptyText; color: Colors.islandFg; opacity: 0.7
-            font.family: Theme.fontUi; font.pixelSize: 13
-        }
+    }
+    Text {
+        anchors.centerIn: list; visible: list.count === 0
+        text: page.busy ? "Searching" : page.emptyText; color: Colors.islandFg; opacity: 0.7
+        font.family: Theme.fontUi; font.pixelSize: 13
     }
 }
