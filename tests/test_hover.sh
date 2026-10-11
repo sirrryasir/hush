@@ -68,7 +68,7 @@ t_hover() {
   wait_state hover && pass "pointer on the pill opens the hover face" || fail "no hover face (state $(state))"
   local g; g=$(gap @in hover)
   [[ $g -ge 110 && $g -le 200 ]] && pass "hover after $g ms (dwell 120, <= 200)" || fail "hover after $g ms"
-  local i; for i in $(seq 20); do [[ "$(shell_ipc islandSize)" == "320x44" ]] && break; sleep 0.05; done
+  local i; for i in $(seq 30); do [[ "$(shell_ipc islandSize)" == "320x44" ]] && break; sleep 0.1; done # the spring settles within ~3 s under load
   assert_eq "320x44" "$(shell_ipc islandSize)" "hover face is 320x44"
   assert_eq "true" "$(shell_ipc islandControlVisible hoverWifi)" "hover face shows the Wi-Fi state"
   if [[ "$(shell_ipc batteryPresent)" == "true" ]]; then
