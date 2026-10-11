@@ -2,24 +2,27 @@
 """Hush brand kit builder.
 
 Draws the Breath mark (the island pill and its dot) and the "hush" wordmark from one round-ended
-stroke, outlines them with Inkscape, and composes every delivery file from those masters.
-Run from anywhere:  python3 assets/brand/src/build.py
-Needs: inkscape (outline + union), rsvg-convert (PNG). Paths are relative to assets/brand/.
+stroke, outlines them with Inkscape and writes the canonical files, one set per use:
+  svg/       symbol and horizontal lockup, black (for light) and white (for dark)
+  app/       app icon squircle, dark and light, SVG + 512 PNG
+  social/    README header (dark, light), GitHub social preview, default avatar (lock/login face)
+  matugen/templates/fastfetch-logo.svg   the fastfetch logo, tinted per theme at runtime
+web/favicon.{svg,ico} were exported once from svg/hush-symbol (small cut) and are not rebuilt here.
+Run from anywhere:  python3 assets/brand/src/build.py   (needs inkscape and rsvg-convert)
 """
 import os, re, subprocess, tempfile
 
 BRAND = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+FASTFETCH = os.path.join(BRAND, "..", "..", "matugen", "templates", "fastfetch-logo.svg")
 TMP = tempfile.mkdtemp(prefix="hush-brand-")
 os.chdir(BRAND)
-for d in ("svg", "png", "app", "social", "shell", "cobrand", "fastfetch"):
+for d in ("svg", "app", "social"):
     os.makedirs(d, exist_ok=True)
 
-BLACK, WHITE, ACCENT = "#000000", "#ffffff", "#7fb3a3"
-# Primary colour per theme (matugen output for each theme's source/wallpaper and mode).
-THEMES = {"dusk": "#dcb9f8", "ember": "#ffb690", "fog": "#236488",
-          "harbor": "#9cd1c1", "moss": "#96d5a6", "paper": "#35675a"}
+BLACK, WHITE = "#000000", "#ffffff"
 
 def f(n): return f"{n:.2f}".rstrip("0").rstrip(".")
+def tmp(name): return os.path.join(TMP, name)
 
 # ------------------------------------------------------------------ geometry
 # Wordmark: x-height 96, stroke 26 (round ends), ascender 140, n-width 80, letter gap 18.
@@ -43,20 +46,6 @@ def glyph(ch, x, by, X=WX, t=WT, W=WW, A=WA):
         xl, xr = x + h + rc, x + WS - h - rc
         return [f"M{f(x+WS-h)} {f(yt)} H{f(xl)} A{f(rc)} {f(rc)} 0 0 0 {f(xl)} {f(ym)} H{f(xr)} "
                 f"A{f(rc)} {f(rc)} 0 0 1 {f(xr)} {f(yb)} H{f(x+h)}"], WS
-    if ch == "o":
-        r = (X - t) / 2
-        cx, cy = x + X / 2, by - X / 2
-        return [f"M{f(cx-r)} {f(cy)} A{f(r)} {f(r)} 0 1 1 {f(cx+r)} {f(cy)} A{f(r)} {f(r)} 0 1 1 {f(cx-r)} {f(cy)}"], X
-    if ch == "r":
-        Rr = R * 0.9
-        cy = by - X + h + Rr
-        return [f"M{f(x+h)} {f(by-X+h)} V{f(by-h)}",
-                f"M{f(x+h)} {f(cy)} A{f(Rr)} {f(Rr)} 0 0 1 {f(x+h+Rr*1.6)} {f(by-X+h)}"], W * 0.72
-    if ch == "f":
-        Rf = R * 0.9
-        top = by - A + h
-        return [f"M{f(x+h)} {f(by-h)} V{f(top+Rf)} A{f(Rf)} {f(Rf)} 0 0 1 {f(x+h+Rf)} {f(top)} H{f(x+h+Rf+10)}",
-                f"M{f(x+h)} {f(by-X+h)} H{f(x+h+Rf+6)}"], W * 0.68
     raise ValueError(ch)
 
 def word(text, x, by, gap=WG):
@@ -92,7 +81,6 @@ def outline(name, w, h, title, fills="", strokes=(), t=WT):
                    check=True, capture_output=True)
     d = " ".join(re.findall(r'\sd="([^"]+)"', open(out).read()))
     d = re.sub(r"(\d+\.\d{2})\d+", r"\1", d)
-    open(name, "w").write(mark_svg(d, w, h, title))
     return d
 
 def mark_svg(d, w, h, title, fill=BLACK, bg=None, rx=0):
@@ -106,39 +94,26 @@ def png(svg, out, w, h=None):
     subprocess.run(cmd, check=True)
 
 # ------------------------------------------------------------------ masters
-SYM = outline("svg/hush-symbol.svg", 256, 256, "Hush", breath())
-# Small cut for 16-24 px: snapped to a 16 px grid (pill 8x4, gap 2, dot 4).
-SYM_S = outline("svg/hush-symbol-small.svg", 256, 256, "Hush", breath(ph=64, gap=32, cy=128))
+SYM = outline(tmp("symbol.svg"), 256, 256, "Hush", breath())
 # Reversed: 2 units thinner all round so white-on-black does not look heavier.
-SYM_R = outline("svg/hush-symbol-reversed.svg", 256, 256, "Hush", breath(ph=72, gap=20))
+SYM_R = outline(tmp("symbol-reversed.svg"), 256, 256, "Hush", breath(ph=72, gap=20))
 _, ww = word("hush", 0, 200)
-WORD = outline("svg/hush-wordmark.svg", ww, 256, "hush", strokes=word("hush", 0, 200)[0])
 LX = 256 + 72  # horizontal lockup: symbol, 72 gap, wordmark; pill centred on the x-height
-LOCK = outline("svg/hush-lockup.svg", LX + ww + 8, 256, "Hush",
-               f'<g transform="translate(0 28)">{breath()}</g>', word("hush", LX, 200)[0])
 LOCK_W = LX + ww + 8
-STK_W = ww + 32  # stacked: symbol above wordmark
-stk = f'<g transform="translate({f(STK_W/2-128)} 0)">{breath(cy=110)}</g>'
-STACK = outline("svg/hush-lockup-stacked.svg", STK_W, 384, "Hush", stk,
-                word("hush", 16, 336)[0])
-_, fw = word("for", 0, 200)
+LOCK = outline(tmp("lockup.svg"), LOCK_W, 256, "Hush",
+               f'<g transform="translate(0 28)">{breath()}</g>', word("hush", LX, 200)[0])
 
-# one-colour variants of every master
-for name, d, w, h in (("hush-symbol", SYM, 256, 256), ("hush-symbol-small", SYM_S, 256, 256),
-                      ("hush-wordmark", WORD, ww, 256), ("hush-lockup", LOCK, LOCK_W, 256),
-                      ("hush-lockup-stacked", STACK, STK_W, 384)):
-    src = SYM_R if name == "hush-symbol" else d
-    for tag, col, dd in (("black", BLACK, d), ("white", WHITE, src), ("accent", ACCENT, d)):
-        p = f"svg/{name}-{tag}.svg"
-        open(p, "w").write(mark_svg(dd, w, h, "Hush", col))
+for tag, col, sym in (("black", BLACK, SYM), ("white", WHITE, SYM_R)):
+    open(f"svg/hush-symbol-{tag}.svg", "w").write(mark_svg(sym, 256, 256, "Hush", col))
+    open(f"svg/hush-lockup-{tag}.svg", "w").write(mark_svg(LOCK, LOCK_W, 256, "Hush", col))
 
 # ------------------------------------------------------------------ composites
 def place(d, vw, vh, x, y, w, fill):
     s = w / vw
     return f'<path transform="translate({f(x)} {f(y)}) scale({f(s)})" fill="{fill}" d="{d}"/>'
 
-def canvas(path, W, H, body, bg, title="Hush", rx=0):
-    b = f'<rect width="{W}" height="{H}" rx="{f(rx)}" fill="{bg}"/>' if bg else ""
+def canvas(path, W, H, body, bg, title="Hush"):
+    b = f'<rect width="{W}" height="{H}" fill="{bg}"/>' if bg else ""
     open(path, "w").write(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" '
                           f'height="{H}" role="img" aria-labelledby="title"><title id="title">{title}</title>'
                           f'{b}{body}</svg>\n')
@@ -154,90 +129,25 @@ def centred(d, vw, vh, W, H, w, fill, dy=0):
     s = w / vw
     return place(d, vw, vh, (W - w) / 2, (H - vh * s) / 2 + dy, w, fill)
 
-# App icon: mark on a pure-black (or white) squircle, mark at 62 % of the tile.
+# App icon: mark on a pure-black (or white) squircle, mark at 60 % of the tile.
 for mode, bg, fg, d in (("dark", BLACK, WHITE, SYM_R), ("light", WHITE, BLACK, SYM)):
     p = f"app/hush-app-icon-{mode}.svg"
-    canvas(p, 1024, 1024, f'<path fill="{bg}" d="{squircle(1024)}"/>' +
-           centred(d, 256, 256, 1024, 1024, 1024 * 0.6, fg, dy=0), None)
-    for s in (512, 1024):
-        png(p, f"app/hush-app-icon-{mode}-{s}.png", s)
+    canvas(p, 1024, 1024, f'<path fill="{bg}" d="{squircle(1024)}"/>' + centred(d, 256, 256, 1024, 1024, 1024 * 0.6, fg), None)
+    png(p, f"app/hush-app-icon-{mode}-512.png", 512)
 
-# README header 1200x300 and GitHub social preview 1280x640, dark and light.
-for mode, bg, fg, d in (("dark", BLACK, WHITE, LOCK), ("light", WHITE, BLACK, LOCK)):
-    p = f"social/readme-header-{mode}.svg"
-    canvas(p, 1200, 300, centred(d, LOCK_W, 256, 1200, 300, 520, fg), None)  # transparent: sits on the GitHub page colour
-    png(p, f"social/readme-header-{mode}.png", 1200)
-    p = f"social/social-preview-{mode}.svg"
-    canvas(p, 1280, 640, centred(d, LOCK_W, 256, 1280, 640, 640, fg), bg)
-    png(p, f"social/social-preview-{mode}.png", 1280)
+# README header 1200x300, transparent so it sits on the GitHub page colour.
+for mode, fg in (("dark", WHITE), ("light", BLACK)):
+    canvas(f"social/readme-header-{mode}.svg", 1200, 300, centred(LOCK, LOCK_W, 256, 1200, 300, 520, fg), None)
 
-# Banner 1500x500 (Reddit/X): lockup a little right of centre so a profile picture never covers it.
-canvas("social/banner.svg", 1500, 500, place(LOCK, LOCK_W, 256, 640, 170, 600, WHITE), BLACK)
-png("social/banner.svg", "social/banner-1500x500.png", 1500)
+# GitHub social preview 1280x640 (upload the PNG in the repo settings).
+canvas("social/social-preview-dark.svg", 1280, 640, centred(LOCK, LOCK_W, 256, 1280, 640, 640, WHITE), BLACK)
+png("social/social-preview-dark.svg", "social/social-preview-dark.png", 1280)
 
-# Avatar 512 (GitHub/org, crops to a circle) and hyprlock/SDDM face 256.
-canvas("social/avatar.svg", 512, 512, centred(SYM_R, 256, 256, 512, 512, 400, WHITE, dy=8), BLACK)
-png("social/avatar.svg", "social/avatar-512.png", 512)
-png("social/avatar.svg", "shell/face-256.png", 256)
-open("shell/face-256.svg", "w").write(open("social/avatar.svg").read())
+# Default lock/login face 256 (bin/hush falls back to it when ~/.face is missing).
+canvas(tmp("avatar.svg"), 512, 512, centred(SYM_R, 256, 256, 512, 512, 400, WHITE, dy=8), BLACK)
+png(tmp("avatar.svg"), "social/avatar-256.png", 256)
 
-# Quickshell tray icons 24/48 (small cut), black and white, plus the symbolic SVG.
-for tag, col in (("black", BLACK), ("white", WHITE)):
-    p = f"shell/tray-{tag}.svg"
-    open(p, "w").write(mark_svg(SYM_S, 256, 256, "Hush", col))
-    for s in (24, 48):
-        png(p, f"shell/tray-{tag}-{s}.png", s)
-
-# PNG ladder of the symbol and lockups.
-for s in (16, 24, 32, 48, 64, 128, 256, 512, 1024):
-    png("svg/hush-symbol-small-black.svg" if s <= 24 else "svg/hush-symbol-black.svg",
-        f"png/hush-symbol-black-{s}.png", s)
-    png("svg/hush-symbol-small-white.svg" if s <= 24 else "svg/hush-symbol-white.svg",
-        f"png/hush-symbol-white-{s}.png", s)
-for tag in ("black", "white", "accent"):
-    png(f"svg/hush-lockup-{tag}.svg", f"png/hush-lockup-{tag}-1200.png", 1200)
-
-# ------------------------------------------------------------------ Hush for Arch Linux
-# Arch logo: the official file from archlinux.org/art, embedded unmodified (only placed and scaled).
-# Wording follows the Arch trademark policy ("<software> for Arch Linux"); no endorsement implied.
-FOR = outline(os.path.join(TMP, "for.svg"), fw, 256, "for", strokes=word("for", 0, 200)[0])
-
-def arch(variant):
-    s = open(f"cobrand/arch/archlinux-logo-{variant}-scalable.svg").read()
-    s = re.sub(r"<\?xml[^>]*>|<!--.*?-->", "", s, flags=re.S)
-    return s.strip()
-
-for mode, bg, fg, av in (("dark", BLACK, WHITE, "white"), ("light", WHITE, BLACK, "black")):
-    W, H = 1200, 300
-    lock_w = 420; lock_h = 256 * lock_w / LOCK_W
-    sl = lock_w / LOCK_W; sf = sl * 0.72; for_w = fw * sf
-    arch_w = 380; arch_h = 199.41692 * arch_w / 600
-    gap = 44
-    total = lock_w + gap + for_w + gap + arch_w
-    x0 = (W - total) / 2
-    base = H / 2 + 200 * 0.5 * 0.5 - 6
-    body = place(LOCK, LOCK_W, 256, x0, (H - lock_h) / 2, lock_w, fg)
-    baseline = (H - lock_h) / 2 + 200 * sl
-    body += place(FOR, fw, 256, x0 + lock_w + gap, baseline - 200 * sf, for_w, fg)
-    ax, ay = x0 + lock_w + gap + for_w + gap, (H - arch_h) / 2
-    nested = re.sub(r"<svg\b", f'<svg x="{f(ax)}" y="{f(ay)}" width="{f(arch_w)}" height="{f(arch_h)}" '
-                    'viewBox="0 0 600 199.41692"', arch(av), count=1)
-    nested = re.sub(r'(<svg[^>]*?)\s(width|height)="(600|199\.41692)"', r"\1", nested)
-    nested = re.sub(r'(<svg[^>]*?)\s(width|height)="(600|199\.41692)"', r"\1", nested)
-    p = f"cobrand/hush-for-arch-linux-{mode}.svg"
-    canvas(p, W, H, body + nested, bg, "Hush for Arch Linux")
-    png(p, f"cobrand/hush-for-arch-linux-{mode}.png", W)
-
-# ------------------------------------------------------------------ fastfetch
-# Runtime: matugen renders matugen/templates/fastfetch-logo.svg in the theme primary, `hush` turns it into
-# a PNG for the kitty graphics protocol. Here: a tight-cropped master and one preview PNG per theme.
-FF = outline(os.path.join(TMP, "ff.svg"), 256, 96, "Hush", breath(cy=48))
-for theme, col in THEMES.items():
-    p = os.path.join(TMP, f"ff-{theme}.svg")
-    open(p, "w").write(mark_svg(FF, 256, 96, "Hush", col))
-    png(p, f"fastfetch/hush-logo-{theme}.png", 512)
-open("fastfetch/hush-logo-template.svg", "w").write(mark_svg(FF, 256, 96, "Hush", "{{colors.primary.default.hex}}"))
-# Web icons (favicon.ico, PNG set, webmanifest) come from the logo-design skill's exporter:
-#   export_variants.py svg/hush-symbol.svg --name hush --title Hush --web-icons --icon-bg "#000000" \
-#     --icon-fg "#ffffff" --favicon-source svg/hush-symbol-small.svg --only favicon app-icon --out-dir web
+# fastfetch: a tight-cropped mark; matugen fills in the theme primary, `hush` rasterises it.
+FF = outline(tmp("ff.svg"), 256, 96, "Hush", breath(cy=48))
+open(FASTFETCH, "w").write(mark_svg(FF, 256, 96, "Hush", "{{colors.primary.default.hex}}"))
 print("brand kit built in", BRAND)
