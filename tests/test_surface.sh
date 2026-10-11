@@ -5,12 +5,8 @@
 source "$(dirname "$0")/lib.sh"; source "$(dirname "$0")/shell_lib.sh"; source "$(dirname "$0")/lib/input.sh"
 cd "$(dirname "$0")/.."
 A=hush-surface-probe-a; B=hush-surface-probe-b
-F="$HOME/.config/hush/settings.json"; BAK=$(mktemp)
-if [[ -f "$F" ]]; then cp "$F" "$BAK"; HAD=1; else HAD=0; fi
-mon_json() { hyprctl monitors -j; }
-mons() { mon_json | python3 -c "import json,sys;print(' '.join(m['name'] for m in json.load(sys.stdin)))"; }
-focused() { mon_json | python3 -c "import json,sys;print(next(m['name'] for m in json.load(sys.stdin) if m['focused']))"; }
-ORIG_MON=$(focused)
+shell_settings_save
+ORIG_MON=$(mon_focused)
 active() { hyprctl activewindow -j | python3 -c "import json,sys;print(json.load(sys.stdin).get('class',''))" 2>/dev/null; }
 # "w h" of every hush-island layer, one line per monitor: "MON x y w h".
 layers() {
@@ -21,14 +17,10 @@ for n, m in sorted(json.load(sys.stdin).items()):
     for l in lvl:
       if l['namespace']=='hush-island': print(n, l['x'], l['y'], l['w'], l['h'])"
 }
-mon_geom() { mon_json | python3 -c "
-import json,sys
-m=next(m for m in json.load(sys.stdin) if m['name']=='$1')
-print(m['x'], m['y'], round(m['width']/m['scale']), round(m['height']/m['scale']), m['reserved'][1])"; }
 cleanup() {
   local c; for c in $A $B; do hyprctl dispatch "hl.dsp.window.close({ window = \"class:$c\" })" >/dev/null 2>&1; done
   input_stop
-  if [[ $HAD == 1 ]]; then cp "$BAK" "$F"; else rm -f "$F"; fi; rm -f "$BAK"
+  shell_settings_restore
   [[ "$(shell_ipc islandState 2>/dev/null)" == expanded ]] && shell_ipc toggleControlCenter >/dev/null 2>&1
   hyprctl dispatch "hl.dsp.focus({ monitor = \"$ORIG_MON\" })" >/dev/null 2>&1
 }
@@ -61,7 +53,7 @@ t_layers() {
   rm -f "$F"; shell_restart; sleep 3
   assert_eq "pong" "$(shell_ipc ping)" "shell up"
   local m mx my mw mh r line
-  for m in $(mons); do
+  for m in $(mon_names); do
     read -r mx my mw mh r <<<"$(mon_geom "$m")"
     line=$(layers | grep "^$m ")
     assert_eq "$m $mx $my $mw 360" "$line" "$m: island layer is full width x 360 at the top"
@@ -82,7 +74,7 @@ t_constant() {
 t_mask() {
   input_start || { pass "$(input_why): click checks skipped"; return; }
   local m mx my mw mh r sz pw ph px py
-  for m in $(mons | tr ' ' '\n' | head -2); do
+  for m in $(mon_names | tr ' ' '\n' | head -2); do
     hyprctl dispatch "hl.dsp.focus({ monitor = \"$m\" })" >/dev/null; sleep 0.6
     assert_eq "$m" "$(shell_ipc islandScreen)" "$m: focused island drives IPC"
     read -r mx my mw mh r <<<"$(mon_geom "$m")"
@@ -120,7 +112,7 @@ t_mask() {
   done
 }
 t_modes() {
-  local m; m=$(focused)
+  local m; m=$(mon_focused)
   shell_ipc settingsSet island.mode '"overlay"' >/dev/null; sleep 1
   assert_eq "0" "$(mon_geom "$m" | cut -d' ' -f5)" "overlay mode reserves nothing"
   shell_ipc settingsSet island.mode '"autohide"' >/dev/null; sleep 1
@@ -135,6 +127,5 @@ t_modes() {
   assert_eq "40" "$(mon_geom "$m" | cut -d' ' -f5)" "back to reserve: 40 px"
   hyprctl layers -j | grep -q '"namespace": "hush-island-reveal"' && fail "reveal strip left behind" || pass "no reveal strip in reserve mode"
 }
-t_log() { local e; e=$(shell_log_errors); [[ -z "$e" ]] && pass "no errors in shell log" || fail "shell log errors: $e"; }
-run_test "layers" t_layers; run_test "constant" t_constant; run_test "mask" t_mask; run_test "modes" t_modes; run_test "log" t_log
+run_test "layers" t_layers; run_test "constant" t_constant; run_test "mask" t_mask; run_test "modes" t_modes; run_test "log" shell_log_check
 finish

@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
 source "$(dirname "$0")/lib.sh"; source "$(dirname "$0")/shell_lib.sh"
 cd "$(dirname "$0")/.."
-F="$HOME/.config/hush/settings.json"; BAK=$(mktemp)
-if [[ -f "$F" ]]; then cp "$F" "$BAK"; HAD=1; else HAD=0; fi
-restore() { if [[ $HAD == 1 ]]; then cp "$BAK" "$F"; else rm -f "$F"; fi; rm -f "$BAK"; }
-trap restore EXIT
+shell_settings_save
+trap shell_settings_restore EXIT
 t_defaults() {
   rm -f "$F"; shell_restart; sleep 2
   assert_eq "140" "$(shell_ipc settingsGet island.width)" "default width"
@@ -27,6 +25,5 @@ t_restore() {
   assert_eq "140" "$(shell_ipc settingsGet island.width)" "restored"
   assert_eq "pong" "$(shell_ipc ping)" "shell alive"
 }
-t_log() { local e; e=$(shell_log_errors); [[ -z "$e" ]] && pass "no errors in shell log" || fail "shell log errors: $e"; }
-run_test "defaults" t_defaults; run_test "set" t_set; run_test "hot reload" t_hot_reload; run_test "restore" t_restore; run_test "log" t_log
+run_test "defaults" t_defaults; run_test "set" t_set; run_test "hot reload" t_hot_reload; run_test "restore" t_restore; run_test "log" shell_log_check
 finish

@@ -56,7 +56,6 @@ print(min(c['at'][1] - next(m['y'] for m in json.loads(sys.argv[1]) if m['id']==
   elif (( k >= 56 )); then pass "tiled windows start at y=$k >= 56"
   else fail "tiled window at y=$k < 56"; fi
 }
-t_log() { local e; e=$(shell_log_errors); [[ -z "$e" ]] && pass "no errors in shell log" || fail "shell log errors: $e"; }
 t_cpu() { local c; c=$(shell_cpu_idle); python3 -c "import sys; sys.exit(0 if float('$c') < 1.0 else 1)" && pass "idle cpu ${c}% < 1%" || fail "idle cpu ${c}%"; }
-run_test "layer" t_layer; run_test "state" t_state; run_test "geometry" t_geometry; run_test "zone" t_zone; run_test "log" t_log; run_test "cpu" t_cpu
+run_test "layer" t_layer; run_test "state" t_state; run_test "geometry" t_geometry; run_test "zone" t_zone; run_test "log" shell_log_check; run_test "cpu" t_cpu
 finish

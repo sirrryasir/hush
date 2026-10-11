@@ -6,27 +6,23 @@
 #   layout.rest.left none drops the activity slot; settingsReset layout brings the defaults back.
 # Note: qs ipc (CLI11) splits an argument that looks like "[a,b]" into several, so array JSON goes
 # in with a leading space (JSON.parse ignores it).
-source "$(dirname "$0")/lib.sh"; source "$(dirname "$0")/shell_lib.sh"
+source "$(dirname "$0")/lib.sh"; source "$(dirname "$0")/shell_lib.sh"; source "$(dirname "$0")/lib/input.sh"
 cd "$(dirname "$0")/.."
-F="$HOME/.config/hush/settings.json"; BAK=$(mktemp)
-if [[ -f "$F" ]]; then cp "$F" "$BAK"; HAD=1; else HAD=0; fi
+shell_settings_save
 read -r MX MY MW MH < <(hyprctl monitors -j | python3 -c "
 import json,sys
 m=next(m for m in json.load(sys.stdin) if m['focused'])
 print(m['x'], m['y'], round(m['width']/m['scale']), round(m['height']/m['scale']))")
 TOP=$(shell_ipc settingsGet island.topGap 2>/dev/null || echo 6); [[ -z "$TOP" ]] && TOP=6
 PX=$((MX + MW / 2)); PY=$((MY + TOP + 18)); AX=$PX; AY=$((MY + MH / 2))
-move() { hyprctl dispatch "hl.dsp.cursor.move({ x = $1, y = $2 })" >/dev/null; }
-state() { shell_ipc islandState; }
-wait_state() { local i; for i in $(seq 40); do [[ "$(state)" == "$1" ]] && return 0; sleep 0.05; done; return 1; }
 # Polls a command until it prints the expected value (layout writes go through settings.json).
 wait_eq() { local want=$1 i out; shift; for i in $(seq 30); do out=$("$@"); [[ "$out" == "$want" ]] && break; sleep 0.1; done; echo "$out"; }
 chips() { shell_ipc islandChips hoverChip_; }
 tiles() { shell_ipc islandChips ccTile_; }
 cleanup() {
-  move "$AX" "$AY"
+  input_move "$AX" "$AY"
   shell_ipc closeSurface >/dev/null 2>&1
-  if [[ $HAD == 1 ]]; then cp "$BAK" "$F"; else rm -f "$F"; fi; rm -f "$BAK"
+  shell_settings_restore
 }
 trap cleanup EXIT
 
@@ -35,7 +31,7 @@ if session_pgrep -x hyprlock >/dev/null; then echo "  SKIP session locked (hyprl
 
 # Pointer onto the pill, then wait for the hover face's chips (the morph swaps the state item in).
 hover_on() {
-  move "$AX" "$AY"; wait_state rest; move "$PX" "$PY"; wait_state hover || return 1
+  input_move "$AX" "$AY"; shell_wait_state rest; input_move "$PX" "$PY"; shell_wait_state hover || return 1
   local i; for i in $(seq 30); do [[ -n "$(chips)" ]] && return 0; sleep 0.1; done; return 1
 }
 
@@ -53,11 +49,11 @@ t_hover() {
   # No battery on this machine: that chip has nothing to show and leaves no gap.
   want="battery,date,workspaces"; [[ -z "$(shell_ipc batterySummary)" ]] && want="date,workspaces"
   assert_eq "$want" "$(wait_eq "$want" chips)" "the hover face follows: battery, date, workspaces, no network"
-  move "$AX" "$AY"; wait_state rest
+  input_move "$AX" "$AY"; shell_wait_state rest
 }
 
 t_cc() {
-  shell_ipc openSurface expanded >/dev/null; wait_state expanded || { fail "control center did not open"; return; }
+  shell_ipc openSurface expanded >/dev/null; shell_wait_state expanded || { fail "control center did not open"; return; }
   sleep 0.3
   assert_eq "wifi,bluetooth,dnd,nightlight" "$(tiles)" "default tiles"
   assert_eq "true" "$(shell_ipc islandControlVisible volumeSlider)" "sliders shown by default"
@@ -68,7 +64,7 @@ t_cc() {
   shell_ipc settingsSet layout.cc.sliders false >/dev/null
   assert_eq "false" "$(wait_eq false shell_ipc islandControlVisible volumeSlider)" "layout.cc.sliders false hides the volume slider"
   assert_eq "560x304" "$(shell_ipc islandSize)" "the control center keeps its size"
-  shell_ipc closeSurface >/dev/null; wait_state rest
+  shell_ipc closeSurface >/dev/null; shell_wait_state rest
 }
 
 t_rest_reset() {
@@ -78,10 +74,10 @@ t_rest_reset() {
   assert_eq "no" "$(python3 -c "import json;print('yes' if 'layout' in json.load(open('$F')) else 'no')" 2>/dev/null || echo no)" "settingsReset drops the layout override"
   assert_eq "workspaces,date,media,bluetooth,network,battery" "$(shell_ipc layoutHover)" "after reset: default hover chips"
   assert_eq "wifi:2x1,bluetooth:2x1,dnd:2x1,nightlight:2x1" "$(shell_ipc layoutTiles)" "after reset: default tiles"
-  shell_ipc openSurface expanded >/dev/null; wait_state expanded; sleep 0.3
+  shell_ipc openSurface expanded >/dev/null; shell_wait_state expanded; sleep 0.3
   assert_eq "wifi,bluetooth,dnd,nightlight" "$(tiles)" "after reset: the grid has the four default tiles"
   assert_eq "true" "$(shell_ipc islandControlVisible volumeSlider)" "after reset: sliders back"
-  shell_ipc closeSurface >/dev/null; wait_state rest
+  shell_ipc closeSurface >/dev/null; shell_wait_state rest
 }
 
 run_test "hover face from layout.hover" t_hover

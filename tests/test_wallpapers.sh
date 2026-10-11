@@ -7,9 +7,6 @@ cd "$(dirname "$0")/.."
 EVI="$HOME/.cache/hush/evidence"; mkdir -p "$EVI"
 MOSS="$HUSH_ROOT/themes/moss/wallpaper.png"
 O_THEME=$(bin/hush status | awk '/^theme /{print $2}'); O_WALL=$(bin/hush status | awk '/^wallpaper /{print $2}')
-state() { shell_ipc islandState; }
-wait_state() { local i; for i in $(seq "${2:-40}"); do [[ "$(state)" == "$1" ]] && return 0; sleep 0.05; done; return 1; }
-wait_ipc() { local i v; for i in $(seq 40); do v=$(shell_ipc "$@"); [[ -n "$v" && "$v" != 0 ]] && return 0; sleep 0.05; done; return 1; }
 restore() {
   [[ "$(bin/hush status | awk '/^wallpaper /{print $2}')" == "$O_WALL" ]] && return
   if [[ "$O_WALL" == "$HUSH_ROOT/themes/$O_THEME/wallpaper.png" ]]; then bin/hush theme "$O_THEME" >/dev/null 2>&1
@@ -18,11 +15,11 @@ restore() {
 trap 'shell_ipc closeSurface >/dev/null 2>&1; restore' EXIT
 t_open() {
   shell_restart; sleep 2
-  shell_ipc toggleWallpapers; wait_state wallpapers
+  shell_ipc toggleWallpapers; shell_wait_state wallpapers
   assert_eq "true" "$(shell_ipc wallpapersVisible)" "toggleWallpapers opens the grid in the island"
   local i; for i in $(seq 20); do [[ "$(shell_ipc islandSize)" == "656x320" ]] && break; sleep 0.05; done
   assert_eq "656x320" "$(shell_ipc islandSize)" "the pill grows to the grid (656x320 on the 8 px grid)"
-  wait_ipc wallpapersCount
+  shell_wait_ipc wallpapersCount
   local n; n=$(shell_ipc wallpapersCount)
   [[ "$n" -ge 6 ]] && pass "wallpapersCount $n >= 6" || fail "wallpapersCount $n"
   local other; other=$(hyprctl layers -j | python3 -c '
@@ -34,7 +31,7 @@ print(" ".join(sorted({l["namespace"] for m in d.values() for lv in m["levels"].
 }
 t_select() {
   local from x y; from=$(shell_ipc wallpapersSelect "$MOSS")
-  wait_state rest || wait_state media
+  shell_wait_state rest || shell_wait_state media
   assert_eq "false" "$(shell_ipc wallpapersVisible)" "picking a tile closes the grid"
   [[ "$from" =~ ^[0-9]+,[0-9]+$ ]] && pass "--from is integer X,Y ($from)" || fail "--from '$from'"
   x=${from%,*}; y=${from#*,}
@@ -50,28 +47,27 @@ sys.exit(0 if m['x']<=$x<m['x']+w and m['y']+16<=$y<m['y']+360 else 1)" \
   assert_eq "$O_WALL" "$(bin/hush status | awk '/^wallpaper /{print $2}')" "original wallpaper restored"
 }
 t_close() {
-  shell_ipc toggleWallpapers; wait_state wallpapers
+  shell_ipc toggleWallpapers; shell_wait_state wallpapers
   assert_eq "true" "$(shell_ipc wallpapersVisible)" "reopens"
-  shell_ipc toggleWallpapers; wait_state rest || wait_state media
+  shell_ipc toggleWallpapers; shell_wait_state rest || shell_wait_state media
   assert_eq "false" "$(shell_ipc wallpapersVisible)" "toggle closes"
-  shell_ipc toggleControlCenter; wait_state expanded
-  shell_ipc toggleWallpapers; wait_state wallpapers
-  assert_eq "wallpapers" "$(state)" "the grid opens over the control center (CC Wallpapers button path)"
+  shell_ipc toggleControlCenter; shell_wait_state expanded
+  shell_ipc toggleWallpapers; shell_wait_state wallpapers
+  assert_eq "wallpapers" "$(shell_state)" "the grid opens over the control center (CC Wallpapers button path)"
   shell_ipc toggleWallpapers; sleep 0.4
 }
 t_settings() {
-  bin/hush settings; wait_state settings
+  bin/hush settings; shell_wait_state settings
   assert_eq "true" "$(shell_ipc settingsVisible)" "hush settings opens the settings surface"
   local i; for i in $(seq 20); do [[ "$(shell_ipc islandSize)" == "560x336" ]] && break; sleep 0.05; done
   assert_eq "560x336" "$(shell_ipc islandSize)" "settings is 560x336"
   grim "$EVI/settings.png" 2>/dev/null
-  bin/hush settings; wait_state rest || wait_state media
+  bin/hush settings; shell_wait_state rest || shell_wait_state media
   assert_eq "false" "$(shell_ipc settingsVisible)" "hush settings again closes it"
 }
-t_log() { local e; e=$(shell_log_errors); [[ -z "$e" ]] && pass "no errors in shell log" || fail "shell log errors: $e"; }
 run_test "open" t_open
 run_test "select" t_select
 run_test "close" t_close
 run_test "settings" t_settings
-run_test "log" t_log
+run_test "log" shell_log_check
 finish

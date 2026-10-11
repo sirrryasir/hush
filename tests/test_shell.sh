@@ -17,7 +17,6 @@ t_colors() {
   assert_eq "$(colors_json_primary)" "$(shell_ipc primary)" "shell primary matches Colors.json after harbor (second switch)"
   assert_eq "$(python3 -c "import json;print(json.load(open('$CFG/hush/Colors.json'))['dark']['on_surface'])")" "$(shell_ipc darkOnSurface)" "darkOnSurface follows Colors.json dark block"
 }
-t_log() { local e; if e=$(shell_log_errors); then pass "no errors in shell log"; else fail "shell log errors: $e"; fi; }
 t_literals() {
   # config/Colors.qml holds the harbor fallback palette; it is the one place hex literals belong.
   local hits; hits=$(grep -rnE '#[0-9a-fA-F]{6}' quickshell/hush --include='*.qml' | grep -v '^quickshell/hush/config/Colors.qml:' | grep -v '"#000000"' || true)
@@ -25,6 +24,6 @@ t_literals() {
 }
 run_test "start" t_start
 run_test "colors" t_colors
-run_test "log" t_log
+run_test "log" shell_log_check
 run_test "literals" t_literals
 finish

@@ -11,8 +11,7 @@
 #   wheel changes the volume with the OSD inside the pill.
 source "$(dirname "$0")/lib.sh"; source "$(dirname "$0")/shell_lib.sh"; source "$(dirname "$0")/lib/input.sh"
 cd "$(dirname "$0")/.."
-F="$HOME/.config/hush/settings.json"; BAK=$(mktemp)
-if [[ -f "$F" ]]; then cp "$F" "$BAK"; HAD=1; else HAD=0; fi
+shell_settings_save
 O_VOL=$(wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null); O_MUTE=0; [[ "$O_VOL" == *MUTED* ]] && O_MUTE=1; O_VOL=$(awk '{print $2}' <<<"$O_VOL")
 O_DND=$(qs -c hush ipc call notifs dndOn 2>/dev/null)
 read -r MX MY MW MH < <(hyprctl monitors -j | python3 -c "
@@ -22,18 +21,15 @@ print(m['x'], m['y'], round(m['width']/m['scale']), round(m['height']/m['scale']
 TOP=$(shell_ipc settingsGet island.topGap 2>/dev/null || echo 6)
 PX=$((MX + MW / 2)); PY=$((MY + TOP + 18)); AX=$PX; AY=$((MY + MH / 2))
 cleanup() {
-  move "$AX" "$AY"
+  input_move "$AX" "$AY"
   input_stop
   shell_ipc closeSurface >/dev/null 2>&1
   [[ -n "$O_VOL" ]] && { wpctl set-volume @DEFAULT_AUDIO_SINK@ "$O_VOL"; wpctl set-mute @DEFAULT_AUDIO_SINK@ "$O_MUTE"; }
   [[ -n "$O_DND" && "$(dnd)" != "$O_DND" ]] && qs -c hush ipc call notifs toggleDnd >/dev/null
-  if [[ $HAD == 1 ]]; then cp "$BAK" "$F"; else rm -f "$F"; fi; rm -f "$BAK"
+  shell_settings_restore
 }
 trap cleanup EXIT
-move() { hyprctl dispatch "hl.dsp.cursor.move({ x = $1, y = $2 })" >/dev/null; }
 dnd() { qs -c hush ipc call notifs dndOn; }
-state() { shell_ipc islandState; }
-wait_state() { local i; for i in $(seq 40); do [[ "$(state)" == "$1" ]] && return 0; sleep 0.05; done; return 1; }
 # ms from the last "$1" mark to the first "$2" mark after it in the island history (-1 if absent).
 gap() { shell_ipc islandHistory | python3 -c "
 import json,sys
@@ -62,10 +58,10 @@ t_files() {
   assert_eq "500" "$(shell_ipc settingsGet motion.armMs)" "arming window from settings"
 }
 t_hover() {
-  shell_ipc closeSurface >/dev/null; move "$AX" "$AY"; sleep 0.6
-  for _ in $(seq 20); do [[ "$(state)" == rest ]] && break; sleep 0.5; done
-  move "$PX" "$PY"
-  wait_state hover && pass "pointer on the pill opens the hover face" || fail "no hover face (state $(state))"
+  shell_ipc closeSurface >/dev/null; input_move "$AX" "$AY"; sleep 0.6
+  for _ in $(seq 20); do [[ "$(shell_state)" == rest ]] && break; sleep 0.5; done
+  input_move "$PX" "$PY"
+  shell_wait_state hover && pass "pointer on the pill opens the hover face" || fail "no hover face (state $(shell_state))"
   local g; g=$(gap @in hover)
   [[ $g -ge 110 && $g -le 200 ]] && pass "hover after $g ms (dwell 120, <= 200)" || fail "hover after $g ms"
   local i; for i in $(seq 30); do [[ "$(shell_ipc islandSize)" == "320x44" ]] && break; sleep 0.1; done # the spring settles within ~3 s under load
@@ -75,22 +71,22 @@ t_hover() {
     assert_eq "true" "$(shell_ipc islandControlVisible hoverBattery)" "hover face shows the battery glyph"
   fi
   # The grace is read from the shell's own stamps (an IPC poll at 150 ms raced the 300 ms grace).
-  move "$AX" "$AY"
-  wait_state rest
-  g=$(gap @out "$(state)")
-  [[ $g -ge 300 && $g -le 450 ]] && pass "back to $(state) $g ms after leaving (grace 300)" || fail "left hover after $g ms"
+  input_move "$AX" "$AY"
+  shell_wait_state rest
+  g=$(gap @out "$(shell_state)")
+  [[ $g -ge 300 && $g -le 450 ]] && pass "back to $(shell_state) $g ms after leaving (grace 300)" || fail "left hover after $g ms"
 }
 t_rearm() {
-  move "$AX" "$AY"; sleep 0.6
+  input_move "$AX" "$AY"; sleep 0.6
   wpctl set-mute @DEFAULT_AUDIO_SINK@ 0; wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.30; sleep 1.5
   wpctl set-volume @DEFAULT_AUDIO_SINK@ 2%-; sleep 0.15
-  assert_eq "osd" "$(state)" "volume change shows the OSD"
-  move "$PX" "$PY"; sleep 0.2
-  assert_eq "osd" "$(state)" "OSD stays while the pointer rests on it"
-  wait_state hover; sleep 0.3; wait_state hover
+  assert_eq "osd" "$(shell_state)" "volume change shows the OSD"
+  input_move "$PX" "$PY"; sleep 0.2
+  assert_eq "osd" "$(shell_state)" "OSD stays while the pointer rests on it"
+  shell_wait_state hover; sleep 0.3; shell_wait_state hover
   local g; g=$(osd_gap)
-  [[ $g -ge 0 && $g -le 350 ]] && pass "hover re-arms $g ms after the OSD ends (<= 350)" || fail "re-arm gap $g ms (state $(state))"
-  move "$AX" "$AY"; sleep 0.6
+  [[ $g -ge 0 && $g -le 350 ]] && pass "hover re-arms $g ms after the OSD ends (<= 350)" || fail "re-arm gap $g ms (state $(shell_state))"
+  input_move "$AX" "$AY"; sleep 0.6
 }
 t_clicks() {
   input_start || { pass "$(input_why): click checks skipped"; return; }
@@ -100,53 +96,53 @@ t_clicks() {
   [[ -n "$pos" ]] || { fail "no dndToggle in the control center"; return; }
   bx=$((MX + ${pos% *})); by=$((MY + ${pos#* }))
   local d0; d0=$(dnd)
-  move "$bx" "$by"; sleep 0.3
+  input_move "$bx" "$by"; sleep 0.3
   shell_ipc toggleControlCenter >/dev/null; sleep 0.1; input_click; sleep 0.3
   assert_eq "$d0" "$(dnd)" "click 100 ms after the control center opened does nothing (arming)"
-  assert_eq "expanded" "$(state)" "the early click did not close the control center"
+  assert_eq "expanded" "$(shell_state)" "the early click did not close the control center"
   sleep 0.5; input_click; sleep 0.3
   [[ "$(dnd)" != "$d0" ]] && pass "the same button works once armed" || fail "armed click did not toggle DND"
   input_click; sleep 0.3
   assert_eq "$d0" "$(dnd)" "DND restored"
   # Outside-click arming (same 500 ms as buttons): a click off the pill 100 ms after the control
   # center opened does not close it; one after the window does.
-  shell_ipc closeSurface >/dev/null; sleep 0.6; move "$AX" "$AY"; sleep 0.3
+  shell_ipc closeSurface >/dev/null; sleep 0.6; input_move "$AX" "$AY"; sleep 0.3
   shell_ipc toggleControlCenter >/dev/null; sleep 0.1; input_click; sleep 0.3
-  assert_eq "expanded" "$(state)" "click outside 100 ms after opening does not close (arming)"
-  sleep 0.4; input_click; wait_state rest
-  assert_eq "rest" "$(state)" "click outside once armed closes the control center"
+  assert_eq "expanded" "$(shell_state)" "click outside 100 ms after opening does not close (arming)"
+  sleep 0.4; input_click; shell_wait_state rest
+  assert_eq "rest" "$(shell_state)" "click outside once armed closes the control center"
   shell_ipc toggleControlCenter >/dev/null; sleep 0.8
   # Esc closes; a click outside closes.
-  input_key Escape; wait_state rest
-  [[ "$(state)" == rest ]] && pass "Esc closes the control center" || fail "Esc left state $(state)"
-  move "$PX" "$PY"; sleep 0.05; input_click right; wait_state notifCenter
-  assert_eq "notifCenter" "$(state)" "right click opens the notification center"
-  move "$AX" "$AY"; sleep 0.6; input_click; sleep 0.6
-  [[ "$(state)" == rest ]] && pass "click outside closes the notification center" || fail "click outside left $(state)"
-  move "$PX" "$PY"; sleep 0.05; input_click middle; wait_state mediaSurface
-  assert_eq "mediaSurface" "$(state)" "middle click opens the media surface"
-  shell_ipc closeSurface >/dev/null; move "$AX" "$AY"; sleep 0.8
-  move "$PX" "$PY"; sleep 0.05; input_click; wait_state expanded
-  assert_eq "expanded" "$(state)" "left click opens the control center"
-  shell_ipc closeSurface >/dev/null; move "$AX" "$AY"; sleep 0.8
+  input_key Escape; shell_wait_state rest
+  [[ "$(shell_state)" == rest ]] && pass "Esc closes the control center" || fail "Esc left state $(shell_state)"
+  input_move "$PX" "$PY"; sleep 0.05; input_click right; shell_wait_state notifCenter
+  assert_eq "notifCenter" "$(shell_state)" "right click opens the notification center"
+  input_move "$AX" "$AY"; sleep 0.6; input_click; sleep 0.6
+  [[ "$(shell_state)" == rest ]] && pass "click outside closes the notification center" || fail "click outside left $(shell_state)"
+  input_move "$PX" "$PY"; sleep 0.05; input_click middle; shell_wait_state mediaSurface
+  assert_eq "mediaSurface" "$(shell_state)" "middle click opens the media surface"
+  shell_ipc closeSurface >/dev/null; input_move "$AX" "$AY"; sleep 0.8
+  input_move "$PX" "$PY"; sleep 0.05; input_click; shell_wait_state expanded
+  assert_eq "expanded" "$(shell_state)" "left click opens the control center"
+  shell_ipc closeSurface >/dev/null; input_move "$AX" "$AY"; sleep 0.8
   # Wheel on the pill: volume with the OSD in the pill.
   wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.30; sleep 1.5
   local v0 v1; v0=$(wpctl get-volume @DEFAULT_AUDIO_SINK@ | awk '{print $2}')
-  move "$PX" "$PY"; sleep 0.05; input_wheel 1; sleep 0.2
+  input_move "$PX" "$PY"; sleep 0.05; input_wheel 1; sleep 0.2
   v1=$(wpctl get-volume @DEFAULT_AUDIO_SINK@ | awk '{print $2}')
   [[ "$v1" != "$v0" ]] && pass "wheel on the pill changes the volume ($v0 -> $v1)" || fail "wheel left volume at $v0"
-  assert_eq "osd" "$(state)" "wheel shows the OSD in the pill"
-  move "$AX" "$AY"; sleep 1.6
+  assert_eq "osd" "$(shell_state)" "wheel shows the OSD in the pill"
+  input_move "$AX" "$AY"; sleep 1.6
   # island.scroll = brightness: the wheel moves the backlight (restored after) with the OSD.
   if command -v brightnessctl >/dev/null && ls "${HUSH_BACKLIGHT_DIR:-/sys/class/backlight}"/*/brightness >/dev/null 2>&1; then
     local sj="$CFG/hush/settings.json" sbak="" b0 b1 braw; [[ -f "$sj" ]] && sbak=$(cat "$sj")
     braw=$(brightnessctl -q g); brightnessctl -q s 50%; sleep 0.3; b0=$(brightnessctl -q g)
     shell_ipc settingsSet island.scroll '"brightness"' >/dev/null; sleep 0.5
-    move "$PX" "$PY"; sleep 0.05; input_wheel 1; sleep 0.4
+    input_move "$PX" "$PY"; sleep 0.05; input_wheel 1; sleep 0.4
     b1=$(brightnessctl -q g)
     [[ "$b1" != "$b0" ]] && pass "scroll=brightness: wheel changes the backlight ($b0 -> $b1)" || fail "scroll=brightness: backlight stayed $b0"
-    assert_eq "osd" "$(state)" "brightness wheel shows the OSD"
-    move "$AX" "$AY"; sleep 1.6
+    assert_eq "osd" "$(shell_state)" "brightness wheel shows the OSD"
+    input_move "$AX" "$AY"; sleep 1.6
     shell_ipc settingsSet island.scroll '"volume"' >/dev/null; sleep 0.3
     if [[ -n "$sbak" ]]; then printf '%s\n' "$sbak" >"$sj"; else rm -f "$sj"; fi
     brightnessctl -q s "$braw"
@@ -154,12 +150,12 @@ t_clicks() {
   # Media at rest is the activity circle (no capsule state); clicking it opens the media surface.
   if python3 -c 'import dbus, gi' 2>/dev/null; then
     python3 tests/fakempris.py & local fp=$!; sleep 3
-    assert_eq "rest" "$(state)" "a playing player keeps the island at rest (now-playing card has ended)"
+    assert_eq "rest" "$(shell_state)" "a playing player keeps the island at rest (now-playing card has ended)"
     assert_eq "true" "$(shell_ipc islandControlVisible activityCircle)" "the activity circle shows at rest"
     pos=$(shell_ipc islandControl activityCircle)
-    move $((MX + ${pos% *})) $((MY + ${pos#* })); sleep 0.05; input_click; wait_state mediaSurface
-    assert_eq "mediaSurface" "$(state)" "clicking the activity circle opens the media surface"
-    shell_ipc closeSurface >/dev/null; move "$AX" "$AY"; kill "$fp" 2>/dev/null; wait "$fp" 2>/dev/null; sleep 0.8
+    input_move $((MX + ${pos% *})) $((MY + ${pos#* })); sleep 0.05; input_click; shell_wait_state mediaSurface
+    assert_eq "mediaSurface" "$(shell_state)" "clicking the activity circle opens the media surface"
+    shell_ipc closeSurface >/dev/null; input_move "$AX" "$AY"; kill "$fp" 2>/dev/null; wait "$fp" 2>/dev/null; sleep 0.8
   else pass "no dbus-python/PyGObject: activity circle click skipped"; fi
 }
 t_overview() {
@@ -167,6 +163,5 @@ t_overview() {
   shell_ipc overview >/dev/null; sleep 0.8; shell_ipc overview >/dev/null; sleep 0.6
   local e; e=$(shell_log_errors); [[ -z "$e" ]] && pass "overview IPC runs without errors" || fail "overview: $e"
 }
-t_log() { local e; e=$(shell_log_errors); [[ -z "$e" ]] && pass "no errors in shell log" || fail "shell log errors: $e"; }
-run_test "files" t_files; run_test "hover" t_hover; run_test "rearm" t_rearm; run_test "clicks" t_clicks; run_test "overview" t_overview; run_test "log" t_log
+run_test "files" t_files; run_test "hover" t_hover; run_test "rearm" t_rearm; run_test "clicks" t_clicks; run_test "overview" t_overview; run_test "log" shell_log_check
 finish

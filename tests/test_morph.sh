@@ -10,10 +10,9 @@
 # 150 ms. Runs on the focused monitor.
 source "$(dirname "$0")/lib.sh"; source "$(dirname "$0")/shell_lib.sh"
 cd "$(dirname "$0")/.."
-F="$HOME/.config/hush/settings.json"; BAK=$(mktemp)
-if [[ -f "$F" ]]; then cp "$F" "$BAK"; HAD=1; else HAD=0; fi
+shell_settings_save
 collapse() { [[ "$(shell_ipc islandState 2>/dev/null)" == expanded ]] && shell_ipc toggleControlCenter >/dev/null 2>&1; }
-cleanup() { collapse; if [[ $HAD == 1 ]]; then cp "$BAK" "$F"; else rm -f "$F"; fi; rm -f "$BAK"; sleep 0.5; }
+cleanup() { collapse; shell_settings_restore; sleep 0.5; }
 trap cleanup EXIT
 
 shell_alive || { fail "shell not running"; exit 1; }

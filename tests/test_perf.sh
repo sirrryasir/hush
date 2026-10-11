@@ -6,11 +6,11 @@
 #  4 reduced motion: the control center opens in <= 150 ms (morphProbe + frame capture), setting restored
 source "$(dirname "$0")/lib.sh"; source "$(dirname "$0")/shell_lib.sh"
 cd "$(dirname "$0")/.."
-F="$HOME/.config/hush/settings.json"; BAK=$(mktemp); if [[ -f "$F" ]]; then cp "$F" "$BAK"; HAD=1; else HAD=0; fi
+shell_settings_save
 FP=""; ROWS=()
 collapse() { shell_ipc closeSurface >/dev/null 2>&1; }
 cleanup() { collapse; [[ -n "$FP" ]] && kill "$FP" 2>/dev/null
-  if [[ $HAD == 1 ]]; then cp "$BAK" "$F"; else rm -f "$F"; fi; rm -f "$BAK"; }
+  shell_settings_restore; }
 trap cleanup EXIT
 shell_alive || { fail "shell not running"; exit 1; }
 session_pgrep -x hyprlock >/dev/null && { echo "  SKIP session locked"; exit 0; }

@@ -76,7 +76,6 @@ t_center() {
   if [[ -n "$sbak" ]]; then printf '%s\n' "$sbak" >"$sj"; else rm -f "$sj"; fi
   [[ "$(shell_ipc batteryPresent)" != "true" || -n "$(shell_ipc batterySummary)" ]] && pass "battery state: $(shell_ipc batterySummary)" || fail "empty battery state"
 }
-t_log() { local e; e=$(shell_log_errors); [[ -z "$e" ]] && pass "no errors in shell log" || fail "shell log errors: $e"; }
 run_test "rest" t_rest
 run_test "clock" t_clock
 run_test "corners" t_corners
@@ -84,5 +83,5 @@ run_test "workspace" t_workspace
 run_test "go" t_go
 run_test "status" t_status
 run_test "center" t_center
-run_test "log" t_log
+run_test "log" shell_log_check
 finish

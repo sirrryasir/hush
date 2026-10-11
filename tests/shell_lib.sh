@@ -7,6 +7,23 @@ shell_restart() { "$HUSH_ROOT/bin/hush" shell restart >/dev/null; }
 shell_alive() { session_pgrep -f "$HUSH_PROC" >/dev/null; }
 shell_has_layer() { hyprctl layers -j | grep -q "\"namespace\": \"$1\""; }
 shell_ipc() { qs -c hush ipc call hush "$@"; }
+# Keep the user's settings.json (in $F) across a test that writes it: save first, restore in cleanup.
+shell_settings_save() { F="$HOME/.config/hush/settings.json"; BAK=$(mktemp); if [[ -f "$F" ]]; then cp "$F" "$BAK"; HAD=1; else HAD=0; fi; }
+shell_settings_restore() { if [[ $HAD == 1 ]]; then cp "$BAK" "$F"; else rm -f "$F"; fi; rm -f "$BAK"; }
+shell_state() { shell_ipc islandState; }
+shell_wait_state() { # state [polls, 50 ms apart; default 40]
+  local i; for i in $(seq "${2:-40}"); do [[ "$(shell_state)" == "$1" ]] && return 0; sleep 0.05; done; return 1
+}
+shell_wait_ipc() { # ipc-call...: until it answers something other than empty or 0
+  local i v; for i in $(seq 40); do v=$(shell_ipc "$@"); [[ -n "$v" && "$v" != 0 ]] && return 0; sleep 0.05; done; return 1
+}
+# Monitor names, the focused one, and "x y logical-w logical-h top-reserve" of one by name.
+mon_names() { hyprctl monitors -j | python3 -c "import json,sys;print(' '.join(m['name'] for m in json.load(sys.stdin)))"; }
+mon_focused() { hyprctl monitors -j | python3 -c "import json,sys;print(next(m['name'] for m in json.load(sys.stdin) if m['focused']))"; }
+mon_geom() { hyprctl monitors -j | python3 -c "
+import json,sys
+m=next(m for m in json.load(sys.stdin) if m['name']=='$1')
+print(m['x'], m['y'], round(m['width']/m['scale']), round(m['height']/m['scale']), m['reserved'][1])"; }
 # Prints log lines since the last restart that look like problems; returns 1 if it printed any.
 # Quickshell tags warnings with an upper-case WARN, matched case-sensitively. Qt 6.12's text-input-v3
 # bookkeeping warns when a layer surface it never saw activated loses a text field (Qt-internal
@@ -20,6 +37,7 @@ shell_log_errors() {
   [[ -z "$hits" ]] && return 0
   printf '%s\n' "$hits"; return 1
 }
+shell_log_check() { local e; if e=$(shell_log_errors); then pass "no errors in shell log"; else fail "shell log errors: $e"; fi; }
 # The sandbox (tests/sandbox.sh) points HUSH_EVIDENCE_DIR at its own directory: its headless outputs
 # are not the desktop the evidence images document.
 shell_screenshot() {
