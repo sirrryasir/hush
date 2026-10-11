@@ -23,6 +23,7 @@ t_rest() {
 }
 t_clock() {
   local d s; d=$(date +%H:%M); s=$(shell_ipc restClock)
+  [[ "$(shell_ipc settingsGet island.clock 2>/dev/null)" == *12* ]] && d=$(date '+%-I:%M %p') # island.clock "12"
   assert_eq "$d" "$s" "rest clock shows $d"
 }
 t_corners() {
