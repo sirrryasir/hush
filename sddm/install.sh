@@ -22,10 +22,19 @@ for f in "$home/.local/share/fonts/hush/InterVariable.ttf" "$(fc-match -f '%{fil
 done
 mkdir -p "$dest/fonts"
 if [[ -n "$inter" ]]; then cp "$inter" "$dest/fonts/InterVariable.ttf"; else echo "warning: Inter not found; the theme falls back to the system sans" >&2; fi
+icons=""
+for f in "$home/.local/share/fonts/hush/MaterialSymbolsRounded.ttf" "$(fc-match -f '%{file}' 'Material Symbols Rounded' 2>/dev/null || true)"; do
+  [[ -f "$f" && "$f" == *MaterialSymbols* ]] && { icons=$f; break; }
+done
+if [[ -n "$icons" ]]; then cp "$icons" "$dest/fonts/MaterialSymbolsRounded.ttf"; else echo "warning: Material Symbols Rounded not found; the buttons fall back to text glyphs" >&2; fi
 ln -sfn "$home/.cache/hush/sddm" "$dest/current"
 
 mkdir -p /etc/sddm.conf.d
 printf '[Theme]\nCurrent=hush\n' > /etc/sddm.conf.d/hush.conf
+# /etc/sddm.conf is read after sddm.conf.d and wins: a Current= there would hide the line above.
+if [[ -f /etc/sddm.conf ]] && grep -Eq '^\s*Current\s*=' /etc/sddm.conf && ! grep -Eq '^\s*Current\s*=\s*hush\s*$' /etc/sddm.conf; then
+  echo "note: /etc/sddm.conf sets $(grep -E '^\s*Current\s*=' /etc/sddm.conf | head -1) and overrides hush.conf; fix: sudo sed -i 's/^\s*Current\s*=.*/Current=hush/' /etc/sddm.conf" >&2
+fi
 
 echo "installed $dest (current -> $home/.cache/hush/sddm)"
 sudo -u "$user" env HOME="$home" "$here/../bin/hush" sddm sync || echo "warning: run 'hush sddm sync' as $user" >&2
