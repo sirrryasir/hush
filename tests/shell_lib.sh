@@ -8,12 +8,15 @@ shell_alive() { pgrep -f "$HUSH_PROC" >/dev/null; }
 shell_has_layer() { hyprctl layers -j | grep -q "\"namespace\": \"$1\""; }
 shell_ipc() { qs -c hush ipc call hush "$@"; }
 # Prints log lines since the last restart that look like problems; returns 1 if it printed any.
-# Quickshell tags warnings with an upper-case WARN, matched case-sensitively.
+# Quickshell tags warnings with an upper-case WARN, matched case-sensitively. Qt 6.12's text-input-v3
+# bookkeeping warns when a layer surface it never saw activated loses a text field (Qt-internal
+# noise, see test_modes keyboard); it is not a shell error.
 shell_log_errors() {
   local marker hits; marker=$(cat "$HOME/.cache/hush/shell.restart-marker" 2>/dev/null || echo 0)
   hits=$(tail -n +"$((marker + 1))" "${1:-$HUSH_LOG}" 2>/dev/null \
     | grep -E -e 'WARN' -e '[Ee][Rr][Rr][Oo][Rr]|[Ww][Aa][Rr][Nn][Ii][Nn][Gg]|TypeError|ReferenceError' \
-    | grep -v 'QML Connections: Implicitly' || true)
+    | grep -v 'QML Connections: Implicitly' \
+    | grep -v 'qt.qpa.wayland.textinput.*Trying to \(dis\|en\)able' || true)
   [[ -z "$hits" ]] && return 0
   printf '%s\n' "$hits"; return 1
 }
