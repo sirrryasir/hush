@@ -1,0 +1,91 @@
+# Hush lock (hyprlock) and login (SDDM) screen, layout B "island-native".
+# One spec for both screens. cy = centre of the element as a fraction of the screen height H.
+# Sizes are pixels at H = 1080 and scale by s = H / 1080 (lengths rounded to even pixels).
+# `hush reload` / `hush lock` turn this into ~/.config/hush/hyprlock-layout.conf (one block set per
+# monitor, % positions) and `hush sddm sync` into ~/.cache/hush/sddm/layout.qml for the greeter.
+# Keys marked sddm_only are ignored by the hyprlock emitter.
+
+base = 1080
+
+[clock]
+cy = 0.3704        # 400 px at 1080
+size = 168
+weight = 100       # Inter Thin, tabular figures
+tracking = -2
+
+[date]
+cy = 0.4815        # 520 px
+size = 24
+weight = 500
+
+[pill]
+cy = 0.7037        # 760 px
+w = 380
+h = 72
+focus_w = 420      # sddm_only: focus grows the pill
+outline_alpha = 0.12
+
+[avatar]
+size = 56
+inset = 8
+
+[field]
+left = 76          # text/dots region inside the pill (symmetric so both screens centre alike)
+right = 76
+placeholder = 15
+dot = 8
+dot_gap = 10
+
+[submit]           # sddm_only
+size = 48
+inset = 12
+
+[glyph]            # caps lock / fingerprint glyphs at the pill's right end
+size = 20
+inset = 26
+
+[hint]
+cy = 0.7648        # 826 px: user name on login
+size = 13
+
+[status]
+top = 36           # centre y of the icon row, px from the top
+right = 40
+size = 18          # Material Symbols pad their glyphs: 18 draws a ~14 px icon
+gap = 10
+
+[media]            # hyprlock_only: one line, only while something plays
+cy = 0.94
+size = 14
+
+[power]            # sddm_only: session, sleep, power
+cy = 0.9333        # 1008 px
+size = 40
+gap = 12
+menu_item = 36
+
+[blur]
+passes = 2
+size = 6
+brightness = 0.62
+contrast = 0.95
+vibrancy = 0.20
+vibrancy_darkness = 0.10
+noise = 0.011
+
+[blur_sddm]        # one MultiEffect pass
+blur = 0.45
+blur_max = 32
+brightness = -0.12
+saturation = 0.10
+
+[motion]
+fade_ms = 250
+focus_ms = 220
+submit_ms = 100
+check_ms = 260
+error_ms = 600
+shake_ms = 300
+shake_px = 8
+success_ms = 300
+success_lift = 24

@@ -36,6 +36,7 @@ usage: hush <command>
   fallback             stop the Hush shell, start Waybar and SwayNC
   sddm sync            refresh ~/.cache/hush/sddm (wallpaper, colours, avatar) for the SDDM theme
   lock                 lock the screen with hyprlock (once)
+  face <image>         set the lock/login avatar: round 512 px crop to ~/.face, then sddm sync
   settings             open (or close) the settings surface in the island
   plugins [status|install]  optional Hyprland plugins gloview and dynamic-cursors (hyprpm)
   overview             open the GloView overview (hyprctl gloview)
@@ -197,6 +198,38 @@ set_wallpaper() { # path
   # Lock-screen avatar: ~/.face if present, else the brand avatar, at a fixed path.
   local face="$HOME/.face"; [[ -f "$face" ]] || face="$HUSH_ROOT/assets/brand/social/avatar-256.png"
   [[ -f "$face" ]] && { ln -sfn "$face" "$CACHE_DIR/face.png.tmp" && mv -Tf "$CACHE_DIR/face.png.tmp" "$CACHE_DIR/face.png"; }
+  lock_layout || echo "hush: lock layout generation failed (continuing)" >&2
+}
+
+lock_monitors() { # NAME:HEIGHT per connected monitor (rotation-aware), none outside Hyprland
+  command -v hyprctl >/dev/null && [[ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]] || return 0
+  hyprctl monitors -j 2>/dev/null | python3 -c '
+import json, sys
+try: mons = json.load(sys.stdin)
+except Exception: mons = []
+for m in mons: print("%s:%d" % (m["name"], m["width"] if m.get("transform", 0) % 2 else m["height"]))' || true
+}
+
+lock_layout() { # hyprlock widgets from lockscreen/layout.toml, one set per monitor
+  mkdir -p "$STATE_DIR"
+  local mons; mapfile -t mons < <(lock_monitors)
+  python3 "$HUSH_ROOT/lockscreen/gen.py" hyprlock "$STATE_DIR/hyprlock-layout.conf" "${mons[@]}"
+}
+
+cmd_face() { # image -> round 512 px PNG at ~/.face and the lock/login caches
+  local src="${1:-}"
+  [[ -n "$src" ]] || die "usage: hush face <image>"
+  [[ -f "$src" ]] || die "no such image: $src"
+  need magick
+  local tmp="$HOME/.face.tmp.png"
+  magick "$src" -auto-orient -gravity center -resize '512x512^' -extent 512x512 \
+    \( -size 512x512 xc:none -fill white -draw 'circle 255.5,255.5 255.5,0' \) \
+    -alpha set -compose DstIn -composite "PNG32:$tmp" || { rm -f "$tmp"; die "could not read $src"; }
+  mv -f "$tmp" "$HOME/.face"
+  mkdir -p "$CACHE_DIR"
+  rm -f "$CACHE_DIR/face.png"; cp -f "$HOME/.face" "$CACHE_DIR/face.png"
+  sddm_sync || echo "hush: sddm sync failed (the lock screen avatar is set)" >&2
+  echo "hush: avatar set from $src"
 }
 
 reload_consumers() { # theme mode
@@ -261,14 +294,26 @@ with open(sys.argv[2].replace("colors.conf.tmp", "colors.qml.tmp"), "w") as f:
     f.write("import QtQuick\nQtObject {\n")
     for k, v in qml.items():
         if v in c: f.write('    property color %s: "%s"\n' % (k, c[v]))
+    # Island roles: the pill is black in every theme, so it uses the dark-scheme values.
+    d = c.get("dark", {})
+    island = {"islandFg": "on_surface", "islandFgVar": "on_surface_variant", "islandPrimary": "primary",
+              "islandPrimaryText": "on_primary", "islandSurfaceHigh": "surface_container_high",
+              "islandError": "error"}
+    for k, v in island.items():
+        if d.get(v) or c.get(v): f.write('    property color %s: "%s"\n' % (k, d.get(v) or c[v]))
+    # Clock and date sit on the dimmed wallpaper: the mode's own text colour, as on the lock screen.
+    for k, v in {"wallText": "on_surface", "wallShade": "surface"}.items():
+        if v in c: f.write('    property color %s: "%s"\n' % (k, c[v]))
     f.write("}\n")
 PY
   mv -f "$out/colors.qml.tmp" "$out/colors.qml"
   mv -f "$out/colors.conf.tmp" "$out/colors.conf"
   local face="$HOME/.face"; [[ -f "$face" ]] || face="$HUSH_ROOT/assets/brand/social/avatar-256.png"
   [[ -f "$face" ]] && { cp -f "$face" "$out/face.png.tmp" && mv -f "$out/face.png.tmp" "$out/face.png"; }
+  python3 "$HUSH_ROOT/lockscreen/gen.py" qml "$out/layout.qml"
   # The greeter runs as another user: it needs x on every directory down to the files.
-  chmod o+x "$CACHE_DIR"; chmod o+rx "$out"; chmod o+r "$out"/*.png "$out/colors.conf" "$out/colors.qml"
+  # plain 644 files: a copy out of an NTFS/exFAT checkout would otherwise carry x bits
+  chmod o+x "$CACHE_DIR"; chmod o+rx "$out"; chmod 644 "$out"/*.png "$out/colors.conf" "$out/colors.qml" "$out/layout.qml"
   if [[ "$(stat -c %A "$HOME")" != ?????????x ]]; then
     echo "hush: warning: $HOME is not world-executable; the SDDM greeter cannot read $out (chmod o+x $HOME, or copy the bundle elsewhere)" >&2
   fi
@@ -573,7 +618,8 @@ main() {
     timer) cmd_timer "${2:-}" ;;
     volume) shift; cmd_volume "$@" ;;
     brightness) shift; cmd_brightness "$@" ;;
-    lock) pgrep -x hyprlock >/dev/null || exec hyprlock ;;
+    lock) pgrep -x hyprlock >/dev/null || { lock_layout || true; exec hyprlock; } ;;
+    face) shift; cmd_face "$@" ;;
     settings) qs -c hush ipc call hush settings >/dev/null || die "the shell is not running" ;;
     --version|version) cat "$HUSH_ROOT/VERSION" ;;
     ""|-h|--help|help) usage ;;

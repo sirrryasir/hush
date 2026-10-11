@@ -35,6 +35,7 @@ Control center per theme: [dusk](assets/themes/dusk-cc.png), [ember](assets/them
 - `themes/`: one folder per theme (`theme.toml` plus a generated wallpaper)
 - `hyprlock/`: lock screen config and layout (colors are generated)
 - `sddm/`: SDDM login theme and its sudo installer
+- `lockscreen/`: the shared lock/login layout spec and its generator
 - `integrations/nvim/`: a LazyVim plugin spec that follows the generated colorscheme
 - `tests/`: `bash tests/run_all.sh` (live tests drive the running shell and Hyprland)
 
@@ -54,6 +55,7 @@ Control center per theme: [dusk](assets/themes/dusk-cc.png), [ember](assets/them
 | `hush shell <start\|stop\|restart\|status\|log>` | manage the Quickshell shell |
 | `hush sddm sync` | refresh the SDDM theme's wallpaper, colors and avatar |
 | `hush lock` | lock the screen with hyprlock (once) |
+| `hush face <image>` | set the lock and login avatar (round crop to `~/.face`, then `hush sddm sync`) |
 | `hush settings` | open (or close) the settings surface in the island |
 | `hush overview` | open the GloView overview (needs the plugin) |
 | `hush plugins [status\|install]` | status of, or install, the optional Hyprland plugins |
@@ -135,15 +137,20 @@ git clone https://github.com/sirrryasir/hush.git ~/hush
 | `XDG_CONFIG_HOME` | `~/.config` | where generated files are written |
 | `HUSH_WALL_DIRS` | unset | colon-separated extra wallpaper folders for `hush wall random` and the wallpaper grid |
 
-### SDDM login theme
+### Lock and login screens
 
-`sddm/hush/` is a Qt6 greeter theme that mirrors the lock screen (blurred wallpaper, thin Inter clock, round avatar, pill password field, session and power buttons). Install it once, with sudo:
+Both screens share one layout, "island-native" (`lockscreen/layout.toml`, sizes at 1080p, positions as fractions of the screen height): a thin Inter clock with tabular figures and the date over the blurred, dimmed wallpaper, and one black pill, the same black as the bar island, holding your avatar and the password. Battery and network sit top right as icons only. A wrong password turns the pill's hairline red; no "wrong password" text is shown. `hush face <image>` sets the avatar for both (a round 512 px crop written to `~/.face`).
+
+- Lock (`hush lock`, hyprlock): `hush reload` and `hush lock` generate `~/.config/hush/hyprlock-layout.conf` from the spec, one widget set per connected monitor; `hyprlock/hyprlock.conf` sources it. Caps lock and the fingerprint prompt show as glyphs inside the pill. hyprlock cannot animate shapes, so the lock screen is the static form of the layout.
+- Login (SDDM): `sddm/hush/` is a Qt6 greeter with the same layout plus motion: the pill grows when you type, a round submit button appears, it shrinks to a circle with a spinning arc while checking, shakes with a red hairline and clears on a wrong password, and fades with the clock lifting on success. Three black buttons at the bottom open the session list (Hyprland first, your last choice remembered), suspend, and restart/shut down. It is keyboard-first: type and press Enter; Tab reaches the buttons, arrows and Enter pick a session, Esc closes.
+
+Install the greeter once, as root (`install.sh` never runs sudo for you):
 
 ```
 sudo sddm/install.sh
 ```
 
-This copies the theme to `/usr/share/sddm/themes/hush` (with Inter, since the greeter cannot see your user fonts), writes `/etc/sddm.conf.d/hush.conf` (`[Theme] Current=hush`) and links `hush/current` to `~/.cache/hush/sddm`. `hush sddm sync` writes the current wallpaper, avatar and palette there (world-readable); `hush theme` and `hush wall` call it automatically once that directory exists. The greeter runs as the `sddm` user, so `$HOME` must be traversable (`chmod o+x ~`); `hush sddm sync` warns when it is not. Preview without logging out: `sddm-greeter-qt6 --test-mode --theme sddm/hush` inside a nested compositor.
+This copies the theme to `/usr/share/sddm/themes/hush` with Inter and Material Symbols (the greeter runs as the `sddm` user and cannot see your fonts), writes `/etc/sddm.conf.d/hush.conf` (`[Theme] Current=hush`) and links `hush/current` to `~/.cache/hush/sddm`. A `Current=` line in `/etc/sddm.conf` is read last and wins over `hush.conf`; the installer prints the one-line fix when it finds one. `hush sddm sync` writes the wallpaper, avatar, palette (`colors.qml`) and layout (`layout.qml`) there, world-readable; `hush theme` and `hush wall` call it once that directory exists, `hush face` always does. `$HOME` must be traversable by the `sddm` user (`chmod o+x ~`); `hush sddm sync` warns when it is not. Preview without logging out: `sddm-greeter-qt6 --test-mode --theme sddm/hush` inside a nested compositor (`tests/test_sddm.sh` does this in a nested Hyprland).
 
 Generated files (`hush generated`) land in `~/.config`: Hyprland `hypr/modules/theme.lua` and `gloview-colors.lua`, kitty `theme.conf`, `nvim/colors/hush.lua`, GTK, qt6ct, Kvantum, fastfetch, waybar, hyprlock and `~/.config/hush/` (Colors.json, p10k colors, browser theme). If `~/.config` is itself a dotfiles repo, `hush track off` marks the tracked ones `skip-worktree` so `git commit -a` leaves them alone. The fastfetch template reads its logo from `~/.config/fastfetch/logo.txt`.
 
