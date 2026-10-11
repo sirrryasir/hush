@@ -33,9 +33,16 @@ Item {
 
     function pickIndex(i) {
         if (i < 0 || i >= files.length) return
+        // A pick by path (IPC, Settings) can name a tile scrolled out of the grid: bring it into
+        // view first so the reveal grows from where the tile is drawn, never from below the pill.
+        grid.currentIndex = i
+        grid.positionViewAtIndex(i, GridView.Contain)
+        grid.forceLayout()
         const it = grid.itemAtIndex(i)
-        const c = it ? it.mapToItem(root, it.thumbCentre.x, it.thumbCentre.y)
-                     : Qt.point(root.width / 2, root.height / 2)
+        const raw = it ? it.mapToItem(root, it.thumbCentre.x, it.thumbCentre.y)
+                       : Qt.point(root.width / 2, root.height / 2)
+        const c = Qt.point(Math.max(grid.x, Math.min(grid.x + grid.width, raw.x)),
+                           Math.max(grid.y, Math.min(grid.y + grid.height, raw.y)))
         const o = globalOrigin()
         const from = Qt.point(Math.round(o.x + c.x), Math.round(o.y + c.y))
         lastFrom = from.x + "," + from.y
