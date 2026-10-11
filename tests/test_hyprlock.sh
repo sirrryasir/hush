@@ -1,61 +1,153 @@
 #!/usr/bin/env bash
+# hyprlock, layout B: static checks on the generated layout, then real screenshots in a nested
+# Hyprland (headless 1920x1080 and 2560x1440 outputs) for harbor and paper. The live session is never
+# locked: hyprlock runs inside the nested compositor and authenticates against the vlock PAM service
+# (pam_unix only, no faillock), so the wrong-password check cannot lock the account.
 source "$(dirname "$0")/lib.sh"
+source "$(dirname "$0")/nested.sh"
 cd "$(dirname "$0")/.."
+EVID="$HOME/.cache/hush/evidence"
+R=$(mktemp -d)
+trap 'nested_stop 2>/dev/null; pkill -f "hyprlock -c $R" 2>/dev/null; rm -rf "$R"' EXIT
+GEN=lockscreen/gen.py
+
+render_theme() { # theme -> $R/$t/hyprlock/colors.conf, wall.conf
+  local t=$1 mode scheme contrast
+  mkdir -p "$R/$t"; test_matugen_cfg "$R/$t" hyprlock > "$R/$t.toml"
+  mode=$(sed -n 's/^mode = "\(.*\)"/\1/p' themes/$t/theme.toml); scheme=$(sed -n 's/^scheme = "\(.*\)"/\1/p' themes/$t/theme.toml)
+  contrast=$(sed -n 's/^contrast = //p' themes/$t/theme.toml)
+  matugen image "themes/$t/wallpaper.png" -c "$R/$t.toml" -m "$mode" -t "$scheme" --contrast "${contrast:-0}" --source-color-index 0 -q >/dev/null 2>&1
+  printf '$wall = %s\n' "$PWD/themes/$t/wallpaper.png" > "$R/$t/wall.conf"
+}
+
 t_sources() {
   assert_contains "$CFG/hypr/hyprlock.conf" 'hush/hyprlock-wall.conf' "hyprlock.conf sources the hush wallpaper file"
-  grep -q 'wall.set' hyprlock/layouts/layout_default.conf && fail "layout still references wall.set" || pass "layout no longer uses wall.set"
-  assert_contains hyprlock/layouts/layout_default.conf 'font_family = Inter' "layout uses Inter"
+  assert_contains hyprlock/hyprlock.conf 'hush/hyprlock-layout.conf' "hyprlock.conf sources the generated layout"
+  assert_contains bin/hush 'lock_layout' "hush generates the layout (reload, lock)"
+  for f in caps-lock.sh status-line.sh media-line.sh; do [[ -x hyprlock/$f ]] && pass "$f executable" || fail "$f not executable"; done
 }
-t_parse() {
-  # hyprlock has no --check; verify every referenced variable is defined.
-  local undefined; undefined=$(grep -oE '\$[A-Za-z_0-9]+' hyprlock/layouts/layout_default.conf | grep -vxE '\$(HOME|FPRINTPROMPT)' | sort -u | while read -r v; do
-    grep -qF "${v} =" hyprlock/colors.conf ~/.config/hush/hyprlock-wall.conf 2>/dev/null || echo "$v"; done)
-  [[ -z "$undefined" ]] && pass "all layout variables defined" || fail "undefined: $undefined"
+t_generator() {
+  python3 $GEN hyprlock "$R/a.conf" SHOT:1080 BIG:1440 || { fail "generator failed"; return; }
+  pass "generator writes per-monitor widgets"
+  assert_contains "$R/a.conf" 'monitor = SHOT' "block set for SHOT"
+  assert_contains "$R/a.conf" 'monitor = BIG' "block set for BIG"
+  assert_contains "$R/a.conf" 'size = 380, 72' "pill 380x72 at 1080"
+  assert_contains "$R/a.conf" 'size = 506, 96' "pill scales to 506x96 at 1440 (even px)"
+  assert_contains "$R/a.conf" 'position = 0, 12.960%' "clock at +12.96 % (centre y 400 of 1080)"
+  assert_contains "$R/a.conf" 'position = 0, -20.370%' "pill at -20.37 % (centre y 760)"
+  assert_contains "$R/a.conf" 'font_family = Inter Variable Thin' "clock Inter Variable Thin"
+  assert_contains "$R/a.conf" "font_features='tnum'" "clock tabular figures"
+  assert_contains "$R/a.conf" 'blur_passes = 2' "blur 2 passes"
+  assert_contains "$R/a.conf" 'brightness = 0.62' "brightness 0.62"
+  assert_contains "$R/a.conf" 'fail_text =' "empty fail text"
+  assert_contains "$R/a.conf" 'Enter password' "placeholder"
+  assert_contains "$R/a.conf" 'check_color = $hushIslandCheck' "check colour = island primary"
+  assert_contains "$R/a.conf" 'fail_color = $hushIslandFail' "fail colour = island error"
+  assert_contains "$R/a.conf" 'cmd[update:250]' "caps lock polled every 250 ms"
+  python3 $GEN hyprlock "$R/b.conf"; assert_contains "$R/b.conf" 'monitor =' "no monitors: one set for every monitor"
+  grep -nE "#[0-9a-fA-F]{6}|rgba\([0-9]" "$R/a.conf" hyprlock/layouts/layout_default.conf && fail "hardcoded colours" || pass "no hardcoded colours"
+  local h; h=$(HOME="$R/home" HUSH_ROOT=$PWD bash -c 'source <(sed -n "/^lock_monitors()/,/^}/p;/^lock_layout()/,/^}/p" bin/hush); STATE_DIR=$HOME/.config/hush; HYPRLAND_INSTANCE_SIGNATURE= lock_layout' && echo ok)
+  [[ $h == ok && -s "$R/home/.config/hush/hyprlock-layout.conf" ]] && pass "lock_layout writes ~/.config/hush/hyprlock-layout.conf" || fail "lock_layout"
 }
-t_prefix() {
-  # hyprlang substitutes variables by prefix, so no defined name may be a prefix of another.
-  local clash; clash=$(cat hyprlock/hyprlock.conf hyprlock/colors.conf ~/.config/hush/hyprlock-wall.conf hyprlock/layouts/layout_default.conf \
+t_variables() {
+  local t v undefined
+  for t in harbor paper; do
+    render_theme $t
+    undefined=""
+    for v in $(cat "$R/a.conf" hyprlock/layouts/layout_default.conf | grep -oE '\$[A-Za-z_0-9]+' | sort -u | grep -vxE '\$(HOME|FPRINTPROMPT|wall)'); do
+      grep -qE "^\\${v} = rgba\\([0-9a-f]{8}\\)" "$R/$t/hyprlock/colors.conf" || undefined="$undefined $v"; done
+    [[ -z "$undefined" ]] && pass "$t: every variable defined" || fail "$t: undefined:$undefined"
+  done
+  local clash; clash=$(cat hyprlock/hyprlock.conf "$R/harbor/hyprlock/colors.conf" "$R/harbor/wall.conf" hyprlock/layouts/layout_default.conf \
     | grep -oE '^\s*\$[A-Za-z_0-9]+\s*=' | grep -oE '[A-Za-z_0-9]+' | sort -u | awk '{a[NR]=$0} END{for(i=1;i<=NR;i++)for(j=1;j<=NR;j++)if(i!=j && index(a[j],a[i])==1)print a[i]" prefixes "a[j]}')
   [[ -z "$clash" ]] && pass "no hyprlock variable is a prefix of another" || fail "prefix clashes: $clash"
-  grep -qE '\$(primary|text|accent)_[0-9]' hyprlock/colors.conf && fail "legacy aliases still defined" || pass "legacy aliases removed"
 }
-t_no_literals() {
-  grep -nE "#[0-9a-fA-F]{6}|rgba\([0-9]" hyprlock/layouts/layout_default.conf && fail "layout has hardcoded colors" || pass "layout has no hardcoded colors"
+t_version() {
+  hyprlock --version 2>&1 | grep -q 'v0\.' && pass "$(hyprlock --version 2>&1 | head -1)" || fail "hyprlock --version"
+  if strings "$(command -v hyprlock)" | grep -qx inputFieldWidth; then
+    assert_contains hyprlock/layouts/layout_default.conf 'inputFieldWidth' "inputFieldWidth animation enabled (installed hyprlock has it)"
+  else pass "installed hyprlock lacks inputFieldWidth (not used)"; fi
+  assert_contains hyprlock/layouts/layout_default.conf 'fadeIn, 1, 2.5' "fadeIn 2.5"
+  assert_contains hyprlock/layouts/layout_default.conf 'fadeOut, 1, 2.5' "fadeOut 2.5"
 }
-t_render() {
-  # Render the colours for harbor and paper into a scratch dir (never touches the live theme), then
-  # check every variable the layout uses is defined and the layout has the Apple-style pieces.
-  local R; R=$(mktemp -d); local t
+
+lock_conf() { # theme -> config path
+  local t=$1
+  python3 $GEN hyprlock "$R/$t/layout.conf" SHOT:1080 BIG:1440 WAYLAND-1:720
+  cat > "$R/$t/hyprlock.conf" <<EOF
+\$hyprlockDir = $PWD/hyprlock
+source = $R/$t/wall.conf
+source = $R/$t/hyprlock/colors.conf
+source = $PWD/hyprlock/layouts/layout_default.conf
+source = $R/$t/layout.conf
+auth {
+    pam {
+        module = vlock
+    }
+    fingerprint {
+        enabled = false
+    }
+}
+EOF
+  echo "$R/$t/hyprlock.conf"
+}
+hex_of() { sed -n "s/^\\\$$2 = rgba(\([0-9a-f]\{6\}\)..)/\1/p" "$R/$1/hyprlock/colors.conf"; }
+
+t_nested() {
+  command -v Hyprland >/dev/null && command -v grim >/dev/null || { pass "no Hyprland/grim (skipped)"; return; }
+  [[ -f /etc/pam.d/vlock ]] || { pass "no /etc/pam.d/vlock (skipped: never test a wrong password against faillock)"; return; }
+  mkdir -p "$EVID"
+  nested_start "$R/nest" SHOT:1920x1080 BIG:2560x1440 || { fail "nested Hyprland"; return; }
+  pass "nested Hyprland with SHOT 1920x1080 and BIG 2560x1440"
+  local t cfg out H text w spec
   for t in harbor paper; do
-    mkdir -p "$R/$t"; test_matugen_cfg "$R/$t" hyprlock > "$R/$t.toml"
-    local mode scheme contrast
-    mode=$(sed -n 's/^mode = "\(.*\)"/\1/p' themes/$t/theme.toml); scheme=$(sed -n 's/^scheme = "\(.*\)"/\1/p' themes/$t/theme.toml)
-    contrast=$(sed -n 's/^contrast = //p' themes/$t/theme.toml)
-    matugen image "themes/$t/wallpaper.png" -c "$R/$t.toml" -m "$mode" -t "$scheme" --contrast "${contrast:-0}" --source-color-index 0 -q >/dev/null 2>&1
-    assert_file "$R/$t/hyprlock/colors.conf" "$t colours render"
-    local v undefined=""
-    for v in $(grep -oE '\$hush[A-Za-z0-9]+' hyprlock/layouts/layout_default.conf | sort -u); do
-      grep -qE "^\\${v} = rgba\\([0-9a-f]{8}\\)" "$R/$t/hyprlock/colors.conf" || undefined="$undefined $v"; done
-    [[ -z "$undefined" ]] && pass "$t: every colour variable defined" || fail "$t: undefined:$undefined"
+    cfg=$(lock_conf $t)
+    nest hyprctl eval 'hl.clear_crashed_lockscreen()' >/dev/null 2>&1
+    nest hyprctl dismissnotify >/dev/null 2>&1
+    (nest hyprlock -c "$cfg" --grace 0 >"$R/$t/hyprlock.log" 2>&1 &)
+    sleep 3
+    text=$(hex_of $t hushWallText)
+    for out in SHOT BIG; do
+      H=1080; [[ $out == BIG ]] && H=1440
+      nest grim -o $out "$EVID/lock-b-$t-$H.png"
+      read -r w r g b < <(tests/lockshot.py pill "$EVID/lock-b-$t-$H.png")
+      spec=$(python3 -c "print(2*round(380*$H/1080/2))")
+      [[ "$r$g$b" == 000 ]] && pass "$t $H: pill is black" || fail "$t $H: pill pixel $r,$g,$b"
+      (( w >= spec - 8 && w <= spec + 8 )) && pass "$t $H: pill ${w} px wide (spec $spec)" || fail "$t $H: pill ${w} px (spec $spec)"
+      read -r got want < <(tests/lockshot.py clock "$EVID/lock-b-$t-$H.png" "$text")
+      python3 -c "import sys; sys.exit(0 if abs($got-$want) <= 4 else 1)" 2>/dev/null \
+        && pass "$t $H: clock centre y $got (spec $want)" || fail "$t $H: clock centre y $got (spec $want)"
+    done
+    if [[ $t == harbor ]]; then
+      nest wtype 'hush-not-the-password'; sleep 0.6
+      nest grim -o SHOT "$EVID/lock-b-harbor-typing.png"
+      (( $(tests/lockshot.py inside "$EVID/lock-b-harbor-typing.png") > 150 )) && pass "typing shows dots" || fail "no dots while typing"
+      read -r lo hi < <(tests/lockshot.py dots "$EVID/lock-b-harbor-typing.png")
+      (( lo >= 0 && hi >= 0 )) && pass "21 dots stay between the avatar and the right end (margins $lo/$hi px)" || fail "dots spill over the pill ends ($lo/$hi px)"
+      nest wtype -k Return
+      local i edge="" err; err=$(hex_of harbor hushIslandFail)
+      # PNG encoding of a blurred frame takes ~2 s under hyprlock, longer than the 600 ms fail
+      # flash: poll with uncompressed PPM frames, keep the first one showing the error hairline
+      for ((i = 0; i < 60; i++)); do
+        nest grim -t ppm -o SHOT "$R/fail.ppm"; edge=$(tests/lockshot.py edge "$R/fail.ppm")
+        [[ $edge == "$err" ]] && break; sleep 0.05
+      done
+      python3 -c "from PIL import Image; Image.open('$R/fail.ppm').save('$EVID/lock-b-harbor-fail.png')"
+      [[ $edge == "$err" ]] && pass "wrong password: hairline turns island error #$err" || fail "fail outline #$edge (want #$err)"
+      # no fail text: nothing in the pill brighter than the idle placeholder (a fail text draws in
+      # the full field colour, the placeholder at 60 %)
+      local inside idle; inside=$(tests/lockshot.py inside "$R/fail.ppm"); idle=$(tests/lockshot.py inside "$EVID/lock-b-harbor-1080.png")
+      (( inside <= idle + 10 )) && pass "no fail text in the pill (max luminance $inside, idle placeholder $idle)" || fail "text in the pill on failure (luminance $inside > idle $idle)"
+      grep -qi 'wrong password' "$cfg" "$R/$t/layout.conf" && fail "config still says wrong password" || pass "no 'wrong password' text configured"
+    fi
+    pkill -f "hyprlock -c $R" ; sleep 0.5
   done
-  rm -rf "$R"
+  nested_stop
 }
-t_apple() {
-  local L=hyprlock/layouts/layout_default.conf
-  assert_contains "$L" 'blur_passes = 2' "background blurred"
-  assert_contains "$L" 'font_size = 96' "clock is 96"
-  assert_contains "$L" 'rounding = -1' "round avatar and pill"
-  assert_contains "$L" '$FPRINTPROMPT' "fingerprint hint"
-  assert_contains "$L" 'media-line.sh' "media line"
-  [[ -x hyprlock/media-line.sh ]] && pass "media-line.sh executable" || fail "media-line.sh not executable"
-  assert_file assets/brand/social/avatar-256.png "default avatar present"
-  hyprlock --help 2>&1 | grep -q -- '--config' && pass "hyprlock --help sane" || fail "hyprlock --help"
-  hyprlock --help 2>&1 | grep -q -- '--grace' && pass "hyprlock supports --grace" || fail "hyprlock --grace"
-}
+
 run_test "sources" t_sources
-run_test "variables" t_parse
-run_test "prefixes" t_prefix
-run_test "no literals" t_no_literals
-run_test "render" t_render
-run_test "apple" t_apple
+run_test "generator" t_generator
+run_test "variables" t_variables
+run_test "version" t_version
+run_test "nested screenshots" t_nested
 finish

@@ -204,24 +204,45 @@ def gate(theme, out):
     # hyprlock: input field text on its inner colour; the clock over the dimmed, blurred wallpaper
     hl = dict(re.findall(r"^\$(\w+) = rgba\(([0-9a-fA-F]{6})ff\)", open(f"{out}/hyprlock/colors.conf").read(), re.M))
     H = lambda x: rgb(hl[x])
-    add("hyprlock input text/inner", H("hushOnSurfaceMain"), H("hushSurfaceCont"), 4.5)
-    add("hyprlock input placeholder (fgVar)/inner", H("hushOnSurfaceVar"), H("hushSurfaceCont"), 4.5)
-    # labels on the wallpaper: blurred, contrast 0.85 then brightness from the layout (hyprland blur pass)
-    lay = open(f"{ROOT}/hyprlock/layouts/layout_default.conf").read()
-    bgblock = lay[lay.index("background {"):]
-    con = float(re.search(r"contrast = ([\d.]+)", bgblock).group(1))
-    bri = float(re.search(r"brightness = ([\d.]+)", bgblock).group(1))
-    lab = re.findall(r"label \{[^}]*?\bcolor = \$(\w+)", lay)
+    # the pill is the island: black with dark-scheme roles; the placeholder is islandText at 60 %
+    add("hyprlock pill dots/text on black", H("hushIslandText"), H("hushIslandBg"), 4.5)
+    add("hyprlock pill placeholder (60 %) on black", blend(H("hushIslandText"), H("hushIslandBg"), 0.6), H("hushIslandBg"), 4.5)
+    add("hyprlock pill glyphs on black", H("hushIslandMuted"), H("hushIslandBg"), 3.0)
+    add("hyprlock pill check outline on black", H("hushIslandCheck"), H("hushIslandBg"), 3.0)
+    add("hyprlock pill fail outline on black", H("hushIslandFail"), H("hushIslandBg"), 3.0)
+    # labels on the wallpaper: blurred, contrast then brightness from lockscreen/layout.toml (hyprland
+    # blur pass); label colours from the generated widgets (alpha vars are blended over the wallpaper)
+    blur = tomllib.load(open(f"{ROOT}/lockscreen/layout.toml", "rb"))["blur"]
+    con, bri = float(blur["contrast"]), float(blur["brightness"])
+    lay = subprocess.run([sys.executable, f"{ROOT}/lockscreen/gen.py", "hyprlock", "-"], capture_output=True, text=True).stdout
+    hla = dict(re.findall(r"^\$(\w+) = rgba\(([0-9a-fA-F]{8})\)", open(f"{out}/hyprlock/colors.conf").read(), re.M))
+    # each label is checked over the wallpaper band it sits on (32x18 grid); large text (>= 18 pt, hyprlock font_size)
+    # and icon glyphs need 3.0 (WCAG large text / non-text), body text 4.5; font_size is in points
     from PIL import Image
     im = Image.open(f"{ROOT}/themes/{theme}/wallpaper.png").convert("RGB").resize((32, 18), Image.BOX)
-    worst = {v: 99.0 for v in set(lab)}
-    for y in range(3, 13):
-        for x in range(10, 22):
-            p = tuple(min(255, max(0, ((ch / 255 - 0.5) * con + 0.5) * bri * 255)) for ch in im.getpixel((x, y)))
-            for v in worst:
-                worst[v] = min(worst[v], cr(H(v), p))
-    for v, r in sorted(worst.items()):
-        rows.append((f"hyprlock label ${v}/dimmed wallpaper (worst)", r, 4.5))
+    for name, body in re.findall(r"label \{ # ([\w ]+?)[,(\n][^}]*?\n(.*?)\n\}", lay, re.S):
+        var = re.search(r"\bcolor = \$(\w+)", body).group(1)
+        if var.startswith("hushIsland"):
+            continue
+        size = int(re.search(r"font_size = (\d+)", body).group(1))
+        icons = "Material Symbols" in body
+        pos = re.search(r"position = (-?[\d.]+%?), (-?[\d.]+%?)", body)
+        if "valign = top" in body:
+            band, cols = range(0, 2), range(27, 32)
+        else:
+            cy = 0.5 - float(pos.group(2).rstrip("%")) / 100
+            r0 = int(cy * 18)
+            band, cols = range(max(0, r0 - 1), min(18, r0 + 2)), range(10, 22)
+        need = 3.0 if (size >= 18 or icons) else 4.5
+        h8 = hla[var]; al = int(h8[6:], 16) / 255
+        worst = 99.0
+        for y in band:
+            for x in cols:
+                p = tuple(min(255, max(0, ((ch / 255 - 0.5) * con + 0.5) * bri * 255)) for ch in im.getpixel((x, y)))
+                if "shadow_passes" in body:  # halo in $hushWallShade: model as a 35 % blend under the text
+                    p = blend(rgb(hla["hushWallShade"][:6]), p, 0.35)
+                worst = min(worst, cr(blend(rgb(h8[:6]), p, al), p))
+        rows.append((f"hyprlock {name} ${var}/dimmed wall", worst, need))
 
     # SDDM: clock/date/labels over the blurred wallpaper (saturation 0.1) under a 20 % surface dim.
     from PIL import Image
