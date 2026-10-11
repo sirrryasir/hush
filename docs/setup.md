@@ -87,3 +87,9 @@ LazyVim) `~/.config/nvim/lua/plugins/hush-theme.lua` point into the checkout. Fo
 `~/.local/share/fonts/hush`, the git hooks are enabled and `harbor` is applied on first run
 (`--no-fonts` and `--no-theme` skip those steps). It is idempotent and never overwrites a real
 file: anything in the way is moved to `~/.cache/hush/backup-<timestamp>/`.
+
+## Helium (Chromium)
+
+`hush theme` also writes a Chromium theme to `~/.config/hush/helium-theme/`. Load it once:
+`chrome://extensions`, Developer mode, Load unpacked, choose that folder. Restart the browser after
+a theme change; pages that follow `prefers-color-scheme` switch with the GTK preference `hush` sets.

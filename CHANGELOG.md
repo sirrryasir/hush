@@ -2,7 +2,7 @@
 
 All notable changes to Hush are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
-[Semantic Versioning](https://semver.org/). Commit rules are in [docs/COMMITS.md](docs/COMMITS.md).
+[Semantic Versioning](https://semver.org/). Commit rules are in the README (Contributing).
 
 ## [Unreleased]
 

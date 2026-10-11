@@ -57,7 +57,7 @@ sudo ~/hush/sddm/install.sh   # optional login screen; the only step that needs 
 `~/.local/bin`, installs fonts, enables the git hooks and applies `harbor`. It never uses sudo
 and never overwrites a real file: anything in the way moves to `~/.cache/hush/backup-<timestamp>/`.
 Start the shell from autostart with `hush reload` then `hush shell start`. Full list and the
-blur layer rule: [docs/setup.md](docs/setup.md). Coming from the old dotfiles: [docs/MIGRATION.md](docs/MIGRATION.md).
+blur layer rule: [docs/setup.md](docs/setup.md).
 
 ## Use
 
@@ -119,13 +119,19 @@ Plugins: `hush plugins install`, then load `~/.config/hush/plugins.lua` from `hy
 ## Testing
 
 `bash tests/sandbox.sh` runs the suite in a nested Hyprland without touching your session.
-`bash tests/run_all.sh` runs everything against the live shell.
+`bash tests/run_all.sh` runs everything against the live shell. Details: [docs/testing.md](docs/testing.md).
+Design notes for contributors: [docs/design.md](docs/design.md); brand files: [docs/brand.md](docs/brand.md).
 
 ## Contributing
 
-Conventional Commits, one coherent change per commit, tests green first ([docs/COMMITS.md](docs/COMMITS.md)).
-`install.sh` enables the `pre-commit` (personal-data scan, `hush check`) and `commit-msg` hooks.
-No user names, home paths or monitor names in the tree.
+- Conventional Commits: `type(scope): subject`, at most 72 characters, types
+  `feat fix perf refactor docs test chore build ci style revert`, `!` for a breaking change.
+- One coherent change per commit, with a body that says why (optional for `docs` and `chore`).
+  Tests green first; squash fixups before pushing.
+- `install.sh` enables the `commit-msg` hook (enforces the above) and `pre-commit`
+  (personal-data scan, `hush check`). No user names, home paths or monitor names in the tree.
+- Releases at milestones only: bump `VERSION` and `CHANGELOG.md` in `chore(release): X.Y.Z`,
+  then an annotated `vX.Y.Z` tag.
 
 ## Credits
 
