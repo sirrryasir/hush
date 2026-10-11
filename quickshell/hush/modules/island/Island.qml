@@ -173,6 +173,12 @@ Item {
     Timer { id: grace; interval: Settings.motion.leaveGraceMs || 300; onTriggered: if (!hover.hovered) islandRoot.arbiter.lower("hover") }
     Timer { id: shrinkPoll; interval: 16; repeat: true; onTriggered: if (!islandRoot.hoverPending || !body.shrinking()) { stop(); if (islandRoot.hoverPending) { islandRoot.hoverPending = false; islandRoot.tryHover() } } }
     HoverHandler { id: hover; onHoveredChanged: islandRoot.hoverChanged() }
+    // The window activates only after the first surface opens (its keyboard focus turns on with
+    // it), and Qt then hands focus to the root item: take it back, or keys go nowhere.
+    Connections {
+        target: islandRoot.Window.window
+        function onActiveChanged() { if (islandRoot.surfaceOpen && islandRoot.Window.window.active) islandRoot.forceActiveFocus() }
+    }
 
     onStateChanged: {
         inStateChange = true
