@@ -9,6 +9,8 @@ import qs.services
 //     2 s after the cable goes in;
 //   "battery": an iOS-style battery glyph with the percent inside (BatteryGlyph) all the time;
 //   "wifi": the previous thin battery arc with the Wi-Fi glyph (bolt while charging) inside.
+// layout.rest.right "none" (Composer) turns the slot off: no statusCenter content and no plug-in
+// bolt; a critical battery and the privacy glyphs still show (warnings, not decoration).
 // A machine without a battery shows the "wifi" ring in battery mode. Mic and camera in use show as
 // small glyphs in every mode (privacy).
 Item {
@@ -24,12 +26,13 @@ Item {
         const m = String(Settings.island.statusCenter || "none")
         return m === "wifi" || m === "battery" ? m : "none"
     }
-    readonly property bool batteryShown: Battery.present && (centerMode === "battery" || critical || plugged)
-    readonly property bool ringShown: centerMode === "wifi" || (centerMode === "battery" && !Battery.present)
+    readonly property bool slotOn: Composer.restRight === "status"
+    readonly property bool batteryShown: Battery.present && (critical || slotOn && (centerMode === "battery" || plugged))
+    readonly property bool ringShown: slotOn && (centerMode === "wifi" || (centerMode === "battery" && !Battery.present))
     readonly property string netGlyph: !Net.connected ? "signal_wifi_off" : Bt.connectedName !== "" ? "bluetooth_connected" : Net.icon
     readonly property string ringGlyph: charging ? "bolt" : netGlyph
     // The indicator that applies right now (tests): camera, mic, the charging bolt, else the ring glyph.
-    readonly property string glyph: camera ? "videocam" : mic ? "mic" : charging && (batteryShown || ringShown || plugged) ? "bolt" : ringShown ? netGlyph : ""
+    readonly property string glyph: camera ? "videocam" : mic ? "mic" : charging && (batteryShown || ringShown || slotOn && plugged) ? "bolt" : ringShown ? netGlyph : ""
     // What the slot shows, for tests: "battery:80", "glyph:<ring glyph>" or "none".
     readonly property string center: batteryShown ? "battery:" + Battery.percent : ringShown ? "glyph:" + ringGlyph : "none"
     readonly property color fg: Colors.islandFg

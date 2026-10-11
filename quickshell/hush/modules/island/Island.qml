@@ -261,6 +261,18 @@ Item {
         mark("@adjust")
         return true
     }
+    // Alt/Shift + Up/Down on a focused row of a reorderable list (the Settings Modules composer:
+    // the surface exposes reorder(control, dir) -> a key, and controlFor(key)) moves the row; the
+    // focus follows the moved row once the list has rebuilt.
+    function navReorder(dir, mods) {
+        const it = surface.item, t = navTarget
+        if (!(mods & (Qt.AltModifier | Qt.ShiftModifier)) || !t || !it || typeof it.reorder !== "function") return false
+        const key = it.reorder(t, dir)   // "" when the control is not on a row; at an end the row stays
+        if (key === "") return false
+        mark("@reorder")
+        Qt.callLater(() => { const c = surface.item && surface.item.controlFor ? surface.item.controlFor(key) : null; if (c) setNav(c) })
+        return true
+    }
     Keys.onPressed: event => {
         if (!surfaceOpen) return
         let done = false
@@ -269,8 +281,8 @@ Item {
         case Qt.Key_Backtab: done = navStep(-1); break
         case Qt.Key_Left: done = navAdjust(-1, event.modifiers & Qt.ShiftModifier) || navMove(-1, 0); break
         case Qt.Key_Right: done = navAdjust(1, event.modifiers & Qt.ShiftModifier) || navMove(1, 0); break
-        case Qt.Key_Up: done = navMove(0, -1); break
-        case Qt.Key_Down: done = navMove(0, 1); break
+        case Qt.Key_Up: done = navReorder(-1, event.modifiers) || navMove(0, -1); break
+        case Qt.Key_Down: done = navReorder(1, event.modifiers) || navMove(0, 1); break
         case Qt.Key_Return: case Qt.Key_Enter: case Qt.Key_Space: done = navActivate(); break
         }
         if (done) event.accepted = true
@@ -338,6 +350,7 @@ Item {
             onCloseRequested: islandRoot.closeSurface()
             onOpenWallpapers: islandRoot.openSurface("wallpapers")
             onOpenNotifications: islandRoot.openSurface("notifCenter")
+            onOpenSettings: islandRoot.openSurface("settings")
         }
     }
     Component { id: mediaSurfaceComp; Surf.Media {} }

@@ -6,7 +6,7 @@ import qs.config
 import qs.config as Cfg
 import qs.modules.island.cc
 
-// Settings surface (design 2.6): 560x320 GUI over the Settings singleton. A page rail on the left
+// Settings surface (design 2.6): 560x336 GUI over the Settings singleton. A page rail on the left
 // (Island, Behaviour, Modules, Theme, About). Sliders preview while dragging (`preview` overrides,
 // `previewed` signal for the host pill) and write Cfg.Settings.set only on release.
 FocusScope {
@@ -53,6 +53,7 @@ FocusScope {
     component Chip: Rectangle {
         id: chip
         property string text; property bool on: false
+        property string accName: ""
         signal clicked()
         implicitWidth: lbl.implicitWidth + 24; implicitHeight: 26; radius: 13
         color: on ? Colors.islandPrimary : (ma.containsMouse ? Colors.islandSurfaceHigh : Colors.islandSurface)
@@ -62,11 +63,13 @@ FocusScope {
             font.family: Theme.fontUi; font.pixelSize: 12; font.weight: Font.Medium
         }
         MouseArea { id: ma; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: chip.clicked()
-            Accessible.role: Accessible.Button; Accessible.name: chip.text; Accessible.checked: chip.on }
+            Accessible.role: Accessible.Button; Accessible.name: chip.accName || chip.text; Accessible.checked: chip.on }
     }
     component Switch: Rectangle {
         id: sw
         property bool on: false
+        property string name: ""
+        property string navRole: "switch"
         readonly property string rowTitle: parent && parent.parent && parent.parent.title !== undefined ? parent.parent.title : ""
         signal toggled(bool v)
         implicitWidth: 38; implicitHeight: 22; radius: 11
@@ -77,7 +80,7 @@ FocusScope {
             Behavior on x { NumberAnimation { duration: Theme.durationShort } }
         }
         MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: sw.toggled(!sw.on)
-            Accessible.role: Accessible.CheckBox; Accessible.name: sw.rowTitle; Accessible.checked: sw.on }
+            Accessible.role: Accessible.CheckBox; Accessible.name: sw.name || sw.rowTitle; Accessible.checked: sw.on }
     }
     component Row2: Item {
         property string title
@@ -140,6 +143,82 @@ FocusScope {
         }
     }
 
+    // --- Modules page: the composer (Composer singleton over settings `layout`) ---
+    // A row: switch, label, then (control center tiles) a 1x1/2x1 size toggle, then up/down. The row
+    // buttons are MouseAreas with a navRole, so the island's keyboard navigator reaches them and
+    // Alt/Shift + Up/Down on any of them moves the row (reorder / controlFor below).
+    component RowButton: MouseArea {
+        id: rb
+        property string glyph; property string text; property string navRole; property string label
+        implicitWidth: text !== "" ? 40 : 26; implicitHeight: 22
+        cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+        hoverEnabled: true
+        Accessible.role: Accessible.Button; Accessible.name: rb.label
+        Rectangle {
+            anchors.fill: parent; radius: 7
+            color: rb.containsMouse && rb.enabled ? Colors.islandSurfaceHighest : Colors.islandSurfaceHigh
+            opacity: rb.enabled ? 1 : 0.35
+            Text { anchors.centerIn: parent; visible: rb.glyph !== ""; text: rb.glyph; color: Colors.islandFg
+                font.family: Theme.fontIcon; font.pixelSize: 18 }
+            Text { anchors.centerIn: parent; visible: rb.text !== ""; text: rb.text; color: Colors.islandFg
+                font.family: Theme.fontUi; font.pixelSize: 11; font.weight: Font.Medium; font.features: { "tnum": 1 } }
+        }
+    }
+    component LayoutRow: Item {
+        id: lr
+        property string layoutSection   // "hover" | "cc"
+        property var entry: ({})
+        property int pos: 0
+        property int count: 1
+        readonly property string label: Cfg.Composer.label(entry.id)
+        objectName: "layoutRow_" + layoutSection + "_" + entry.id
+        width: parent ? parent.width : 0; height: root.composerRowH
+        Switch { x: 0; anchors.verticalCenter: parent.verticalCenter; on: !!lr.entry.enabled
+            name: lr.label + (lr.layoutSection === "cc" ? " tile" : " chip") + ", shown"
+            onToggled: v => Cfg.Composer.setEnabled(lr.layoutSection, lr.entry.id, v) }
+        Label { x: 48; height: parent.height; width: parent.width - 48 - btns.width - 8; text: lr.label; elide: Text.ElideRight
+            color: lr.entry.enabled ? Colors.islandFg : Colors.islandFgVar }
+        Row {
+            id: btns
+            anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; spacing: 4
+            RowButton { visible: lr.layoutSection === "cc"; navRole: "size"; objectName: "layoutBtn_" + lr.layoutSection + "_" + lr.entry.id + "_size"; text: lr.entry.size || "1x1"
+                label: lr.label + " size, " + (lr.entry.size || "1x1") + ". Toggle 1x1 or 2x1"
+                onClicked: Cfg.Composer.setSize(lr.entry.id, lr.entry.size === "2x1" ? "1x1" : "2x1") }
+            RowButton { navRole: "up"; objectName: "layoutBtn_" + lr.layoutSection + "_" + lr.entry.id + "_up"; glyph: "keyboard_arrow_up"; enabled: lr.pos > 0; label: "Move " + lr.label + " up"
+                onClicked: Cfg.Composer.move(lr.layoutSection, lr.entry.id, -1) }
+            RowButton { navRole: "down"; objectName: "layoutBtn_" + lr.layoutSection + "_" + lr.entry.id + "_down"; glyph: "keyboard_arrow_down"; enabled: lr.pos < lr.count - 1; label: "Move " + lr.label + " down"
+                onClicked: Cfg.Composer.move(lr.layoutSection, lr.entry.id, 1) }
+        }
+    }
+    function walkItems(it, f) { if (!it) return null; const r = f(it); if (r) return r
+        for (let i = 0; i < it.children.length; i++) { const x = walkItems(it.children[i], f); if (x) return x } return null }
+    // Island navigator hooks: the row key for the focused control ("" when not on a composer row),
+    // after moving that row by dir; and the control for a key once the list has rebuilt.
+    function reorder(control, dir) {
+        let role = "", it = control
+        while (it && it !== root) {
+            if (role === "" && typeof it.navRole === "string") role = it.navRole
+            if (typeof it.layoutSection === "string" && it.entry) {
+                Cfg.Composer.move(it.layoutSection, it.entry.id, dir)
+                return it.layoutSection + "|" + it.entry.id + "|" + (role || "switch")
+            }
+            it = it.parent
+        }
+        return ""
+    }
+    function controlFor(key) {
+        const k = String(key).split("|")
+        const row = walkItems(root, it => it.objectName === "layoutRow_" + k[0] + "_" + k[1] ? it : null)
+        const host = row ? walkItems(row, it => it.navRole === k[2] ? it : null) : null
+        return host ? walkItems(host, it => it.acceptedButtons !== undefined && it.pressAndHoldInterval !== undefined ? it : null) : null
+    }
+    property string modulesSection: "surfaces"
+    // Ten rows plus the section tabs and the bottom row share the page height (28 px at most).
+    property real composerRowH: 24
+    readonly property var modulesSections: [
+        { id: "surfaces", label: "Surfaces" }, { id: "rest", label: "Rest" },
+        { id: "hover", label: "Hover face" }, { id: "cc", label: "Control center" }]
+
     // Page rail.
     Column {
         x: 12; y: 14; width: 120; spacing: 2
@@ -193,17 +272,78 @@ FocusScope {
             Row2 { title: "Scroll"; z: 1; Drop { key: "scroll"; options: ["volume", "brightness", "none"] } }
         }
 
-        ColumnLayout {
-            visible: root.page === "modules"; width: parent.width; height: parent.height; spacing: 0
-            readonly property real rowH: Math.min(44, height / 6)
-            Repeater {
-                model: ["media", "notifications", "calendar", "launcher", "wallpapers", "settings"]
-                delegate: Row2 {
-                    required property string modelData
-                    title: modelData.charAt(0).toUpperCase() + modelData.slice(1)
-                    Switch { anchors.verticalCenter: parent.verticalCenter; on: Cfg.Settings.modules[modelData] !== false
-                        onToggled: v => Cfg.Settings.set("modules." + modelData, v) }
+        // Modules: the surfaces on/off (modules.*) and the composer for the rest pill, the hover face
+        // and the control center (Composer). Changes apply live and persist; Reset layout drops
+        // the user's layout so the defaults apply again.
+        Column {
+            id: modulesPage
+            objectName: "modulesPage"
+            visible: root.page === "modules"; width: parent.width; height: parent.height; spacing: 6
+            Binding { target: root; property: "composerRowH"; value: Math.min(28, Math.floor((modulesPage.height - 2 * (26 + 6)) / 10)) }
+            Row {
+                spacing: 6
+                Repeater {
+                    model: root.modulesSections
+                    delegate: Chip { required property var modelData; text: modelData.label; on: root.modulesSection === modelData.id
+                        onClicked: root.modulesSection = modelData.id }
                 }
+            }
+            Column {
+                visible: root.modulesSection === "surfaces"; width: parent.width
+                Repeater {
+                    model: ["media", "notifications", "calendar", "launcher", "wallpapers", "settings"]
+                    delegate: Row2 {
+                        required property string modelData
+                        width: parent.width; height: 34
+                        title: modelData.charAt(0).toUpperCase() + modelData.slice(1)
+                        Switch { anchors.verticalCenter: parent.verticalCenter; on: Cfg.Settings.modules[modelData] !== false
+                            onToggled: v => Cfg.Settings.set("modules." + modelData, v) }
+                    }
+                }
+            }
+            Column {
+                visible: root.modulesSection === "rest"; width: parent.width
+                Row2 { width: parent.width; height: 34; title: "Left: activity"
+                    Switch { anchors.verticalCenter: parent.verticalCenter; name: "Rest left, activity circle"; on: Cfg.Composer.restLeft === "activity"
+                        onToggled: v => Cfg.Composer.setRest("left", v ? "activity" : "none") } }
+                Row2 { width: parent.width; height: 34; title: "Centre: clock"
+                    Label { height: parent.height; text: "Always shown"; color: Colors.islandFgVar } }
+                Row2 { width: parent.width; height: 34; title: "Right: status"
+                    Switch { anchors.verticalCenter: parent.verticalCenter; name: "Rest right, status"; on: Cfg.Composer.restRight === "status"
+                        onToggled: v => Cfg.Composer.setRest("right", v ? "status" : "none") } }
+                Label { width: parent.width; height: 40; wrapMode: Text.WordWrap; color: Colors.islandFgVar; font.pixelSize: 11
+                    text: "What the status slot shows is the Status centre setting (Behaviour). A low battery and the mic/camera glyphs show even with it off." }
+            }
+            Column {
+                visible: root.modulesSection === "hover"; width: parent.width
+                Repeater {
+                    model: Cfg.Composer.hover
+                    delegate: LayoutRow { required property var modelData; required property int index
+                        layoutSection: "hover"; entry: modelData; pos: index; count: Cfg.Composer.hover.length }
+                }
+            }
+            Column {
+                visible: root.modulesSection === "cc"; width: parent.width
+                Repeater {
+                    model: Cfg.Composer.tiles
+                    delegate: LayoutRow { required property var modelData; required property int index
+                        layoutSection: "cc"; entry: modelData; pos: index; count: Cfg.Composer.tiles.length }
+                }
+            }
+            // Bottom row: the control center's section switches (on that section) and Reset layout.
+            Item {
+                width: parent.width; height: 26; visible: root.modulesSection !== "surfaces"
+                Row {
+                    spacing: 6; visible: root.modulesSection === "cc"
+                    Repeater {
+                        model: Cfg.Composer.sectionKeys
+                        delegate: Chip { required property string modelData; objectName: "ccSection_" + modelData
+                            text: Cfg.Composer.sectionLabels[modelData]; on: Cfg.Composer.section(modelData)
+                            accName: "Control center " + Cfg.Composer.label(modelData).toLowerCase() + (on ? ", shown" : ", hidden")
+                            onClicked: Cfg.Composer.setSection(modelData, !on) }
+                    }
+                }
+                Chip { objectName: "resetLayout"; anchors.right: parent.right; text: "Reset layout"; onClicked: Cfg.Composer.reset() }
             }
         }
 

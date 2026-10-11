@@ -6,3 +6,4 @@ singleton Paths 1.0 Paths.qml
 singleton Settings 1.0 Settings.qml
 singleton Priorities 1.0 Priorities.qml
 singleton Sizes 1.0 Sizes.qml
+singleton Composer 1.0 Composer.qml

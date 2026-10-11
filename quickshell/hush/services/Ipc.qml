@@ -130,6 +130,35 @@ Singleton {
         // --- settings (Task 1) ---
         function settingsGet(key: string): string { const v = Settings.get(key); return v === undefined ? "" : JSON.stringify(v) }
         function settingsSet(key: string, json: string): void { try { Settings.set(key, JSON.parse(json)) } catch (e) { console.warn("settingsSet: bad json for " + key) } }
+        // --- layout composer ---
+        function settingsReset(key: string): void { Settings.unset(key) }
+        // Visible items of the shown state named <prefix><id>, in reading order: "id,id,..".
+        function islandChips(prefix: string): string {
+            const root0 = root.island ? root.island.item : null, out = []
+            const walk = it => {
+                if (!it || !it.visible) return
+                if (typeof it.objectName === "string" && it.objectName.indexOf(prefix) === 0 && it.width > 0) {
+                    const p = it.mapToItem(root0, 0, 0); out.push({ id: it.objectName.slice(prefix.length), x: p.x, y: p.y })
+                }
+                for (let i = 0; i < it.children.length; i++) walk(it.children[i])
+            }
+            walk(root0)
+            out.sort((a, b) => Math.abs(a.y - b.y) > 8 ? a.y - b.y : a.x - b.x)
+            return out.map(e => e.id).join(",")
+        }
+        function layoutHover(): string { return Composer.hoverShown.join(",") }
+        function layoutTiles(): string { return Composer.tilesShown.map(t => t.id + ":" + t.size).join(",") }
+        // Keyboard-focus the composer row control "section|id|role" (tests start a key sequence there).
+        function islandNavKey(key: string): bool {
+            const it = root.island && root.island.item && root.island.item.controlFor ? root.island.item.controlFor(key) : null
+            if (it) root.island.setNav(it)
+            return !!it
+        }
+        // Settings surface page and Modules section (tests).
+        function settingsPage(page: string, section: string): void {
+            const s = root.surface("settings"); if (!s) return
+            s.page = page; if (section) s.modulesSection = section
+        }
         // --- end settings ---
     }
     // --- activity IPC (Task 15) ---

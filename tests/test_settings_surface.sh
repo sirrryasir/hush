@@ -12,7 +12,7 @@ t_settings() {
   local up=0; for _ in $(seq 20); do sleep 0.3; [[ -n "$(hq size)" ]] && { up=1; break; }; done
   [[ $up == 1 ]] && pass "harness starts" || { fail "harness did not start"; kill "$pid" 2>/dev/null; return; }
   hyprctl layers -j | grep -q '"namespace": "hush-harness-settings"' && pass "layer hush-harness-settings present" || fail "layer missing"
-  assert_eq "560x288" "$(hq size)" "declared size 560x288"
+  assert_eq "560x336" "$(hq size)" "declared size 560x336"
   assert_eq "$(tr -d '[:space:]' < VERSION)" "$(hq version)" "About reads VERSION"
   hq previewWidth 200 >/dev/null; sleep 0.2
   assert_eq "200" "$(hq shownWidth)" "drag previews without writing"
@@ -46,6 +46,52 @@ t_settings() {
   hq stepSlider "Reveal time" -10 >/dev/null; sleep 0.6
   assert_eq "2100" "$(hq dataOf motion.revealMs)" "Shift step is ten steps"
   assert_eq "1" "$(hq setPage island >/dev/null; sleep 0.2; hq hasSlider Width >/dev/null && echo 1)" "pages still list their sliders"
+  # Modules page: the composer (layout.*). Rows render the normalised lists; buttons and the keyboard
+  # hook reorder, switches and size toggles write settings.json, Reset layout drops the override.
+  local J="python3 -c"
+  hq setPage modules >/dev/null; hq setSection surfaces >/dev/null; sleep 0.2
+  for t in Media Notifications Calendar Launcher Wallpapers Settings; do
+    assert_eq "true" "$(hq hasSwitch "$t")" "Modules/Surfaces keeps the \"$t\" switch"
+  done
+  hq setSection hover >/dev/null; sleep 0.2
+  assert_eq "workspaces,date,media,bluetooth,network,battery,volume,brightness,timer,recording" "$(hq rows hover)" "hover rows in the default order"
+  assert_eq "false" "$(hq enabledOf "hover|workspaces|up")" "first row: up is disabled"
+  assert_eq "false" "$(hq enabledOf "hover|recording|down")" "last row: down is disabled"
+  hq press "hover|date|down" >/dev/null; sleep 0.6
+  assert_eq "workspaces,media,date" "$(hq rows hover | cut -d, -f1-3)" "down moves Date below Now playing"
+  assert_eq "media" "$($J "import json;print(json.load(open('$f'))['layout']['hover'][1]['id'])")" "the order is in settings.json"
+  assert_eq "hover|date|switch" "$(hq reorder "hover|date|switch" -1)" "Alt/Shift+Up hook on the row's switch returns the row key"
+  sleep 0.6
+  assert_eq "workspaces,date,media" "$(hq rows hover | cut -d, -f1-3)" "the key hook moved Date back up"
+  assert_eq "" "$(hq reorder "hover|workspaces|switch" -1 >/dev/null; hq rows hover | cut -d, -f1 | grep -v workspaces)" "moving the first row up keeps it first"
+  hq press "hover|workspaces|switch" >/dev/null; sleep 0.6
+  assert_eq "date,media,bluetooth,network,battery" "$(hq layoutHover)" "switch off: Workspaces leaves the hover face"
+  hq press "hover|volume|switch" >/dev/null; sleep 0.6
+  assert_eq "date,media,bluetooth,network,battery,volume" "$(hq layoutHover)" "switch on: Volume joins it"
+  assert_eq "" "$(hq unnamed)" "every control on the hover section has an accessible name"
+  hq setSection cc >/dev/null; sleep 0.2
+  assert_eq "wifi,bluetooth,dnd,nightlight,timer,recording,lock,theme,wallpapers,settings" "$(hq rows cc)" "control center rows in the default order"
+  hq press "cc|wifi|size" >/dev/null; sleep 0.6
+  assert_eq "wifi:1x1" "$(hq layoutTiles | cut -d, -f1)" "size toggle: Wi-Fi tile 1x1"
+  hq press "cc|lock|switch" >/dev/null; sleep 0.6
+  assert_eq "true" "$(hq layoutTiles | grep -q 'lock:1x1' && echo true)" "switch on: Lock tile shown"
+  hq press "cc|lock|up" >/dev/null; sleep 0.6
+  assert_eq "lock,recording" "$(hq rows cc | cut -d, -f6-7)" "up moves Lock above Recording"
+  hq pressNamed ccSection_sliders >/dev/null; sleep 0.6
+  assert_eq "false" "$(hq ccSection sliders)" "Sliders chip hides the sliders row"
+  assert_eq "False" "$($J "import json;print(json.load(open('$f'))['layout']['cc']['sliders'])")" "layout.cc.sliders false in settings.json"
+  assert_eq "" "$(hq unnamed)" "every control on the control center section has an accessible name"
+  hq setSection rest >/dev/null; sleep 0.2
+  assert_eq "true" "$(hq hasSwitch "Left: activity")" "Rest has the activity switch"
+  assert_eq "true" "$(hq hasSwitch "Right: status")" "Rest has the status switch"
+  hq flip "Left: activity" >/dev/null; sleep 0.6
+  assert_eq "none" "$(hq dataOf layout.rest.left)" "activity switch off: layout.rest.left none"
+  assert_eq "" "$(hq unnamed)" "every control on the rest section has an accessible name"
+  hq pressNamed resetLayout >/dev/null; sleep 0.6
+  assert_eq "no" "$($J "import json;print('yes' if 'layout' in json.load(open('$f')) else 'no')")" "Reset layout drops the layout override"
+  hq setSection hover >/dev/null; sleep 0.2
+  assert_eq "workspaces,date,media,bluetooth,network,battery" "$(hq layoutHover)" "after reset: default hover chips"
+  assert_eq "true" "$(hq ccSection sliders)" "after reset: sliders back"
   kill "$pid" 2>/dev/null; wait "$pid" 2>/dev/null
   if [[ $had == 1 ]]; then mv "$f.bak-test" "$f"; else rm -f "$f"; fi
 }

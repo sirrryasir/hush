@@ -137,6 +137,10 @@ git clone https://github.com/sirrryasir/hush.git ~/hush
 | `XDG_CONFIG_HOME` | `~/.config` | where generated files are written |
 | `HUSH_WALL_DIRS` | unset | colon-separated extra wallpaper folders for `hush wall random` and the wallpaper grid |
 
+### Composing the island
+
+Settings → Modules decides what the island shows, in four sections. Surfaces turns whole surfaces (media, notifications, calendar, launcher, wallpapers, settings) on or off. Rest picks the resting pill's sides: the activity circle on the left, the status slot on the right (what the slot shows is Behaviour → Status centre), the clock always in the middle. Hover face and Control center list their chips and tiles as rows: a switch shows or hides one, the arrows move it (or Shift+Up/Down with the row focused), and a control center tile toggles between 1x1 and 2x1 on a four-column grid; chips for things that are not there (Bluetooth off, no battery, no timer) leave no gap. The Sliders, Media, Themes and Power chips under the tiles switch those control center sections off. Every change applies at once and is saved to the `layout` key of `~/.config/hush/settings.json` (`hush settings`, or `qs -c hush ipc call hush settingsSet layout.hover ' [...]'`, with a space before an array); "Reset layout" removes the key so the defaults in `config/settings.default.json` apply again.
+
 ### Lock and login screens
 
 Both screens share one layout, "island-native" (`lockscreen/layout.toml`, sizes at 1080p, positions as fractions of the screen height): a thin Inter clock with tabular figures and the date over the blurred, dimmed wallpaper, and one black pill, the same black as the bar island, holding your avatar and the password. Battery and network sit top right as icons only. A wrong password turns the pill's hairline red; no "wrong password" text is shown. `hush face <image>` sets the avatar for both (a round 512 px crop written to `~/.face`).

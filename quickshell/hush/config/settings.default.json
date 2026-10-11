@@ -8,6 +8,25 @@
   "modules": {
     "media": true, "notifications": true, "calendar": true, "launcher": true, "wallpapers": true, "settings": true
   },
+  "layout": {
+    "rest": { "left": "activity", "right": "status" },
+    "hover": [
+      { "id": "workspaces", "enabled": true }, { "id": "date", "enabled": true }, { "id": "media", "enabled": true },
+      { "id": "bluetooth", "enabled": true }, { "id": "network", "enabled": true }, { "id": "battery", "enabled": true },
+      { "id": "volume", "enabled": false }, { "id": "brightness", "enabled": false },
+      { "id": "timer", "enabled": false }, { "id": "recording", "enabled": false }
+    ],
+    "cc": {
+      "tiles": [
+        { "id": "wifi", "enabled": true, "size": "2x1" }, { "id": "bluetooth", "enabled": true, "size": "2x1" },
+        { "id": "dnd", "enabled": true, "size": "2x1" }, { "id": "nightlight", "enabled": true, "size": "2x1" },
+        { "id": "timer", "enabled": false, "size": "1x1" }, { "id": "recording", "enabled": false, "size": "1x1" },
+        { "id": "lock", "enabled": false, "size": "1x1" }, { "id": "theme", "enabled": false, "size": "1x1" },
+        { "id": "wallpapers", "enabled": false, "size": "1x1" }, { "id": "settings", "enabled": false, "size": "1x1" }
+      ],
+      "sliders": true, "media": true, "themeStrip": true, "power": true
+    }
+  },
   "motion": {
     "hoverDwellMs": 120, "leaveGraceMs": 300, "armMs": 500, "revealMs": 1500,
     "springQuick": { "spring": 12, "damping": 0.6, "velocity": 0 },

@@ -14,6 +14,7 @@ Singleton {
     readonly property var island: root.data.island || ({})
     readonly property var modules: root.data.modules || ({})
     readonly property var motion: root.data.motion || ({})
+    readonly property var layout: root.data.layout || ({})
 
     function isObj(v) { return v !== null && typeof v === "object" && !Array.isArray(v) }
     function merge(a, b) {
@@ -32,7 +33,24 @@ Singleton {
         let o = u
         for (let i = 0; i < keys.length - 1; i++) { if (!isObj(o[keys[i]])) o[keys[i]] = {}; o = o[keys[i]] }
         o[keys[keys.length - 1]] = value
+        root.write(u)
+    }
+    // Drop the user's override at `path` (and any empty parents), so the default applies again.
+    function unset(path) {
+        const keys = String(path).split("."), u = JSON.parse(JSON.stringify(root.user || {}))
+        const chain = [u]
+        for (let i = 0; i < keys.length - 1; i++) { const n = chain[i][keys[i]]; if (!isObj(n)) return; chain.push(n) }
+        if (!(keys[keys.length - 1] in chain[chain.length - 1])) return
+        delete chain[chain.length - 1][keys[keys.length - 1]]
+        for (let i = chain.length - 1; i > 0; i--) if (Object.keys(chain[i]).length === 0) delete chain[i - 1][keys[i - 1]]
+        root.write(u)
+    }
+    // One write at a time: a change made while the writer runs is queued (the latest wins), so two
+    // quick changes (a row moved twice) never leave the older one on disk.
+    property var pendingWrite: null
+    function write(u) {
         root.user = u
+        if (writer.running) { root.pendingWrite = u; return }
         writer.command = ["sh", "-c", 'mkdir -p "$(dirname "$1")" && printf "%s\\n" "$2" > "$1.tmp" && mv "$1.tmp" "$1"',
             "sh", root.userPath, JSON.stringify(u, null, 2)]
         writer.running = true
@@ -50,9 +68,14 @@ Singleton {
         path: root.userPath
         watchChanges: true
         onFileChanged: reloadTimer.restart()
-        onLoaded: { try { root.user = JSON.parse(userFile.text()) } catch (e) { console.warn("settings.json parse failed: " + e) } }
+        // A reload landing between two queued writes would briefly bring back the older one.
+        onLoaded: { if (writer.running || root.pendingWrite !== null) return
+            try { root.user = JSON.parse(userFile.text()) } catch (e) { console.warn("settings.json parse failed: " + e) } }
         onLoadFailed: root.user = ({})
     }
     Timer { id: reloadTimer; interval: 80; onTriggered: userFile.reload() }
-    Process { id: writer }
+    Process {
+        id: writer
+        onExited: if (root.pendingWrite !== null) { const u = root.pendingWrite; root.pendingWrite = null; root.write(u) }
+    }
 }

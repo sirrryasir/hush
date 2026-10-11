@@ -48,5 +48,39 @@ ShellRoot {
         function stepSlider(title: string, n: int): void { const w = rowItem(title, "cur"); walk(w, c => { if (typeof c.stepAdjust === "function") c.stepAdjust(n) }) }
         function dataOf(path: string): string { return String(path.split(".").reduce((o, k) => o[k], Settings.data)) }
         function unitOf(title: string): string { return rowItem(title, "unit").unit }
+        // Modules composer.
+        function setSection(sec: string): void { s.modulesSection = sec }
+        // Rendered composer rows of a section, top to bottom ("id,id,..").
+        function rows(sec: string): string {
+            const o = []; walk(s, it => { if (it.visible && typeof it.objectName === "string" && it.objectName.indexOf("layoutRow_" + sec + "_") === 0)
+                o.push({ id: it.entry.id, y: it.mapToItem(s, 0, 0).y }) })
+            return o.sort((a, b) => a.y - b.y).map(e => e.id).join(",")
+        }
+        function press(key: string): bool { const c = s.controlFor(key); if (!c || !c.enabled) return false; c.clicked(null); return true }
+        function enabledOf(key: string): bool { const c = s.controlFor(key); return !!c && c.enabled }
+        // The island navigator's Alt/Shift+Up/Down hook, as the island calls it.
+        function reorder(key: string, dir: int): string { return s.reorder(s.controlFor(key), dir) }
+        function pressNamed(name: string): void { walk(s, it => { if (it.objectName === name) it.clicked() }) }
+        function layoutHover(): string { return Composer.hoverShown.join(",") }
+        function layoutTiles(): string { return Composer.tilesShown.map(t => t.id + ":" + t.size).join(",") }
+        function ccSection(k: string): bool { return Composer.section(k) }
+        // Visible MouseAreas on the shown Modules section without an accessible name ("" = none).
+        function unnamed(): string {
+            const o = []; let page = null
+            walk(s, it => { if (it.objectName === "modulesPage") page = it })
+            const w = it => { if (!it.visible) return
+                if (it.acceptedButtons !== undefined && it.pressAndHoldInterval !== undefined && !(it.Accessible.name)) o.push(String(it.parent))
+                for (let i = 0; i < it.children.length; i++) w(it.children[i]) }
+            if (page) w(page)
+            return o.join("|")
+        }
+        function controls(): int {
+            let n = 0, page = null
+            walk(s, it => { if (it.objectName === "modulesPage") page = it })
+            const w = it => { if (!it.visible) return; if (it.acceptedButtons !== undefined && it.pressAndHoldInterval !== undefined) n++
+                for (let i = 0; i < it.children.length; i++) w(it.children[i]) }
+            if (page) w(page)
+            return n
+        }
     }
 }

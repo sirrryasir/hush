@@ -62,8 +62,8 @@ t_close() {
 t_settings() {
   bin/hush settings; wait_state settings
   assert_eq "true" "$(shell_ipc settingsVisible)" "hush settings opens the settings surface"
-  local i; for i in $(seq 20); do [[ "$(shell_ipc islandSize)" == "560x288" ]] && break; sleep 0.05; done
-  assert_eq "560x288" "$(shell_ipc islandSize)" "settings is 560x288"
+  local i; for i in $(seq 20); do [[ "$(shell_ipc islandSize)" == "560x336" ]] && break; sleep 0.05; done
+  assert_eq "560x336" "$(shell_ipc islandSize)" "settings is 560x336"
   grim "$EVI/settings.png" 2>/dev/null
   bin/hush settings; wait_state rest || wait_state media
   assert_eq "false" "$(shell_ipc settingsVisible)" "hush settings again closes it"
