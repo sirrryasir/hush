@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Island v2 surface (design 2.4): one full-width, fixed-height layer per monitor whose geometry never
+# Island v2 surface: one full-width, fixed-height layer per monitor whose geometry never
 # changes; only the input mask follows the pill. Clicks 2 px outside the pill reach the window below,
 # a click on the pill does not; a fullscreen window retracts the pill. Runs on every monitor.
 source "$(dirname "$0")/lib.sh"; source "$(dirname "$0")/shell_lib.sh"; source "$(dirname "$0")/lib/input.sh"

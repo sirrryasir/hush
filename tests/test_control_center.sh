@@ -11,7 +11,7 @@ t_open() {
   assert_eq "560x304" "$(shell_ipc islandSize)" "expanded size"
   assert_eq "6" "$(shell_ipc ccThemeCount)" "six themes listed"
   [[ -n "${HUSH_SHOT:-}" ]] && shell_screenshot "$HUSH_SHOT"
-  shell_screenshot taskB7-cc-dark
+  shell_screenshot cc-dark
 }
 t_theme() {
   shell_ipc ccSetTheme dusk >/dev/null; sleep 4
@@ -20,7 +20,7 @@ t_theme() {
   shell_ipc ccSetTheme paper >/dev/null; sleep 4
   assert_contains <(bin/hush status | head -1) "theme paper" "theme switched to paper"
   assert_eq "expanded" "$(shell_ipc islandState)" "still expanded on light theme"
-  shell_screenshot taskB7-cc-light
+  shell_screenshot cc-light
   shell_ipc ccSetTheme harbor >/dev/null; sleep 4
   assert_contains <(bin/hush status | head -1) "theme harbor" "back to harbor"
 }

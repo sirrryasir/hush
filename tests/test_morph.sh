@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Island v2 morph (design 2.5): the pill springs between declared sizes, interruptibly, with staged
+# Island v2 morph: the pill springs between declared sizes, interruptibly, with staged
 # content. A frame sequence (grim every 40 ms) across an expand that is reversed 130 ms in must keep
 # its velocity continuous: each frame's width jump is at most twice the previous jump plus 8 px
 # (both scaled to the frame interval; repeated frames from the capture are merged). A leg's start

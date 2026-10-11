@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Media surface (Task 9): the harness (tests/harness/media.qml) shows it at its declared size, the cava
+# Media surface: the harness (tests/harness/media.qml) shows it at its declared size, the cava
 # process exists only while it is shown and is gone 1 s after the harness exits. A stub cava in
 # tests/harness/bin stands in for the real one; a fake MPRIS player supplies the track.
 source "$(dirname "$0")/lib.sh"

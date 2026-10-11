@@ -17,11 +17,11 @@ t_themes() {
     wait_ipc islandState rest; wait_ipc launcherVisible false
     shell_ipc toggleLauncher; wait_ipc launcherVisible true && pass "$t: launcher opens" || fail "$t: launcher did not open"
     sleep 0.5; shell_ipc toggleLauncher; wait_ipc launcherVisible false && pass "$t: launcher closes" || fail "$t: launcher did not close"
-    shell_screenshot "taskB10-$t-rest"
+    shell_screenshot "integration-$t-rest"
     wait_ipc islandState rest; sleep 0.5
     shell_ipc toggleControlCenter; wait_ipc islandState expanded && pass "$t: control center opens" || fail "$t: control center did not open"
     sleep 0.5
-    shell_screenshot "taskB10-$t-cc"
+    shell_screenshot "integration-$t-cc"
     shell_ipc toggleControlCenter; wait_ipc islandState rest && pass "$t: control center closes" || fail "$t: control center did not close"
   done
 }

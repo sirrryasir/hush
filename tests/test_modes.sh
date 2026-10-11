@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Island modes, fullscreen reveal and OSD overlay, keyboard navigation (plan Task 16).
+# Island modes, fullscreen reveal and OSD overlay, keyboard navigation.
 #   mode switch over IPC settingsSet: overlay reserves nothing and keeps the pill; auto-hide
 #   retracts it, a workspace change and the 1 px top strip reveal it, the leave grace hides it;
 #   fullscreen kitty: the pill retracts, the strip stays live on the Overlay layer, the pointer at

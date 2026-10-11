@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Island performance gate (plan Task 17b), live shell. Prints a table and asserts:
+# Island performance gate, live shell. Prints a table and asserts:
 #  1 idle at rest, no media: CPU < 1 % and < 50 voluntary ctx switches/s over 20 s
 #  2 same with a playing MPRIS player (activity ring animating): CPU < 1.5 %, no cava while the media surface is closed
 #  3 every surface opened and closed 3x over IPC: idle CPU < 1 % within 10 s, RSS growth < 20 MB (leak smoke)

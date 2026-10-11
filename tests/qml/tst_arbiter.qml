@@ -2,7 +2,7 @@ import QtQuick
 import QtTest
 import "../../quickshell/hush/modules/island"
 
-// Table-driven tests for the island Arbiter (design 2.3). Each row is a script of steps
+// Table-driven tests for the island Arbiter. Each row is a script of steps
 // followed by the expected current source, queue and (optionally) event log / payload.
 // Steps: ["d", name, priority, opts] declare, ["r", name, payload] raise, ["l", name, key?]
 // lower, ["w", ms] wait, ["p", bool] pointerInside.

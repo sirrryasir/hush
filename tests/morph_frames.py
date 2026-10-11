@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Frame-sequence capture of the island pill (design 2.5, plan Task 4).
+"""Frame-sequence capture of the island pill.
 
 Usage: morph_frames.py X Y W H ROW PERIOD_MS TOTAL_MS
 Captures the global logical region X,Y WxH with grim every PERIOD_MS for TOTAL_MS. The caller arms

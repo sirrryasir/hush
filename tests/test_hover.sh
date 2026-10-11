@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Island v2 hover and input (design 2.2). The pointer is moved with hl.dsp.cursor.move and clicks,
+# Island v2 hover and input. The pointer is moved with hl.dsp.cursor.move and clicks,
 # keys and the wheel go through tests/lib/input.sh (ydotoold live, virtual devices in the sandbox). Timings come
 # from the island's own history (state changes and pointer crossings stamped in the shell), so IPC
 # latency never counts:
