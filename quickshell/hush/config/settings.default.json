@@ -3,7 +3,8 @@
     "width": 140, "height": 36, "radius": 18, "topGap": 6, "reserve": 40,
     "mode": "reserve", "hoverFace": true, "liveActivities": true, "reducedMotion": false,
     "clickLeft": "cc", "clickRight": "notifs", "clickMiddle": "media", "scroll": "volume",
-    "nowPlayingOsd": true, "fullscreenReveal": true, "fullscreenOsd": true, "statusCenter": "none"
+    "nowPlayingOsd": true, "fullscreenReveal": true, "fullscreenOsd": true, "statusCenter": "none",
+    "clock": "24"
   },
   "modules": {
     "media": true, "notifications": true, "calendar": true, "launcher": true, "wallpapers": true, "settings": true

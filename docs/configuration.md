@@ -24,7 +24,8 @@ own layer.
 
 Hover 120 ms opens the hover face; it closes 300 ms after the pointer leaves. `island.clickLeft`,
 `clickRight`, `clickMiddle` take `cc`, `notifs`, `media`, `calendar`, `launcher` or `none`;
-`island.scroll` takes `volume`, `brightness` or `none`. Esc or a click outside closes a panel;
+`island.scroll` takes `volume`, `brightness` or `none`; `island.clock` is `24` or `12` (pill, lock
+and login). Esc or a click outside closes a panel;
 buttons ignore clicks for the first `motion.armMs` (500 ms). Critical notifications stay until
 clicked.
 

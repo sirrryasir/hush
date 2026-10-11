@@ -47,6 +47,7 @@ Rectangle {
         id: lay
         property real base: 1080
         property real clockCy: 0.3704
+        property real clock12: 0
         property real clockSize: 168
         property real clockWeight: 100
         property real clockTracking: -2
@@ -205,7 +206,7 @@ Rectangle {
             id: clock
             anchors.horizontalCenter: parent.horizontalCenter
             y: Math.round(root.height * lay.clockCy - height / 2)
-            text: Qt.formatTime(root.now, "hh:mm")
+            text: Qt.formatTime(root.now, lay.clock12 > 0 ? "h:mm AP" : "hh:mm")
             color: pal.wallText
             font.family: root.fontName
             font.pixelSize: root.fs(lay.clockSize)

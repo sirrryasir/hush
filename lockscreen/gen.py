@@ -5,12 +5,20 @@
                                           every monitor at H = 1080)
   gen.py qml OUT                          the same spec as a QML object for the greeter
 """
-import os, sys, tomllib
+import json, os, sys, tomllib
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SPEC = tomllib.load(open(os.path.join(HERE, "layout.toml"), "rb"))
 WEIGHTS = {100: "Thin", 200: "ExtraLight", 300: "Light", 400: "", 500: "Medium", 600: "SemiBold", 700: "Bold"}
 ICONS = "Material Symbols Rounded"
+
+
+def clock12():  # island.clock in settings.json, "24" unless set to "12"
+    cfg = os.path.join(os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config")), "hush", "settings.json")
+    try:
+        return str(json.load(open(cfg)).get("island", {}).get("clock")) == "12"
+    except (OSError, ValueError):
+        return False
 
 
 def even(v):
@@ -58,7 +66,7 @@ def hyprlock(monitors):
             f"\n# ---- {name or 'every monitor'} at H = {h} (s = {s:.4f})",
             "label { # clock, tabular figures",
             mon,
-            f"    text = cmd[update:1000] echo \"<span font_features='tnum' letter_spacing='{track}'>$(date +%H:%M)</span>\"",
+            f"    text = cmd[update:1000] echo \"<span font_features='tnum' letter_spacing='{track}'>$(date +'{"%-I:%M %p" if clock12() else "%H:%M"}')</span>\"",
             "    color = $hushWallText",
             f"    font_size = {PT(c['size'])}",
             f"    font_family = {family(c['weight'])}",
@@ -191,6 +199,7 @@ def qml():
             head = sec.split("_")
             name = head[0] + "".join(x.capitalize() for x in head[1:] + parts)
             lines.append(f"    property real {name}: {v}")
+    lines.append(f"    property real clock12: {int(clock12())}")
     lines.append("}")
     return "\n".join(lines) + "\n"
 
