@@ -237,8 +237,10 @@ FocusScope {
         }
     }
 
-    Item {
+    Flickable {
         x: 148; y: 14; width: parent.width - 160; height: parent.height - 28 - (root.warning !== "" ? 24 : 0)
+        clip: true; contentWidth: width; boundsBehavior: Flickable.StopAtBounds
+        contentHeight: Math.max(height, behaviourPage.visible ? behaviourPage.height : modulesPage.visible ? modulesPage.height : 0)
 
         ColumnLayout {
             visible: root.page === "island"; width: parent.width; height: parent.height; spacing: 0
@@ -256,8 +258,9 @@ FocusScope {
         }
 
         ColumnLayout {
-            visible: root.page === "behaviour"; width: parent.width; height: parent.height; spacing: 0
-            readonly property real rowH: Math.min(44, height / 12)
+            id: behaviourPage
+            visible: root.page === "behaviour"; width: parent.width; spacing: 0
+            readonly property real rowH: 32
             Row2 { title: "Hover face"; Switch { anchors.verticalCenter: parent.verticalCenter; on: !!Cfg.Settings.island.hoverFace; onToggled: v => Cfg.Settings.set("island.hoverFace", v) } }
             Row2 { title: "Live activities"; Switch { anchors.verticalCenter: parent.verticalCenter; on: !!Cfg.Settings.island.liveActivities; onToggled: v => Cfg.Settings.set("island.liveActivities", v) } }
             Row2 { title: "Reduced motion"; Switch { anchors.verticalCenter: parent.verticalCenter; on: !!Cfg.Settings.island.reducedMotion; onToggled: v => Cfg.Settings.set("island.reducedMotion", v) } }
@@ -279,8 +282,8 @@ FocusScope {
         Column {
             id: modulesPage
             objectName: "modulesPage"
-            visible: root.page === "modules"; width: parent.width; height: parent.height; spacing: 6
-            Binding { target: root; property: "composerRowH"; value: Math.min(28, Math.floor((modulesPage.height - 2 * (26 + 6)) / 10)) }
+            visible: root.page === "modules"; width: parent.width; spacing: 6
+            Binding { target: root; property: "composerRowH"; value: 28 }
             Row {
                 spacing: 6
                 Repeater {
@@ -359,7 +362,7 @@ FocusScope {
             visible: root.page === "about"; width: parent.width; spacing: 8
             Label { text: "Hush"; font.pixelSize: 20; font.weight: Font.DemiBold }
             Label { text: "Version " + root.version; color: Colors.islandFgVar }
-            Label { text: "A quiet shell for Hyprland and Quickshell."; color: Colors.islandFgVar }
+            Label { text: "Dynamic island shell for Hyprland, built on Quickshell."; color: Colors.islandFgVar }
         }
     }
 
