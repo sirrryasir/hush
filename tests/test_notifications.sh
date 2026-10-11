@@ -106,7 +106,9 @@ t_storm() {
 t_center() {
   shell_ipc toggleDrawer; wait_state notifCenter
   assert_eq "notifCenter" "$(state)" "toggleDrawer opens the notification center in the island"
-  assert_eq "480x260" "$(shell_ipc islandSize)" "center is 480x260" 
+  # The state flips at once; the pill springs to the surface size over the morph.
+  local i; for i in $(seq 30); do [[ "$(shell_ipc islandSize)" == "480x260" ]] && break; sleep 0.05; done
+  assert_eq "480x260" "$(shell_ipc islandSize)" "center is 480x260"
   local other; other=$(hyprctl layers -j | python3 -c '
 import json,sys
 d=json.load(sys.stdin)

@@ -20,7 +20,7 @@ t_open() {
   shell_restart; sleep 2
   shell_ipc toggleWallpapers; wait_state wallpapers
   assert_eq "true" "$(shell_ipc wallpapersVisible)" "toggleWallpapers opens the grid in the island"
-  local i; for i in $(seq 20); do [[ "$(shell_ipc islandSize)" == "624x340" ]] && break; sleep 0.05; done
+  local i; for i in $(seq 20); do [[ "$(shell_ipc islandSize)" == "656x320" ]] && break; sleep 0.05; done
   assert_eq "656x320" "$(shell_ipc islandSize)" "the pill grows to the grid (656x320 on the 8 px grid)"
   wait_ipc wallpapersCount
   local n; n=$(shell_ipc wallpapersCount)
