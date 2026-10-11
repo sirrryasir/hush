@@ -19,7 +19,18 @@ Singleton {
 
     PwObjectTracker { objects: [Pipewire.defaultAudioSink, Pipewire.defaultAudioSource] }
     Timer { interval: 2000; running: true; onTriggered: root.ready = true }
-    onVolumeChanged: if (ready) changed("volume")
-    onMutedChanged: if (ready) changed("volume")
-    onMicMutedChanged: if (ready) changed("mic")
+    // A default-device switch (a Bluetooth headset connecting or dropping) swaps the node: its
+    // volume reads 0 until bound, then jumps to the device's level. That is not a user change,
+    // so the OSD stays quiet until the new node is bound and has settled.
+    readonly property bool sinkLive: ready && !!sink && sink.ready && !sinkSettle.running
+    readonly property bool sourceLive: ready && !!source && source.ready && !sourceSettle.running
+    Timer { id: sinkSettle; interval: 500 }
+    Timer { id: sourceSettle; interval: 500 }
+    onSinkChanged: sinkSettle.restart()
+    onSourceChanged: sourceSettle.restart()
+    Connections { target: root.sink; function onReadyChanged() { sinkSettle.restart() } }
+    Connections { target: root.source; function onReadyChanged() { sourceSettle.restart() } }
+    onVolumeChanged: if (sinkLive) changed("volume")
+    onMutedChanged: if (sinkLive) changed("volume")
+    onMicMutedChanged: if (sourceLive) changed("mic")
 }
