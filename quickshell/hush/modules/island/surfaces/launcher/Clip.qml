@@ -10,7 +10,7 @@ Item {
     id: root
     property bool active: false
     property var lines: []
-    // false until the first `cliphist list` exits 0 (missing binary or broken db: "not installed").
+    // false until the first `cliphist list` ran and the binary exists; an empty history is just empty.
     property bool available: false
     property bool loaded: false
     // Decoded thumbnails by cliphist id: { "6620": "file:///run/user/1000/hush-clip-<pid>/6620" }.
@@ -96,7 +96,7 @@ Item {
         stdout: StdioCollector {
             onStreamFinished: root.lines = text.split("\n").filter(l => l.length > 0)
         }
-        onExited: code => { root.available = code === 0; root.loaded = true; root.loadCount++ }
+        onExited: code => { root.available = code !== 127; root.loaded = true; root.loadCount++ }
     }
     Process { id: deleter; onExited: root.reload() }
 }
