@@ -16,7 +16,7 @@ Item {
     property bool mediaOn: Media.player !== null && Media.playing
     property real mediaProgress: Media.length > 0 ? Math.max(0, Math.min(1, Media.position / Media.length)) : 0
     property string artUrl: Media.artUrl
-    readonly property string mode: recording ? "recording" : timerOn ? "timer" : mediaOn ? "media" : ""
+    readonly property string mode: !Settings.island.liveActivities ? "" : recording ? "recording" : timerOn ? "timer" : mediaOn ? "media" : ""
     readonly property bool shown: mode !== ""
     readonly property real progress: mode === "timer" ? timerProgress : mediaProgress
     readonly property bool hasArt: artUrl !== "" && art.status === Image.Ready

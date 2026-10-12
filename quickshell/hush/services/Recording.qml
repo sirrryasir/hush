@@ -4,7 +4,8 @@ import Quickshell
 import Quickshell.Io
 
 // Screen-recorder watch: `active` and `kind` ("wf-recorder", "obs", "gpu-screen-recorder" or "").
-// Polls pgrep every 2 s, and only while `enabled` (the island sets it from Settings liveActivities).
+// Polls pgrep every 2 s while `enabled`. Settings "Live activities" hides the pill slot
+// (ActivityCircle); the control-center tile keeps reading `active`.
 Singleton {
     id: root
     property bool enabled: true
