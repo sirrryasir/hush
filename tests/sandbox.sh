@@ -118,7 +118,7 @@ cat > "$SB/bin/brightnessctl" <<'SH'
 #!/usr/bin/env bash
 # brightnessctl for the test sandbox: get/set on $HUSH_BACKLIGHT_DIR/*/ (the subset hush and the tests use)
 d=$(ls -d "$HUSH_BACKLIGHT_DIR"/*/ | head -1); max=$(cat "$d/max_brightness"); cur=$(cat "$d/brightness")
-args=(); for a in "$@"; do case "$a" in -q|--quiet) ;; -m|--machine-readable) ;; *) args+=("$a") ;; esac; done
+args=(); for a in "$@"; do case "$a" in -q|--quiet|-m|--machine-readable|--min-value=*) ;; *) args+=("$a") ;; esac; done
 case "${args[0]:-}" in
   g|get) echo "$cur" ;;
   m|max) echo "$max" ;;
