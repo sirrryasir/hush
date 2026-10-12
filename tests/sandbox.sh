@@ -136,7 +136,7 @@ chmod +x "$SB/bin/brightnessctl"
 # --- environment ---------------------------------------------------------------------------------
 ENVF="$SB/env"
 {
-  echo "unset DISPLAY WAYLAND_SOCKET SWAYSOCK PIPEWIRE_REMOTE PULSE_SERVER HYPRLAND_INSTANCE_SIGNATURE"
+  echo "unset DISPLAY WAYLAND_SOCKET SWAYSOCK PIPEWIRE_REMOTE PULSE_SERVER HYPRLAND_INSTANCE_SIGNATURE HUSH_WALL_DIRS"
   printf 'export %s=%q\n' HOME "$H" XDG_CONFIG_HOME "$H/.config" XDG_CACHE_HOME "$H/.cache" \
     XDG_DATA_HOME "$H/.local/share" XDG_STATE_HOME "$H/.local/state" XDG_RUNTIME_DIR "$RUN" \
     DBUS_SESSION_BUS_ADDRESS "unix:path=$RUN/bus" PATH "$SB/bin:$H/.local/bin:$PATH" \
