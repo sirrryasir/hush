@@ -17,18 +17,18 @@ lock and login screens use the same island.
 
 <table>
   <tr>
-    <td><img src="assets/themes/dusk.png" alt="dusk" /><br/><sub>dusk</sub></td>
-    <td><img src="assets/themes/ember.png" alt="ember" /><br/><sub>ember</sub></td>
-    <td><img src="assets/themes/fog.png" alt="fog" /><br/><sub>fog</sub></td>
+    <td><img src="assets/themes/dusk-cc.png" alt="dusk" /><br/><sub>dusk</sub></td>
+    <td><img src="assets/themes/ember-cc.png" alt="ember" /><br/><sub>ember</sub></td>
+    <td><img src="assets/themes/fog-cc.png" alt="fog" /><br/><sub>fog</sub></td>
   </tr>
   <tr>
-    <td><img src="assets/themes/harbor.png" alt="harbor" /><br/><sub>harbor</sub></td>
-    <td><img src="assets/themes/moss.png" alt="moss" /><br/><sub>moss</sub></td>
-    <td><img src="assets/themes/paper.png" alt="paper" /><br/><sub>paper</sub></td>
+    <td><img src="assets/themes/harbor-cc.png" alt="harbor" /><br/><sub>harbor</sub></td>
+    <td><img src="assets/themes/moss-cc.png" alt="moss" /><br/><sub>moss</sub></td>
+    <td><img src="assets/themes/paper-cc.png" alt="paper" /><br/><sub>paper</sub></td>
   </tr>
 </table>
 
-Control center per theme: [dusk](assets/themes/dusk-cc.png), [ember](assets/themes/ember-cc.png), [fog](assets/themes/fog-cc.png), [harbor](assets/themes/harbor-cc.png), [moss](assets/themes/moss-cc.png), [paper](assets/themes/paper-cc.png).
+At rest: [dusk](assets/themes/dusk.png), [ember](assets/themes/ember.png), [fog](assets/themes/fog.png), [harbor](assets/themes/harbor.png), [moss](assets/themes/moss.png), [paper](assets/themes/paper.png).
 
 ## Features
 
