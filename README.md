@@ -9,36 +9,28 @@
 
 ![Hush demo](assets/demo/hush-demo.gif)
 
-Full-quality recording: [assets/demo/hush-demo.mp4](assets/demo/hush-demo.mp4)
-
 Hush replaces the bar, launcher, notification daemon and control center with one pill at the
 top of each monitor. Six themes recolour the shell and the applications it templates; the
-lock and login screens use the same island.
+lock and login screens use the same island. Full-quality demo: [hush-demo.mp4](assets/demo/hush-demo.mp4).
 
 <table>
-  <tr>
-    <td><img src="assets/themes/dusk-cc.png" alt="dusk" /><br/><sub>dusk</sub></td>
-    <td><img src="assets/themes/ember-cc.png" alt="ember" /><br/><sub>ember</sub></td>
-    <td><img src="assets/themes/fog-cc.png" alt="fog" /><br/><sub>fog</sub></td>
-  </tr>
-  <tr>
-    <td><img src="assets/themes/harbor-cc.png" alt="harbor" /><br/><sub>harbor</sub></td>
-    <td><img src="assets/themes/moss-cc.png" alt="moss" /><br/><sub>moss</sub></td>
-    <td><img src="assets/themes/paper-cc.png" alt="paper" /><br/><sub>paper</sub></td>
-  </tr>
+  <tr><td><img src="assets/themes/dusk-cc.png" alt="dusk" /><br/><sub>dusk</sub></td><td><img src="assets/themes/ember-cc.png" alt="ember" /><br/><sub>ember</sub></td><td><img src="assets/themes/fog-cc.png" alt="fog" /><br/><sub>fog</sub></td></tr>
+  <tr><td><img src="assets/themes/harbor-cc.png" alt="harbor" /><br/><sub>harbor</sub></td><td><img src="assets/themes/moss-cc.png" alt="moss" /><br/><sub>moss</sub></td><td><img src="assets/themes/paper-cc.png" alt="paper" /><br/><sub>paper</sub></td></tr>
 </table>
 
 At rest: [dusk](assets/themes/dusk.png), [ember](assets/themes/ember.png), [fog](assets/themes/fog.png), [harbor](assets/themes/harbor.png), [moss](assets/themes/moss.png), [paper](assets/themes/paper.png).
 
 ## Features
 
-- **Island**: a narrow pill at rest (clock, activity circle, status ring); hover face with workspaces, date and track; configurable left, right and middle click and scroll; control center, media, calendar, notification center, launcher (apps, windows, calculator, clipboard), wallpaper grid and settings grow out of the pill; a priority arbiter with a resuming queue for OSDs and notifications; `reserve`, `overlay` and `autohide` modes; fullscreen retract and reveal; full keyboard navigation.
-- **Theming**: six themes; `hush theme` recolours the shell, Hyprland, kitty, Neovim, GTK, Qt/Kvantum, hyprlock, SDDM, fastfetch and the browser; circle-reveal wallpaper transition from the island; shell colours cross-fade; WCAG contrast gates in the tests.
-- **Lock and login**: one QML screen for the Quickshell session lock and the SDDM greeter: a thin clock over the blurred wallpaper, the black password pill hidden until you type, fingerprint and failure messages under it; hyprlock as a fallback; `hush face` sets the login avatar.
-- **Settings**: a settings surface with live preview, a composer for the rest pill, hover face and control center, all stored in `~/.config/hush/settings.json`.
-- **Plugins** (optional): GloView overview and dynamic-cursors (shake to find), coloured from the theme.
-- **Boot menu**: a matching rEFInd theme, optional.
-- **Live activities**: recording, countdown timer and now playing shown at rest; mic and camera use in the status ring.
+- **Island**: clock, activity circle and status ring at rest; a hover face with workspaces, date
+  and track; control center, media, calendar, notification center, launcher (apps, windows,
+  calculator, clipboard), wallpaper grid and settings open from the pill. OSDs and notifications
+  queue by priority. Modes `reserve`, `overlay`, `autohide`; fullscreen retract; keyboard navigation.
+- **Live activities**: recording, countdown and now playing at rest; mic and camera in use.
+- **Theming**: `hush theme` recolours the shell, Hyprland, kitty, Neovim, GTK, Qt/Kvantum,
+  hyprlock, SDDM, fastfetch and the browser, with a circle-reveal wallpaper transition.
+- **Lock and login**: one QML screen for the session lock and the SDDM greeter; hyprlock fallback.
+- **Optional**: GloView overview and dynamic-cursors plugins, a matching rEFInd boot menu.
 
 ## Install
 
@@ -56,11 +48,11 @@ sudo ~/hush/integrations/refind/install.sh   # optional boot menu; needs root
 `install.sh` symlinks the shell, matugen, hyprlock and `hush*` into `~/.config` and
 `~/.local/bin`, installs fonts, enables the git hooks and applies `harbor`. It never uses sudo
 and never overwrites a real file: anything in the way moves to `~/.cache/hush/backup-<timestamp>/`.
-Autostart `hush reload` then `hush shell start`. Blur rule, modes and links: [docs/configuration.md](docs/configuration.md).
+Then autostart `hush reload` and `hush shell start` from `hyprland.lua`.
 
 ## Use
 
-Hush ships no keybinds. Suggested binds (`hl.bind(combo, hl.dsp.exec_cmd(cmd))` in `hyprland.lua`):
+Hush ships no keybinds. Suggested ones, as `hl.bind(combo, hl.dsp.exec_cmd(cmd))`:
 
 | Keys | Command |
 | --- | --- |
@@ -97,33 +89,25 @@ Hush ships no keybinds. Suggested binds (`hl.bind(combo, hl.dsp.exec_cmd(cmd))` 
 
 ### Keyboard
 
-In any island panel, Tab and Shift+Tab or the arrows move focus, Enter or Space activates, Esc closes.
-Left and Right step a focused slider; hold Shift for steps of ten.
-Settings rows move with Shift+Up and Shift+Down.
+In any island panel, Tab, Shift+Tab or the arrows move focus, Enter or Space activates, Esc closes.
+Left and Right step a focused slider (Shift: ten steps); Shift+Up and Shift+Down move Settings rows.
 
 ## Configure
 
-Settings live in `~/.config/hush/settings.json` (defaults: `quickshell/hush/config/settings.default.json`),
-hot-reloaded. `hush settings` opens the GUI; Settings, Modules composes the rest pill, hover face and
-control center; Settings, Lock picks the lock and login look. Keys, modes, click mapping, environment: [docs/configuration.md](docs/configuration.md).
+`hush settings` opens the settings surface; it writes `~/.config/hush/settings.json`, which
+also works by hand and is hot-reloaded. Every key, the blur rule, lock and login, plugins and the
+boot menu: [docs/configuration.md](docs/configuration.md).
 
-Add a theme:
-
-1. Create `themes/<name>/theme.toml` (copy an existing one).
-2. Run `hush-wallgen` to generate its wallpaper.
-3. Run `hush theme <name>`.
-
-Plugins: `hush plugins install`, then load `~/.config/hush/plugins.lua` from `hyprland.lua` ([docs/configuration.md](docs/configuration.md#plugins)).
+New theme: a `themes/<name>/` folder with a `theme.toml` (copy one) and a `wallpaper.png`, then
+`hush theme <name>`. `hush-wallgen <theme|all>` regenerates the bundled wallpapers.
 
 ## Contributing
 
 - Tests: `bash tests/sandbox.sh` runs the suite in a nested Hyprland without touching your
   session; `bash tests/run_all.sh` drives the live shell; `tests/test_<name>.sh` runs one.
-- Conventional Commits, 72-character subject, one coherent change per commit with a body that
-  says why. The hooks `install.sh` enables check the format, scan for personal data and run
-  `hush check`. No user names, home paths or monitor names in the tree.
-- Releases at milestones: `chore(release): X.Y.Z` bumps `VERSION` and `CHANGELOG.md`, then an
-  annotated tag.
+- Conventional Commits, subject at most 72 characters, a body that says why. The hooks check the
+  format, scan for personal data (no user names, home paths or monitor names) and run `hush check`.
+- Releases: `chore(release): X.Y.Z` bumps `VERSION` and `CHANGELOG.md`, then an annotated tag.
 
 ## Credits
 

@@ -10,45 +10,38 @@ Draft of the 0.2.0 entry; `VERSION` is bumped and the date set at release.
 
 ### Added
 
-- Island v2: one fixed full-width layer per monitor with a live input mask and a spring morph.
-  Rest pill (clock, activity circle, status ring), hover face, configurable click and scroll
-  mapping, outside-click arming.
-- Surfaces grown from the island: control center (Wi-Fi password entry, Bluetooth pairing,
-  in-place sub-pages), media with spectrum, calendar, notification center, launcher (apps,
-  windows, calculator, clipboard with previews), wallpaper grid and settings.
-- Priority arbiter with a resuming queue for OSDs and notifications; sticky critical marker.
-- Live activities at rest: recording, countdown (`hush timer`), now playing; mic and camera use.
-- Modes `reserve`, `overlay`, `autohide`; fullscreen retract, reveal and OSD overlay;
-  keyboard navigation with slider steps; reduced motion.
-- Settings surface with live preview and a composer for the rest pill, hover face and control
-  center; hot-reloaded `settings.json` with defaults.
-- Theming: circle-reveal wallpaper transition (`--from`), shell colour cross-fade.
-- Lock and login from one QML screen (`lockscreen/Screen.qml`, look "Quiet"): the Quickshell
-  session lock (`hush lock`, its own process; PAM password plus parallel fprintd fingerprint)
-  and the SDDM greeter (`sddm/install.sh`, `hush sddm sync`); the password pill appears on the
-  first key, failures and fingerprint prompts read as text under it; `hush face` sets the login
-  avatar. hyprlock stays as `hush lock --hyprlock` with the same geometry.
-- Optional rEFInd boot menu theme (`integrations/refind`): the theme's blurred wallpaper, white OS glyphs, a marker under the chosen one.
-- 12 or 24 hour clock (`island.clock`) on the pill, lock and login.
-- Settings, Lock: clock style (quiet, bold, stacked), date, name, reveal and status line for the
-  lock and login (`lock.*`).
-- `tests/sandbox.sh` runs the suite in a nested headless Hyprland without touching the session.
-- Demo video and GIF (`assets/demo`), theme screenshots.
-- CLI: `hush lock [--hyprlock]`, `face`, `settings`, `timer`, `volume`, `brightness`, `plugins`, `overview`;
-  optional GloView and dynamic-cursors plugins.
-- Brand kit (icon, wordmark, README header, social images).
+- Island: one fixed full-width layer per monitor with an input mask and a spring morph; rest pill
+  (clock, activity circle, status ring), hover face, click and scroll mapping.
+- Surfaces: control center (Wi-Fi password entry, Bluetooth pairing), media with spectrum,
+  calendar, notification center, launcher (apps, windows, calculator, clipboard), wallpapers, settings.
+- Priority arbiter with a resuming queue for OSDs and notifications; critical notifications stay.
+- Live activities at rest: recording, countdown (`hush timer`), now playing, mic and camera in use.
+- Modes `reserve`, `overlay`, `autohide`; fullscreen retract and OSD overlay; keyboard navigation;
+  reduced motion.
+- Settings surface and `settings.json` (hot-reloaded), with a composer for the rest pill, hover
+  face and control center.
+- Circle-reveal wallpaper transition (`--from`) and shell colour cross-fade.
+- Lock and login from one QML screen (`lockscreen/Screen.qml`): `hush lock` with PAM password and
+  fprintd, and an SDDM greeter (`sddm/install.sh`, `hush sddm sync`, `hush face`).
+- Lock clock styles (quiet, bold, stacked) and `lock.*` settings; 12 or 24 hour clock (`island.clock`).
+- Optional rEFInd boot menu theme (`integrations/refind`).
+- CLI: `lock [--hyprlock]`, `face`, `settings`, `timer`, `volume`, `brightness`, `plugins`,
+  `overview`; optional GloView and dynamic-cursors plugins.
+- `tests/sandbox.sh` runs the suite in a nested headless Hyprland.
+- Demo video, theme screenshots and brand files (icon, README header, social preview).
 
 ### Fixed
 
-- Readable light themes in the island, hyprlock, Neovim, kitty ANSI black and p10k.
+- Contrast of light themes in the island, hyprlock, Neovim, kitty ANSI black and p10k.
 - No volume OSD when the default sink switches; scroll to brightness; Media `canSeek` guard.
-- Single-instance rule counts only this compositor; Bluetooth unblocks rfkill when needed.
+- The single-instance rule counts only this compositor; Bluetooth lifts an rfkill block.
 - Settings pages scroll; the Live activities switch hides the pill slot; an empty clipboard
   history no longer reads as a missing cliphist; the first surface after start-up gets keys.
 
 ### Changed
 
-- README rewritten; configuration reference in `docs/configuration.md`.
+- README rewritten; configuration reference moved to `docs/configuration.md`.
+- hyprlock is now the fallback lock (`hush lock --hyprlock`).
 
 ## [0.1.0] - 2026-10-02
 
