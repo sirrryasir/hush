@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SDDM greeter, layout B: theme files, `hush sddm sync` / `hush face`, then the real greeter
+# SDDM greeter (sddm/hush/Main.qml around lockscreen/Screen.qml, look A): theme files, `hush sddm sync` / `hush face`, then the real greeter
 # (sddm-greeter-qt6 --test-mode) in a nested Hyprland with one headless 1920x1080 output: idle,
 # typing, checking, error and the session list, typed with wtype. theme.conf testAuth=fail stands in
 # for the daemon (test mode has none). The live session is never touched.
@@ -24,14 +24,16 @@ t_theme() {
   assert_contains sddm/install.sh 'Current=hush' "install.sh selects the theme"
   assert_contains sddm/install.sh 'InterVariable.ttf' "install.sh bundles Inter"
   assert_contains sddm/install.sh 'MaterialSymbolsRounded.ttf' "install.sh bundles the icon font"
-  grep -q 'XMLHttpRequest(' $T/Main.qml && fail "Main.qml uses XMLHttpRequest (blocked in the greeter)" || pass "no XMLHttpRequest file reads"
-  for k in 'blurEnabled: true' 'lay.blurSddmBlur' 'lay.pillFocusW' 'lay.motionShakePx' 'PathAngleArc' 'sddm.login(' 'sessionModel.lastIndex'; do
-    assert_contains $T/Main.qml "$k" "Main.qml: $k"
+  assert_contains sddm/install.sh 'lockscreen/Screen.qml' "install.sh copies the shared screen into the theme"
+  grep -q 'XMLHttpRequest(' $T/Main.qml lockscreen/Screen.qml && fail "XMLHttpRequest file reads (blocked in the greeter)" || pass "no XMLHttpRequest file reads"
+  for k in 'sddm.login(' 'sessionModel.lastIndex' 'Hush.Screen'; do assert_contains $T/Main.qml "$k" "Main.qml: $k"; done
+  for k in 'blurEnabled: true' 'lay.blurRadius' 'lay.motionShakePx' 'PathAngleArc' 'function fail(' 'signal submit('; do
+    assert_contains lockscreen/Screen.qml "$k" "Screen.qml: $k"
   done
 }
 t_qml() {
   if command -v qmllint >/dev/null; then
-    qmllint $T/Main.qml >/dev/null 2>&1 && pass "qmllint clean" || fail "qmllint errors in Main.qml"
+    qmllint lockscreen/Screen.qml >/dev/null 2>&1 && pass "qmllint clean" || fail "qmllint errors in Screen.qml"
   else pass "qmllint absent (skipped)"; fi
 }
 t_sync() {
@@ -45,7 +47,7 @@ t_sync() {
   assert_file "$out/layout.qml" "sync writes layout.qml"
   assert_contains "$out/colors.conf" 'primary=#' "colors.conf has primary"
   assert_contains "$out/colors.qml" 'islandError' "colors.qml has the island roles"
-  assert_contains "$out/layout.qml" 'property real pillCy: 0.7037' "layout.qml carries the shared spec"
+  assert_contains "$out/layout.qml" 'property real pillCy: 0.7' "layout.qml carries the shared spec"
   assert_eq "r-x" "$(stat -c %A "$out" | cut -c8-10)" "bundle dir is o+rx"
   assert_eq "r--" "$(stat -c %A "$out/wallpaper.png" | cut -c8-10)" "wallpaper is world-readable"
   assert_eq "r--" "$(stat -c %A "$out/layout.qml" | cut -c8-10)" "layout.qml is world-readable"
@@ -69,7 +71,7 @@ t_face() {
 
 # ---- the real greeter ---------------------------------------------------------------------------
 greeter_theme() { # bundle dir -> $R/theme (a copy with fonts, current/ and testAuth=fail)
-  mkdir -p "$R/theme"; cp -a $T/. "$R/theme/"; rm -f "$R/theme/current"; ln -s "$1" "$R/theme/current"
+  mkdir -p "$R/theme"; cp -a $T/. "$R/theme/"; cp lockscreen/Screen.qml "$R/theme/"; rm -f "$R/theme/current"; ln -s "$1" "$R/theme/current"
   mkdir -p "$R/theme/fonts"
   cp "$(fc-match -f '%{file}' 'Inter Variable')" "$R/theme/fonts/InterVariable.ttf"
   cp "$(fc-match -f '%{file}' 'Material Symbols Rounded')" "$R/theme/fonts/MaterialSymbolsRounded.ttf"
@@ -111,7 +113,7 @@ t_greeter() {
   [[ $log == *"selected=Hyprland"* ]] && pass "Hyprland preselected (nothing remembered)" || fail "selected: $log"
 
   local text err prim hi w c
-  text=$(qcol "$B" wallText); err=$(qcol "$B" islandError); prim=$(qcol "$B" islandPrimary); hi=$(qcol "$B" islandSurfaceHigh)
+  text=ffffff; err=$(qcol "$B" islandError); prim=$(qcol "$B" islandPrimary); hi=$(qcol "$B" islandSurfaceHigh)
   shot idle
   [[ $(tests/sddmshot.py px "$R/idle.ppm" 110 0) != 000000 ]] && pass "idle: no pill before a key press" || fail "idle: pill shown before a key press"
   read -r got want < <(tests/lockshot.py clock "$R/idle.ppm" "$text")
@@ -129,8 +131,8 @@ t_greeter() {
   shot typing
   w=$(tests/sddmshot.py width "$R/typing.ppm")
   [[ $(tests/sddmshot.py px "$R/typing.ppm" 110 0) == 000000 ]] && pass "typing: a key press shows the black pill" || fail "typing: pill pixel #$(tests/sddmshot.py px "$R/typing.ppm" 110 0)"
-  (( w >= 412 && w <= 428 )) && pass "typing: pill grew to ${w} px (spec 420)" || fail "typing: pill ${w} px (spec 420)"
-  c=$(tests/sddmshot.py px "$R/typing.ppm" $((210 - 12 - 24 - 14)) 0)   # inside the submit button, left of its arrow
+  (( w >= 332 && w <= 348 )) && pass "typing: pill ${w} px (spec 340)" || fail "typing: pill ${w} px (spec 340)"
+  c=$(tests/sddmshot.py px "$R/typing.ppm" $((170 - 8 - 40 + 6)) 0)   # inside the submit button, left of its arrow
   near "$c" "$hi" 24 && pass "typing: submit button (#$c)" || fail "typing: no submit button (#$c, want #$hi)"
   (( $(tests/lockshot.py inside "$R/typing.ppm") > 150 )) && pass "typing: dots shown" || fail "typing: no dots"
 
@@ -141,8 +143,8 @@ t_greeter() {
     w=$(tests/sddmshot.py width "$R/checking.ppm")
     (( w < 200 )) && break
   done
-  (( w >= 64 && w <= 80 )) && pass "checking: pill collapsed to a ${w} px circle" || fail "checking: pill ${w} px (want 72)"
-  (( $(tests/sddmshot.py near "$R/checking.ppm" "$prim" 35) >= 8 )) && pass "checking: primary arc around the avatar" || fail "checking: no arc in #$prim"
+  (( w >= 48 && w <= 64 )) && pass "checking: pill collapsed to a ${w} px circle" || fail "checking: pill ${w} px (want 56)"
+  (( $(tests/sddmshot.py near "$R/checking.ppm" "$prim" 27) >= 8 )) && pass "checking: primary arc around the avatar" || fail "checking: no arc in #$prim"
 
   # burst of frames over the fake auth (900 ms) and the error flash (600 ms), analysed afterwards
   for ((i = 0; i < 30; i++)); do nest grim -t ppm -o SHOT "$R/e$i.ppm"; done
@@ -151,12 +153,13 @@ t_greeter() {
   done
   [[ -n $f ]] && cp "$R/$f.ppm" "$R/error.ppm"
   [[ -n $f ]] && pass "error: red hairline (#$edge ~ #$err)" || fail "error: hairline never turned #$err"
+  [[ -n $f ]] && (( $(tests/lockshot.py status "$R/error.ppm" "$err") > 20 )) && pass "error: status line in the error colour" || fail "error: no red status line"
   sleep 1
-  nest hyprctl dispatch 'hl.dsp.cursor.move({ x = 30, y = 30 })' >/dev/null 2>&1; sleep 0.4   # the pill hides 2 s after the error: wake it
+  nest wtype 'x'; sleep 0.4   # the pill hid 2 s after the error: a key wakes it
   shot after-error
   w=$(tests/sddmshot.py width "$R/after-error.ppm")
-  (( w >= 372 && w <= 388 )) && pass "after error: field cleared, pill back to ${w} px" || fail "after error: pill ${w} px"
-  near "$(tests/sddmshot.py edge "$R/after-error.ppm")" "$err" 40 && fail "after error: hairline still red" || pass "after error: hairline back to the 12 % outline"
+  (( w >= 332 && w <= 348 )) && pass "after error: a key shows the ${w} px pill again" || fail "after error: pill ${w} px"
+  near "$(tests/sddmshot.py edge "$R/after-error.ppm")" "$err" 40 && fail "after error: hairline still red after a key" || pass "after error: a key turns the hairline back to the 12 % outline"
 
   nest wtype -k Tab; sleep 0.2; nest wtype -k Return; sleep 0.6
   shot sessions

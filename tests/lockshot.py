@@ -6,6 +6,7 @@
   lockshot.py edge PNG             colour of the pill's top hairline (brightest pixel on the top edge)
   lockshot.py inside PNG           brightest luminance inside the pill's text area (0-255)
   lockshot.py dots PNG             margins (px) between the outermost dots and the pill's rounded ends (<0: spill)
+  lockshot.py status PNG HEX       pixels near colour HEX on the status line under the pill
 """
 import sys, tomllib, os
 from PIL import Image
@@ -58,10 +59,15 @@ def main():
         print("%02x%02x%02x" % best[1])
     elif cmd == "inside":
         half = round(SPEC["pill"]["w"] * s / 2)
-        x0 = cx - half + round(SPEC["field"]["left"] * s)
-        x1 = cx + half - round(SPEC["glyph"]["inset"] * s) - round(SPEC["glyph"]["size"] * s * 2)
+        x0, x1 = cx - half + round(SPEC["pill"]["h"] * s), cx + half - round(SPEC["pill"]["h"] * s)
         hh = round(SPEC["pill"]["h"] * s / 2) - 6
         print(int(max(lum(px[x, y]) for x in range(x0, x1) for y in range(pcy - hh, pcy + hh))))
+    elif cmd == "status":
+        h = sys.argv[3].lstrip("#")
+        want = tuple(int(h[i:i + 2], 16) for i in (0, 2, 4))
+        cy, hh = round(SPEC["status"]["cy"] * H), round(SPEC["status"]["size"] * s)
+        print(sum(1 for y in range(cy - hh, cy + hh) for x in range(cx - round(0.15 * H), cx + round(0.15 * H))
+                  if sum(abs(a - b) for a, b in zip(px[x, y], want)) < 60))
     elif cmd == "dots":
         # bright pixels on the centre row, inside the hairline; limits a quarter pill height in from the ends
         half = round(SPEC["pill"]["w"] * s / 2)

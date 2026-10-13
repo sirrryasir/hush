@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# hyprlock, layout B: static checks on the generated layout, then real screenshots in a nested
+# hyprlock fallback (`hush lock --hyprlock`), look A: static checks on the generated layout, then real screenshots in a nested
 # Hyprland (headless 1920x1080 and 2560x1440 outputs) for harbor and paper. The live session is never
 # locked: hyprlock runs inside the nested compositor and authenticates against the vlock PAM service
 # (pam_unix only, no faillock), so the wrong-password check cannot lock the account.
@@ -24,30 +24,39 @@ t_sources() {
   assert_contains "$CFG/hypr/hyprlock.conf" 'hush/hyprlock-wall.conf' "hyprlock.conf sources the hush wallpaper file"
   assert_contains hyprlock/hyprlock.conf 'hush/hyprlock-layout.conf' "hyprlock.conf sources the generated layout"
   assert_contains bin/hush 'lock_layout' "hush generates the layout (reload, lock)"
-  for f in caps-lock.sh status-line.sh media-line.sh; do [[ -x hyprlock/$f ]] && pass "$f executable" || fail "$f not executable"; done
+  [[ -x hyprlock/status-line.sh ]] && pass "status-line.sh executable" || fail "status-line.sh not executable"
 }
 t_generator() {
   python3 $GEN hyprlock "$R/a.conf" SHOT:1080 BIG:1440 || { fail "generator failed"; return; }
   pass "generator writes per-monitor widgets"
   assert_contains "$R/a.conf" 'monitor = SHOT' "block set for SHOT"
   assert_contains "$R/a.conf" 'monitor = BIG' "block set for BIG"
-  assert_contains "$R/a.conf" 'size = 380, 72' "pill 380x72 at 1080"
-  assert_contains "$R/a.conf" 'size = 506, 96' "pill scales to 506x96 at 1440 (even px)"
-  assert_contains "$R/a.conf" 'position = 0, 12.960%' "clock at +12.96 % (centre y 400 of 1080)"
-  assert_contains "$R/a.conf" 'position = 0, -20.370%' "pill at -20.37 % (centre y 760)"
+  assert_contains "$R/a.conf" 'size = 340, 56' "pill 340x56 at 1080"
+  assert_contains "$R/a.conf" 'size = 454, 74' "pill scales to 454x74 at 1440 (even px)"
+  assert_contains "$R/a.conf" 'position = 0, 18.000%' "clock at +18 % (centre y 346 of 1080)"
+  assert_contains "$R/a.conf" 'position = 0, -20.000%' "pill at -20 % (centre y 756)"
+  assert_contains "$R/a.conf" 'position = 0, -25.460%' "status line at -25.46 % (centre y 815)"
   assert_contains "$R/a.conf" 'font_family = Inter Variable Thin' "clock Inter Variable Thin"
-  assert_contains "$R/a.conf" 'font_size = 210' "clock 280 px (210 pt) at 1080"
+  assert_contains "$R/a.conf" 'font_size = 120' "clock 160 px (120 pt) at 1080"
+  assert_contains "$R/a.conf" "date +'%A %-d %B' | tr a-z A-Z" "date in capitals"
   assert_contains "$R/a.conf" 'fade_on_empty = true' "field hidden until you type"
+  [[ $(grep -c 'Material Symbols' "$R/a.conf") == 2 ]] && pass "icon font only for the top-right glyphs (no pill glyphs)" || fail "icon font labels: $(grep -c 'Material Symbols' "$R/a.conf") (want one per monitor)"
   assert_contains "$R/a.conf" 'inner_color = $hushIslandBg' "the field is the black pill"
   grep -qE '^(shape|image) ' "$R/a.conf" && fail "shape/image blocks left (the field is the pill)" || pass "no shape or image blocks"
   assert_contains "$R/a.conf" "font_features='tnum'" "clock tabular figures"
-  assert_contains "$R/a.conf" 'blur_passes = 2' "blur 2 passes"
-  assert_contains "$R/a.conf" 'brightness = 0.62' "brightness 0.62"
+  assert_contains "$R/a.conf" 'blur_passes = 3' "blur 3 passes"
+  python3 - "$R/a.conf" <<'PY' && pass "brightness follows the theme mode" || fail "brightness does not follow the mode"
+import json, os, re, sys, tomllib
+b = tomllib.load(open("lockscreen/layout.toml", "rb"))["blur"]
+try: mode = json.load(open(os.path.join(os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config")), "hush", "state.json"))).get("mode")
+except (OSError, ValueError): mode = None
+want = b["brightness_light"] if mode == "light" else b["brightness"]
+sys.exit(0 if re.search(r"^\s*brightness = %s$" % re.escape(str(want)), open(sys.argv[1]).read(), re.M) else 1)
+PY
   assert_contains "$R/a.conf" 'fail_text =' "empty fail text"
-  assert_contains "$R/a.conf" 'Enter password' "placeholder"
+  assert_contains "$R/a.conf" 'placeholder_text =' "no placeholder (the field shows only while typing)"
   assert_contains "$R/a.conf" 'check_color = $hushIslandCheck' "check colour = island primary"
   assert_contains "$R/a.conf" 'fail_color = $hushIslandFail' "fail colour = island error"
-  assert_contains "$R/a.conf" 'cmd[update:250]' "caps lock polled every 250 ms"
   python3 $GEN hyprlock "$R/b.conf"; assert_contains "$R/b.conf" 'monitor =' "no monitors: one set for every monitor"
   grep -nE "#[0-9a-fA-F]{6}|rgba\([0-9]" "$R/a.conf" hyprlock/layouts/layout_default.conf && fail "hardcoded colours" || pass "no hardcoded colours"
   local h; h=$(HOME="$R/home" HUSH_ROOT=$PWD bash -c 'source <(sed -n "/^lock_monitors()/,/^}/p;/^lock_layout()/,/^}/p" bin/hush); STATE_DIR=$HOME/.config/hush; HYPRLAND_INSTANCE_SIGNATURE= lock_layout' && echo ok)
@@ -125,7 +134,7 @@ t_nested() {
       H=1080; [[ $out == BIG ]] && H=1440
       nest grim -o $out "$EVID/lock-b-$t-$H-key.png"
       read -r w r g b < <(tests/lockshot.py pill "$EVID/lock-b-$t-$H-key.png")
-      spec=$(python3 -c "print(2*round(380*$H/1080/2))")
+      spec=$(python3 -c "print(2*round(340*$H/1080/2))")
       [[ "$r$g$b" == 000 ]] && pass "$t $H: a key press shows the black pill" || fail "$t $H: pill pixel $r,$g,$b after a key press"
       (( w >= spec - 8 && w <= spec + 8 )) && pass "$t $H: pill ${w} px wide (spec $spec)" || fail "$t $H: pill ${w} px (spec $spec)"
     done
@@ -151,7 +160,6 @@ t_nested() {
       # the full field colour, the placeholder at 60 %)
       local inside idle; inside=$(tests/lockshot.py inside "$R/fail.ppm"); idle=$(tests/lockshot.py inside "$R/empty.ppm")
       (( inside <= idle + 10 )) && pass "no fail text in the pill (max luminance $inside, idle placeholder $idle)" || fail "text in the pill on failure (luminance $inside > idle $idle)"
-      grep -qi 'wrong password' "$cfg" "$R/$t/layout.conf" && fail "config still says wrong password" || pass "no 'wrong password' text configured"
     fi
     session_pkill -f "hyprlock -c $R" ; sleep 0.5
   done

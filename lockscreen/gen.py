@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Turn lockscreen/layout.toml into the hyprlock widgets and the SDDM greeter's layout.qml.
+"""Turn lockscreen/layout.toml into the hyprlock widgets and the layout.qml of lockscreen/Screen.qml.
 
   gen.py hyprlock OUT [NAME:HEIGHT ...]   one widget set per monitor (none given: one set for
                                           every monitor at H = 1080)
-  gen.py qml OUT                          the same spec as a QML object for the greeter
+  gen.py qml OUT                          the same spec as a QML object for the lock and greeter
 """
 import json, os, sys, tomllib
 
@@ -13,12 +13,20 @@ WEIGHTS = {100: "Thin", 200: "ExtraLight", 300: "Light", 400: "", 500: "Medium",
 ICONS = "Material Symbols Rounded"
 
 
-def clock12():  # island.clock in settings.json, "24" unless set to "12"
-    cfg = os.path.join(os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config")), "hush", "settings.json")
+def hush_json(name):  # ~/.config/hush/<name>, {} when missing or unreadable
     try:
-        return str(json.load(open(cfg)).get("island", {}).get("clock")) == "12"
+        return json.load(open(os.path.join(os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config")), "hush", name)))
     except (OSError, ValueError):
-        return False
+        return {}
+
+
+def clock12():  # island.clock in settings.json, "24" unless set to "12"
+    return str(hush_json("settings.json").get("island", {}).get("clock")) == "12"
+
+
+def brightness():  # the wallpaper multiplier: light themes go darker so the white text reads
+    b = SPEC["blur"]
+    return b["brightness_light"] if hush_json("state.json").get("mode") == "light" else b["brightness"]
 
 
 def even(v):
@@ -43,7 +51,7 @@ def hyprlock(monitors):
         "    path = $wall",
         f"    blur_passes = {b['passes']}",
         f"    blur_size = {b['size']}",
-        f"    brightness = {b['brightness']}",
+        f"    brightness = {brightness()}",
         f"    contrast = {b['contrast']}",
         f"    vibrancy = {b['vibrancy']}",
         f"    vibrancy_darkness = {b['vibrancy_darkness']}",
@@ -55,25 +63,24 @@ def hyprlock(monitors):
         L = lambda v: even(v * s)
         F = lambda v: int(round(v * s))
         PT = lambda v: int(round(v * s * 0.75))  # hyprlock font_size is in points at 96 dpi
-        c, d, p, f, g, st, m = (S[k] for k in ("clock", "date", "pill", "field", "glyph", "status", "media"))
+        c, d, p, f, st, ic = (S[k] for k in ("clock", "date", "pill", "field", "status", "icons"))
         pw, ph = L(p["w"]), L(p["h"])
-        gl_x = pw // 2 - L(g["inset"])
-        track = int(round(c["tracking"] * s * 1024 * 0.75))  # px -> Pango units (1/1024 pt, 96 dpi)
+        pango = lambda v: int(round(v * s * 1024 * 0.75))  # px -> Pango units (1/1024 pt, 96 dpi)
         mon = f"    monitor = {name}"
         out += [
             f"\n# ---- {name or 'every monitor'} at H = {h} (s = {s:.4f})",
             "label { # clock, tabular figures",
             mon,
-            f"    text = cmd[update:1000] echo \"<span font_features='tnum' letter_spacing='{track}'>$(date +'{"%-I:%M %p" if clock12() else "%H:%M"}')</span>\"",
+            f"    text = cmd[update:1000] echo \"<span font_features='tnum' letter_spacing='{pango(c['tracking'])}'>$(date +'{"%-I:%M %p" if clock12() else "%H:%M"}')</span>\"",
             "    color = $hushWallText",
             f"    font_size = {PT(c['size'])}",
             f"    font_family = {family(c['weight'])}",
             f"    position = 0, {pct(c['cy'])}",
             "    halign = center", "    valign = center",
             "}",
-            "label { # date",
+            "label { # date in capitals",
             mon,
-            "    text = cmd[update:60000] date +\"%A, %-d %B\"",
+            f"    text = cmd[update:60000] echo \"<span letter_spacing='{pango(d['tracking'])}'>$(date +'%A %-d %B' | tr a-z A-Z)</span>\"",
             "    color = $hushWallMuted",
             f"    font_size = {PT(d['size'])}",
             f"    font_family = {family(d['weight'])}",
@@ -98,73 +105,53 @@ def hyprlock(monitors):
             "    font_family = Inter Variable",
             "    fade_on_empty = true",
             "    fade_timeout = 2000",
-            f"    placeholder_text = <span alpha='60%' size='{int(round(f['placeholder'] * s * 0.75 * 1024))}'>Enter password</span>",
+            "    placeholder_text =",
             "    fail_text =",
             "    fail_timeout = 600",
             "    hide_input = false",
             f"    position = 0, {pct(p['cy'])}",
             "    halign = center", "    valign = center",
             "}",
-            "label { # caps lock glyph, right end of the pill",
-            mon,
-            "    zindex = 5",
-            "    text = cmd[update:250] $HOME/.config/hyprlock/caps-lock.sh",
-            "    color = $hushIslandMuted",
-            f"    font_size = {PT(g['size'])}",
-            f"    font_family = {ICONS}",
-            f"    position = {gl_x}, {pct(p['cy'])}",
-            "    halign = center", "    valign = center",
-            "}",
             "label { # fingerprint prompt under the pill (fprintd sentences; empty without fprintd)",
             mon,
             "    text = $FPRINTPROMPT",
             "    color = $hushWallMuted",
-            f"    font_size = {PT(S['hint']['size'])}",
-            f"    font_family = {family(500)}",
-            f"    position = 0, {pct(S['hint']['cy'])}",
+            f"    font_size = {PT(st['size'])}",
+            f"    font_family = {family(400)}",
+            f"    position = 0, {pct(st['cy'])}",
             "    halign = center", "    valign = center",
             "}",
             "label { # wrong password, same place; hyprlock clears $FPRINTPROMPT on a PAM failure",
             mon,
             "    text = $FAIL $ATTEMPTS[]",
             "    color = $hushIslandFail",
-            f"    font_size = {PT(S['hint']['size'])}",
-            f"    font_family = {family(500)}",
-            f"    position = 0, {pct(S['hint']['cy'])}",
+            f"    font_size = {PT(st['size'])}",
+            f"    font_family = {family(400)}",
+            f"    position = 0, {pct(st['cy'])}",
             "    halign = center", "    valign = center",
             "}",
-            "label { # status: battery and network icons, top right",
+            "label { # battery and network icons, top right",
             mon,
             "    text = cmd[update:10000] $HOME/.config/hyprlock/status-line.sh",
             "    color = $hushWallMuted",
-            f"    font_size = {PT(st['size'])}",
+            f"    font_size = {PT(ic['size'])}",
             f"    font_family = {ICONS}",
-            f"    position = {-L(st['right'])}, {-(L(st['top']) - F(st['size'] * 1.2) // 2)}",
+            f"    position = {-L(ic['right'])}, {-(L(ic['top']) - F(ic['size'] * 1.2) // 2)}",
             "    halign = right", "    valign = top",
-            "}",
-            "label { # media line, only while something plays",
-            mon,
-            "    text = cmd[update:2000] $HOME/.config/hyprlock/media-line.sh",
-            "    color = $hushWallText",
-            f"    font_size = {PT(m['size'])}",
-            "    font_family = Inter Variable Medium",
-            "    shadow_passes = 2",  # small text: a soft halo in the surface colour keeps it legible
-            "    shadow_size = 4",
-            "    shadow_color = $hushWallShade",
-            f"    position = 0, {pct(m['cy'])}",
-            "    halign = center", "    valign = center",
             "}",
         ]
     return "\n".join(out) + "\n"
 
 
 def qml():
-    lines = ["// Generated by `hush sddm sync` from lockscreen/layout.toml. The greeter falls back to",
+    lines = ["// Generated by `hush` from lockscreen/layout.toml. lockscreen/Screen.qml falls back to",
              "// its baked defaults when this file is missing.", "import QtQuick", "QtObject {"]
     for sec, vals in SPEC.items():
         if not isinstance(vals, dict):
             lines.append(f"    property real {sec}: {vals}")
             continue
+        if sec == "blur":
+            vals = {k: v for k, v in vals.items() if k != "brightness_light"} | {"brightness": brightness()}
         for k, v in vals.items():
             parts = k.split("_")
             head = sec.split("_")

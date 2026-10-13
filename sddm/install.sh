@@ -14,6 +14,7 @@ dest=/usr/share/sddm/themes/hush
 rm -rf "$dest"
 mkdir -p "$dest"
 cp -a "$here/hush/." "$dest/"
+cp "$here/../lockscreen/Screen.qml" "$dest/Screen.qml"   # the screen the lock uses too; the theme must be self-contained
 rm -f "$dest/current"
 # The greeter runs as the sddm user and cannot see ~/.local/share/fonts: ship Inter inside the theme.
 inter=""

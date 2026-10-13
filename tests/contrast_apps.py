@@ -206,14 +206,12 @@ def gate(theme, out):
     H = lambda x: rgb(hl[x])
     # the pill is the island: black with dark-scheme roles; the placeholder is islandText at 60 %
     add("hyprlock pill dots/text on black", H("hushIslandText"), H("hushIslandBg"), 4.5)
-    add("hyprlock pill placeholder (60 %) on black", blend(H("hushIslandText"), H("hushIslandBg"), 0.6), H("hushIslandBg"), 4.5)
-    add("hyprlock pill glyphs on black", H("hushIslandMuted"), H("hushIslandBg"), 3.0)
     add("hyprlock pill check outline on black", H("hushIslandCheck"), H("hushIslandBg"), 3.0)
     add("hyprlock pill fail outline on black", H("hushIslandFail"), H("hushIslandBg"), 3.0)
     # labels on the wallpaper: blurred, contrast then brightness from lockscreen/layout.toml (hyprland
     # blur pass); label colours from the generated widgets (alpha vars are blended over the wallpaper)
     blur = tomllib.load(open(f"{ROOT}/lockscreen/layout.toml", "rb"))["blur"]
-    con, bri = float(blur["contrast"]), float(blur["brightness"])
+    con, bri = float(blur["contrast"]), float(blur["brightness_light" if mode == "light" else "brightness"])
     lay = subprocess.run([sys.executable, f"{ROOT}/lockscreen/gen.py", "hyprlock", "-"], capture_output=True, text=True).stdout
     hla = dict(re.findall(r"^\$(\w+) = rgba\(([0-9a-fA-F]{8})\)", open(f"{out}/hyprlock/colors.conf").read(), re.M))
     # each label is checked over the wallpaper band it sits on (32x18 grid); large text (>= 18 pt, hyprlock font_size)
@@ -239,28 +237,20 @@ def gate(theme, out):
         for y in band:
             for x in cols:
                 p = tuple(min(255, max(0, ((ch / 255 - 0.5) * con + 0.5) * bri * 255)) for ch in im.getpixel((x, y)))
-                if "shadow_passes" in body:  # halo in $hushWallShade: model as a 35 % blend under the text
-                    p = blend(rgb(hla["hushWallShade"][:6]), p, 0.35)
                 worst = min(worst, cr(blend(rgb(h8[:6]), p, al), p))
         rows.append((f"hyprlock {name} ${var}/dimmed wall", worst, need))
 
-    # SDDM: clock/date/labels over the blurred wallpaper (saturation 0.1) under a 20 % surface dim.
-    from PIL import Image
-    im = Image.open(f"{ROOT}/themes/{theme}/wallpaper.png").convert("RGB").resize((32, 18), Image.BOX)
-    sur = col("surface")
-    worst_fg = worst_var = 99.0
-    for y in range(2, 12):          # clock to password field band
+    # lock and login screen (lockscreen/Screen.qml): white labels over the blurred wallpaper,
+    # desaturated and multiplied by the same brightness; the date, name and status at 60 % / 55 %
+    sat = float(blur["saturation"])
+    worst = 99.0
+    for y in range(2, 15):          # clock to status band
         for x in range(8, 24):      # centre half
             p = im.getpixel((x, y))
             grey = 0.2126 * p[0] + 0.7152 * p[1] + 0.0722 * p[2]
-            p = blend(p, (grey,) * 3, 0.1)
-            p = blend(sur, p, 0.2)
-            worst_fg = min(worst_fg, cr(col("on_surface"), p))
-            worst_var = min(worst_var, cr(col("on_surface_variant"), p))
-    rows.append(("sddm label fg/wallpaper overlay (worst)", worst_fg, 4.5))
-    rows.append(("sddm date fgVar/wallpaper overlay (worst)", worst_var, 3.0))
-    hs = blend(col("surface_container_high"), sur, 0.6)  # password box: surfaceHigh @ 0.6 over the dim
-    add("sddm password text/box", col("on_surface"), hs, 4.5)
+            p = tuple(c * bri for c in blend(p, (grey,) * 3, sat))
+            worst = min(worst, cr(blend((255, 255, 255), p, 0.55), p))
+    rows.append(("lock/login 55 % white/dimmed wall (worst)", worst, 3.0))
 
     # helium browser manifest
     hm = json.load(open(f"{out}/hush/helium-theme/manifest.json"))["theme"]["colors"]
