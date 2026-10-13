@@ -62,16 +62,26 @@ hl.bind("SUPER + Tab", hl.dsp.exec_cmd("hush overview"))
 
 ## Lock and login
 
-Both share `lockscreen/layout.toml`: a thin clock and date over the blurred wallpaper and one
-black pill for the password, hidden until you type. `hush face <image>` sets the login avatar;
-hyprlock has none.
+The lock and the login screen are one QML file, `lockscreen/Screen.qml`, sized by
+`lockscreen/layout.toml`: a thin clock and the date over the wallpaper (blurred and multiplied by
+0.6, or 0.3 in light themes so the white text reads), and one black pill for the password,
+hidden until a key, a pointer move or a tap, with a status line under it. `hush face <image>`
+sets the login avatar; the lock has none.
 
-hyprlock: `hush reload` writes `~/.config/hush/hyprlock-layout.conf`, sourced by the shipped
-`hyprlock.conf`; `hush lock` locks.
+Lock: `hush lock` runs `quickshell/hush/lock.qml` as its own Quickshell process (a shell restart
+cannot unlock it). The password goes through the PAM service `login`. With fprintd installed a
+second PAM context runs `lockscreen/pam/fprint` (`auth required pam_fprintd.so`) at the same
+time: put a finger on the reader instead of typing; its prompts show under the pill. If the lock
+process dies, Hyprland keeps the session locked; recover from a TTY with
+`hyprctl --instance 0 eval 'hl.clear_crashed_lockscreen()'` and run `hush lock` again.
+
+hyprlock fallback: `hush lock --hyprlock`. `hush reload` writes
+`~/.config/hush/hyprlock-layout.conf` (same geometry), sourced by the shipped `hyprlock.conf`.
 
 SDDM: `sudo sddm/install.sh` once. It copies the Qt 6 greeter with its fonts to
-`/usr/share/sddm/themes/hush`, writes `/etc/sddm.conf.d/hush.conf` and links the theme's
+`/usr/share/sddm/themes/hush` (with `lockscreen/Screen.qml`), writes `/etc/sddm.conf.d/hush.conf` and links the theme's
 `current` to `~/.cache/hush/sddm`, which `hush sddm sync` (called by `hush theme` and
 `hush wall`) keeps up to date. A `Current=` line in `/etc/sddm.conf` wins over `conf.d`; the
 installer prints the fix. `$HOME` must be traversable by the `sddm` user (`chmod o+x ~`).
-Preview: `sddm-greeter-qt6 --test-mode --theme sddm/hush` in a nested compositor.
+Preview: copy `lockscreen/Screen.qml` next to `sddm/hush/Main.qml` in a scratch copy, then
+`sddm-greeter-qt6 --test-mode --theme <copy>` in a nested compositor (`tests/test_sddm.sh` does this).

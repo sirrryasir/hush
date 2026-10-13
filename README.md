@@ -34,15 +34,16 @@ At rest: [dusk](assets/themes/dusk.png), [ember](assets/themes/ember.png), [fog]
 
 - **Island**: a narrow pill at rest (clock, activity circle, status ring); hover face with workspaces, date and track; configurable left, right and middle click and scroll; control center, media, calendar, notification center, launcher (apps, windows, calculator, clipboard), wallpaper grid and settings grow out of the pill; a priority arbiter with a resuming queue for OSDs and notifications; `reserve`, `overlay` and `autohide` modes; fullscreen retract and reveal; full keyboard navigation.
 - **Theming**: six themes; `hush theme` recolours the shell, Hyprland, kitty, Neovim, GTK, Qt/Kvantum, hyprlock, SDDM, fastfetch and the browser; circle-reveal wallpaper transition from the island; shell colours cross-fade; WCAG contrast gates in the tests.
-- **Lock and login**: island-native hyprlock and SDDM greeter from one layout spec, the password pill hidden until you type; `hush face` sets the login avatar.
+- **Lock and login**: one QML screen for the Quickshell session lock and the SDDM greeter: a thin clock over the blurred wallpaper, the black password pill hidden until you type, fingerprint and failure messages under it; hyprlock as a fallback; `hush face` sets the login avatar.
 - **Settings**: a settings surface with live preview, a composer for the rest pill, hover face and control center, all stored in `~/.config/hush/settings.json`.
 - **Plugins** (optional): GloView overview and dynamic-cursors (shake to find), coloured from the theme.
 - **Live activities**: recording, countdown timer and now playing shown at rest; mic and camera use in the status ring.
 
 ## Install
 
-Requirements: Hyprland 0.56 or later (Lua config), Quickshell 0.3, matugen 4, awww, hyprlock,
-python3 with Pillow, lua, imagemagick, git. Optional: sddm, hyprpm (plugins).
+Requirements: Hyprland 0.56 or later (Lua config), Quickshell 0.3, matugen 4, awww,
+python3 with Pillow, lua, imagemagick, git. Optional: sddm, fprintd (fingerprint unlock),
+hyprlock (`hush lock --hyprlock`), hyprpm (plugins).
 
 ```bash
 git clone https://github.com/sirrryasir/hush.git ~/hush
@@ -82,8 +83,8 @@ Hush ships no keybinds. Suggested binds (`hl.bind(combo, hl.dsp.exec_cmd(cmd))` 
 | `hush shell <start\|stop\|restart\|status\|log>` | manage the shell |
 | `hush fallback` | stop Hush, start Waybar and SwayNC |
 | `hush settings` | toggle the settings surface |
-| `hush lock` | lock the screen with hyprlock |
-| `hush face <image>` | set the login avatar |
+| `hush lock [--hyprlock]` | lock the screen (Quickshell session lock; `--hyprlock` uses hyprlock) |
+| `hush face <image>` | set the login avatar (`~/.face`, round crop) and refresh the SDDM theme |
 | `hush sddm sync` | refresh the SDDM theme's wallpaper, colours and avatar |
 | `hush plugins [status\|install]` | show or install the optional plugins |
 | `hush overview` | toggle the GloView overview |
