@@ -43,6 +43,9 @@ git clone https://github.com/sirrryasir/hush.git ~/hush
 ~/hush/install.sh          # --no-fonts / --no-theme skip those steps
 ```
 
+Packaged: Arch `yay -S hush-git`, then `/usr/share/hush/install.sh --no-fonts`.
+Nix `nix profile install github:sirrryasir/hush`, then `~/.nix-profile/share/hush/install.sh --no-fonts`.
+
 `install.sh` symlinks the shell, matugen, hyprlock and `hush*` into `~/.config` and
 `~/.local/bin`, installs fonts, enables the git hooks and applies `harbor`. It never uses sudo
 and never overwrites a real file: anything in the way moves to `~/.cache/hush/backup-<timestamp>/`.
