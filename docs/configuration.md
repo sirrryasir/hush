@@ -93,3 +93,10 @@ SDDM: `sudo sddm/install.sh` once. It copies the Qt 6 greeter with its fonts to
 installer prints the fix. `$HOME` must be traversable by the `sddm` user (`chmod o+x ~`).
 Preview: copy `lockscreen/Screen.qml` next to `sddm/hush/Main.qml` in a scratch copy, then
 `sddm-greeter-qt6 --test-mode --theme <copy>` in a nested compositor (`tests/test_sddm.sh` does this).
+
+## Boot menu
+
+`integrations/refind/` is an optional rEFInd theme: black, white OS icons, a faint ring on the chosen one.
+Install with `sudo integrations/refind/install.sh`; it copies the theme to the ESP and includes it from `refind.conf`.
+It is static black and does not follow `hush theme`.
+Remove: delete the `include themes/hush/theme.conf` line from `refind.conf`.

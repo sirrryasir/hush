@@ -28,6 +28,7 @@ Draft of the 0.2.0 entry; `VERSION` is bumped and the date set at release.
   and the SDDM greeter (`sddm/install.sh`, `hush sddm sync`); the password pill appears on the
   first key, failures and fingerprint prompts read as text under it; `hush face` sets the login
   avatar. hyprlock stays as `hush lock --hyprlock` with the same geometry.
+- Optional rEFInd boot menu theme (`integrations/refind`): black, white OS icons, the island's ring.
 - 12 or 24 hour clock (`island.clock`) on the pill, lock and login.
 - Settings, Lock: clock style (quiet, bold, stacked), date, name, reveal and status line for the
   lock and login (`lock.*`).

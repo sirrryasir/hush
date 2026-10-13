@@ -37,6 +37,7 @@ At rest: [dusk](assets/themes/dusk.png), [ember](assets/themes/ember.png), [fog]
 - **Lock and login**: one QML screen for the Quickshell session lock and the SDDM greeter: a thin clock over the blurred wallpaper, the black password pill hidden until you type, fingerprint and failure messages under it; hyprlock as a fallback; `hush face` sets the login avatar.
 - **Settings**: a settings surface with live preview, a composer for the rest pill, hover face and control center, all stored in `~/.config/hush/settings.json`.
 - **Plugins** (optional): GloView overview and dynamic-cursors (shake to find), coloured from the theme.
+- **Boot menu**: a matching rEFInd theme, optional.
 - **Live activities**: recording, countdown timer and now playing shown at rest; mic and camera use in the status ring.
 
 ## Install
@@ -48,7 +49,8 @@ hyprlock (`hush lock --hyprlock`), hyprpm (plugins).
 ```bash
 git clone https://github.com/sirrryasir/hush.git ~/hush
 ~/hush/install.sh          # --no-fonts / --no-theme skip those steps
-sudo ~/hush/sddm/install.sh   # optional login screen; the only step that needs root
+sudo ~/hush/sddm/install.sh   # optional login screen; needs root
+sudo ~/hush/integrations/refind/install.sh   # optional boot menu; needs root
 ```
 
 `install.sh` symlinks the shell, matugen, hyprlock and `hush*` into `~/.config` and
