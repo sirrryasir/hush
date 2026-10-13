@@ -1,0 +1,2 @@
+# Fingerprint unlock for the Hush lock (quickshell/hush/lock.qml); used only when fprintd is installed.
+auth required pam_fprintd.so

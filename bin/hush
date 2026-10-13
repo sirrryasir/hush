@@ -51,7 +51,7 @@ usage: hush <command>
   track <on|off>       off: git skip-worktree on those files in their repos; on: undo
   fallback             stop the Hush shell, start Waybar and SwayNC
   sddm sync            refresh ~/.cache/hush/sddm (wallpaper, colours, avatar) for the SDDM theme
-  lock                 lock the screen with hyprlock (once)
+  lock [--hyprlock]    lock the screen (Quickshell; --hyprlock: the hyprlock fallback), once
   face <image>         set the login avatar: round 512 px crop to ~/.face, then sddm sync
   settings             open (or close) the settings surface in the island
   plugins [status|install]  optional Hyprland plugins gloview and dynamic-cursors (hyprpm)
@@ -226,7 +226,17 @@ for m in mons: print("%s:%d" % (m["name"], m["width"] if m.get("transform", 0) %
 lock_layout() { # hyprlock widgets from lockscreen/layout.toml, one set per monitor
   mkdir -p "$STATE_DIR"
   local mons; mapfile -t mons < <(lock_monitors)
-  python3 "$HUSH_ROOT/lockscreen/gen.py" hyprlock "$STATE_DIR/hyprlock-layout.conf" "${mons[@]}"
+  python3 "$HUSH_ROOT/lockscreen/gen.py" hyprlock "$STATE_DIR/hyprlock-layout.conf" "${mons[@]}" &&
+    python3 "$HUSH_ROOT/lockscreen/gen.py" qml "$STATE_DIR/lock-layout.qml"
+}
+
+cmd_lock() { # [--hyprlock]  one lock at a time; the Quickshell lock runs as its own process
+  session_pgrep -x hyprlock >/dev/null && return 0
+  lock_layout || true
+  [[ "${1:-}" == --hyprlock ]] && exec hyprlock
+  [[ -z "${1:-}" ]] || die "usage: hush lock [--hyprlock]"
+  need qs
+  HUSH_ROOT=$HUSH_ROOT exec qs -n -p "$HUSH_ROOT/quickshell/hush/lock.qml"
 }
 
 cmd_face() { # image -> round 512 px PNG at ~/.face and the login bundle
@@ -628,7 +638,7 @@ main() {
     timer) cmd_timer "${2:-}" ;;
     volume) shift; cmd_volume "$@" ;;
     brightness) shift; cmd_brightness "$@" ;;
-    lock) session_pgrep -x hyprlock >/dev/null || { lock_layout || true; exec hyprlock; } ;;
+    lock) cmd_lock "${2:-}" ;;
     face) shift; cmd_face "$@" ;;
     settings) qs -c hush ipc call hush settings >/dev/null || die "the shell is not running" ;;
     --version|version) cat "$HUSH_ROOT/VERSION" ;;
