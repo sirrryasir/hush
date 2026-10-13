@@ -2,7 +2,7 @@ import QtQuick
 import QtQuick.Effects
 import QtQuick.Shapes
 
-// Hush lock and login screen, look A "Quiet": a thin clock and the date in capitals over the blurred,
+// Hush lock and login screen, look A "Quiet" (B "Bold" and C "Stacked" come in through layoutSource): a thin clock and the date in capitals over the blurred,
 // dimmed wallpaper; a key, the pointer or a tap reveals the user name, one black pill (the island)
 // holding the password dots, and a status line under it, all hidden again 2 s after the field
 // empties. The pill collapses to a circle with an arc while checking, shakes with a red hairline and a
@@ -59,6 +59,7 @@ Rectangle {
         property real clockSize: 160
         property real clockWeight: 100
         property real clockTracking: -4.8
+        property real clockStack: 0
         property real dateCy: 0.4033
         property real dateSize: 16
         property real dateWeight: 500
@@ -95,6 +96,10 @@ Rectangle {
         property real motionShakePx: 8
         property real motionSuccessMs: 300
         property real motionSuccessLift: 24
+        property real lockDate: 1      // settings.json lock.*: 0 hides the date, name or status line
+        property real lockName: 1
+        property real lockReveal: 1    // 0: the pill, name and status always shown
+        property real lockStatus: 1
     }
     Loader {
         source: root.layoutSource
@@ -119,7 +124,7 @@ Rectangle {
     property string phase: "idle"
     property string failText: ""                // the last failure, until the next key
     // the pill, name and status hide until a key or the pointer wakes them (2 s after the last one)
-    readonly property bool awake: field.text.length > 0 || pillHover.hovered || wake.running || phase !== "idle"
+    readonly property bool awake: lay.lockReveal === 0 || field.text.length > 0 || pillHover.hovered || wake.running || phase !== "idle"
     Timer { id: wake; interval: 2000 }
     HoverHandler { // only real movement: compositors resend the resting position, and the cursor is there at map time
         property var last: null
@@ -209,11 +214,13 @@ Rectangle {
             Behavior on y { NumberAnimation { duration: lay.motionSuccessMs; easing.type: Easing.OutQuint } } }
         Behavior on opacity { NumberAnimation { duration: lay.motionSuccessMs; easing.type: Easing.OutQuint } }
 
+        // look C stacks HH over MM, clockStack x size apart; clockCy is then the block's centre
+        readonly property real pitch: lay.clockStack * lay.clockSize * root.s
         Text {
             id: clock
             anchors.horizontalCenter: parent.horizontalCenter
-            y: Math.round(root.height * lay.clockCy - height / 2)   // Inter's line box centre is its figures' centre
-            text: Qt.formatTime(root.now, lay.clock12 > 0 ? "h:mm AP" : "hh:mm")
+            y: Math.round(root.height * lay.clockCy - hero.pitch / 2 - height / 2)   // Inter's line box centre is its figures' centre
+            text: Qt.formatTime(root.now, hero.pitch > 0 ? (lay.clock12 > 0 ? "h" : "hh") : lay.clock12 > 0 ? "h:mm AP" : "hh:mm")
             color: "white"
             font.family: root.fontName
             font.pixelSize: root.fs(lay.clockSize)
@@ -224,6 +231,16 @@ Rectangle {
             renderType: Text.CurveRendering // distance-field text breaks up a 100-weight stroke at this size
         }
         Text {
+            visible: hero.pitch > 0
+            anchors.horizontalCenter: parent.horizontalCenter
+            y: clock.y + Math.round(hero.pitch)
+            text: Qt.formatTime(root.now, "mm")
+            color: clock.color
+            font: clock.font
+            renderType: clock.renderType
+        }
+        Text {
+            visible: lay.lockDate > 0
             anchors.horizontalCenter: parent.horizontalCenter
             y: Math.round(root.height * lay.dateCy - height / 2)
             text: Qt.formatDate(root.now, "dddd d MMMM").toUpperCase()
@@ -235,6 +252,7 @@ Rectangle {
             font.letterSpacing: lay.dateTracking * root.s
         }
         Text { // user name over the pill
+            visible: lay.lockName > 0
             opacity: root.awake ? 1 : 0
             Behavior on opacity { NumberAnimation { duration: lay.motionFadeMs; easing.type: Easing.OutQuint } }
             anchors.horizontalCenter: parent.horizontalCenter
@@ -247,6 +265,7 @@ Rectangle {
         }
         Text { // status under the pill: the host's message, or the last failure in the error colour
             objectName: "status"
+            visible: lay.lockStatus > 0
             opacity: root.awake ? 1 : 0
             Behavior on opacity { NumberAnimation { duration: lay.motionFadeMs; easing.type: Easing.OutQuint } }
             anchors.horizontalCenter: parent.horizontalCenter

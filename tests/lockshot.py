@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Measure lock/login screenshots against lockscreen/layout.toml.
 
-  lockshot.py clock PNG HEX        centre y of the clock glyphs (pixels near colour HEX)
+  lockshot.py clock PNG HEX        clock glyphs (pixels near colour HEX): centre y, spec centre y, height, ink
   lockshot.py pill PNG             pill: black-run width on its centre row, and the centre pixel
   lockshot.py edge PNG             colour of the pill's top hairline (brightest pixel on the top edge)
   lockshot.py inside PNG           brightest luminance inside the pill's text area (0-255)
@@ -36,7 +36,7 @@ def main():
               if sum(abs(a - b) for a, b in zip(px[x, y], want)) < 60]
         if not ys:
             print("none"); return
-        print(f"{(min(ys) + max(ys)) / 2:.1f} {cy:.1f}")
+        print(f"{(min(ys) + max(ys)) / 2:.1f} {cy:.1f} {max(ys) - min(ys) + 1} {len(ys)}")
     elif cmd == "pill":
         # width: the black run on the row 3 px inside the top hairline (above the avatar, text and
         # submit button), corrected for the rounded ends; plus the colour right of the centre

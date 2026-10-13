@@ -2,7 +2,8 @@
 # Quickshell lock (quickshell/hush/lock.qml, lockscreen/Screen.qml) in a nested Hyprland with one
 # headless 1920x1080 output: idle shows no pill; a key and four characters show the 340 px black pill;
 # Return with HUSH_LOCK_TEST=fail turns the hairline and the status line red; HUSH_LOCK_TEST=ok
-# unlocks and the process exits. PAM is never asked, and the live session is never locked.
+# unlocks and the process exits; settings.json lock.clock "bold" with lock.reveal false shows the pill
+# before a key and a heavier clock. PAM is never asked, and the live session is never locked.
 source "$(dirname "$0")/lib.sh"
 source "$(dirname "$0")/nested.sh"
 cd "$(dirname "$0")/.."
@@ -44,7 +45,8 @@ t_nested() {
   frame idle
   read -r w r g b < <(tests/lockshot.py pill "$R/idle.ppm")
   [[ "$r$g$b" != 000 ]] && pass "idle: no pill before a key" || fail "idle: pill shown before a key"
-  read -r got want < <(tests/lockshot.py clock "$R/idle.ppm" ffffff)
+  local qh qink
+  read -r got want qh qink < <(tests/lockshot.py clock "$R/idle.ppm" ffffff)
   python3 -c "import sys; sys.exit(0 if abs($got-$want) <= 4 else 1)" 2>/dev/null \
     && pass "idle: clock centre y $got (spec $want)" || fail "idle: clock centre y $got (spec $want)"
 
@@ -74,8 +76,18 @@ t_nested() {
   sleep 0.3; frame unlocked
   (( $(tests/lockshot.py inside "$R/unlocked.ppm") < 60 && $(tests/lockshot.py status "$R/unlocked.ppm" ffffff) < 5 )) \
     && pass "unlocked: no lock screen and no crash notice" || fail "something still drawn after unlock"
+  # lock.* in settings.json reach the screen through gen.py's lock-layout.qml (hush lock writes it)
+  local sj="$CFG/hush/settings.json" bh bink
+  cp "$sj" "$R/settings.json" 2>/dev/null || echo '{}' >"$R/settings.json"
+  python3 -c "import json; d=json.load(open('$R/settings.json')); d['lock']={'clock': 'bold', 'reveal': False}; json.dump(d, open('$sj', 'w'))"
+  start_lock fail; frame bold
+  read -r w r g b < <(tests/lockshot.py pill "$R/bold.ppm")
+  [[ "$r$g$b" == 000 ]] && pass "reveal off: the pill before a key" || fail "reveal off: no pill before a key ($r,$g,$b)"
+  read -r got want bh bink < <(tests/lockshot.py clock "$R/bold.ppm" ffffff)
+  (( bink > qink * 2 )) && pass "bold: clock ink $bink (quiet $qink), height $bh (quiet $qh)" || fail "bold: clock ink $bink not over 2x quiet $qink"
+  session_pkill -f "$PWD/$LOCK"; cp "$R/settings.json" "$sj"
   nested_stop
-  evidence idle typing error
+  evidence idle typing error bold
 }
 
 run_test "static" t_static

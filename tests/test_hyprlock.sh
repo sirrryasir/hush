@@ -124,7 +124,7 @@ t_nested() {
       nest grim -o $out "$EVID/lock-b-$t-$H.png"
       read -r w r g b < <(tests/lockshot.py pill "$EVID/lock-b-$t-$H.png")
       [[ "$r$g$b" != 000 ]] && pass "$t $H: no pill before a key press" || fail "$t $H: pill shown before a key press"
-      read -r got want < <(tests/lockshot.py clock "$EVID/lock-b-$t-$H.png" "$text")
+      read -r got want _ < <(tests/lockshot.py clock "$EVID/lock-b-$t-$H.png" "$text")
       python3 -c "import sys; sys.exit(0 if abs($got-$want) <= 4 else 1)" 2>/dev/null \
         && pass "$t $H: clock centre y $got (spec $want)" || fail "$t $H: clock centre y $got (spec $want)"
     done

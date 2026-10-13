@@ -7,7 +7,7 @@ import qs.config as Cfg
 import qs.modules.island.cc
 
 // Settings surface: 560x336 GUI over the Settings singleton. A page rail on the left
-// (Island, Behaviour, Modules, Theme, About). Sliders preview while dragging (`preview` overrides,
+// (Island, Behaviour, Modules, Lock, Theme, About). Sliders preview while dragging (`preview` overrides,
 // `previewed` signal for the host pill) and write Cfg.Settings.set only on release.
 FocusScope {
     id: root
@@ -27,6 +27,7 @@ FocusScope {
         { id: "island", label: "Island", glyph: "pill" },
         { id: "behaviour", label: "Behaviour", glyph: "touch_app" },
         { id: "modules", label: "Modules", glyph: "widgets" },
+        { id: "lock", label: "Lock", glyph: "lock" },
         { id: "theme", label: "Theme", glyph: "palette" },
         { id: "about", label: "About", glyph: "info" }]
 
@@ -39,6 +40,10 @@ FocusScope {
         Cfg.Settings.set(cfgPath(key), v)
         const p = Object.assign({}, preview); delete p[key]; preview = p
     }
+
+    function setLock(k, v) { Cfg.Settings.set("lock." + k, v); lockSync.restart() }
+    // after Settings' writer has put settings.json on disk (it runs async)
+    Timer { id: lockSync; interval: 500; onTriggered: Quickshell.execDetached(["hush", "sddm", "sync"]) }
 
     FileView {
         path: Quickshell.shellDir + "/../../VERSION"
@@ -115,7 +120,8 @@ FocusScope {
     component Drop: Item {
         id: dd
         property string key; property var options: []
-        readonly property string cur: String(Cfg.Settings.island[key])
+        signal chosen()
+        readonly property string cur: String(root.cfgValue(key))
         readonly property string rowTitle: parent && parent.parent && parent.parent.title !== undefined ? parent.parent.title : ""
         property bool open: false
         height: 24; width: 140; anchors.verticalCenter: parent ? parent.verticalCenter : undefined
@@ -137,7 +143,7 @@ FocusScope {
                     Label { x: 10; height: parent.height; text: parent.modelData; font.weight: parent.modelData === dd.cur ? Font.DemiBold : Font.Normal }
                     MouseArea { id: hov; anchors.fill: parent; hoverEnabled: true
                         Accessible.role: Accessible.MenuItem; Accessible.name: parent.modelData
-                        onClicked: { Cfg.Settings.set("island." + dd.key, parent.modelData); dd.open = false } }
+                        onClicked: { Cfg.Settings.set(root.cfgPath(dd.key), parent.modelData); dd.open = false; dd.chosen() } }
                 }
             }
         }
@@ -349,6 +355,18 @@ FocusScope {
                 }
                 Chip { objectName: "resetLayout"; anchors.right: parent.right; text: "Reset layout"; onClicked: Cfg.Composer.reset() }
             }
+        }
+
+        // Lock: settings.json lock.* for the lock and login screens (lockscreen/gen.py reads them);
+        // `hush lock` regenerates its layout, the greeter follows through `hush sddm sync`.
+        ColumnLayout {
+            visible: root.page === "lock"; width: parent.width; spacing: 0
+            readonly property real rowH: 32
+            Row2 { title: "Clock"; z: 1; Drop { key: "lock.clock"; options: ["quiet", "bold", "stacked"]; onChosen: lockSync.restart() } }
+            Row2 { title: "Date"; Switch { anchors.verticalCenter: parent.verticalCenter; on: root.cfgValue("lock.date") !== false; onToggled: v => root.setLock("date", v) } }
+            Row2 { title: "Name"; Switch { anchors.verticalCenter: parent.verticalCenter; on: root.cfgValue("lock.name") !== false; onToggled: v => root.setLock("name", v) } }
+            Row2 { title: "Reveal on key"; Switch { anchors.verticalCenter: parent.verticalCenter; on: root.cfgValue("lock.reveal") !== false; onToggled: v => root.setLock("reveal", v) } }
+            Row2 { title: "Status line"; Switch { anchors.verticalCenter: parent.verticalCenter; on: root.cfgValue("lock.status") !== false; onToggled: v => root.setLock("status", v) } }
         }
 
         ColumnLayout {

@@ -116,7 +116,7 @@ t_greeter() {
   text=ffffff; err=$(qcol "$B" islandError); prim=$(qcol "$B" islandPrimary); hi=$(qcol "$B" islandSurfaceHigh)
   shot idle
   [[ $(tests/sddmshot.py px "$R/idle.ppm" 110 0) != 000000 ]] && pass "idle: no pill before a key press" || fail "idle: pill shown before a key press"
-  read -r got want < <(tests/lockshot.py clock "$R/idle.ppm" "$text")
+  read -r got want _ < <(tests/lockshot.py clock "$R/idle.ppm" "$text")
   python3 -c "import sys; sys.exit(0 if abs($got-$want) <= 4 else 1)" 2>/dev/null \
     && pass "idle: clock centre y $got (spec $want)" || fail "idle: clock centre y $got (spec $want)"
   # the three 40 px buttons, 12 px apart: centres x 908 / 960 / 1012, y 1008 (headless output is 16-bit: colour checks allow ~24)

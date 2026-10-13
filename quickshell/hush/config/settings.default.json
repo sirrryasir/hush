@@ -6,6 +6,7 @@
     "nowPlayingOsd": true, "fullscreenReveal": true, "fullscreenOsd": true, "statusCenter": "none",
     "clock": "24"
   },
+  "lock": { "clock": "quiet", "date": true, "name": true, "reveal": true, "status": true },
   "modules": {
     "media": true, "notifications": true, "calendar": true, "launcher": true, "wallpapers": true, "settings": true
   },

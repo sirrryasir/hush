@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Settings surface in its own scratch Quickshell window (never touches the live shell).
-# Writes ~/.config/hush/settings.json (island.width) and restores it.
+# Writes ~/.config/hush/settings.json (island.width, lock.date, ...) and restores it.
 source "$(dirname "$0")/lib.sh"
 cd "$(dirname "$0")/.."
 export QS_DISABLE_CRASH_HANDLER=1
@@ -92,6 +92,14 @@ t_settings() {
   hq setSection hover >/dev/null; sleep 0.2
   assert_eq "workspaces,date,media,bluetooth,network,battery" "$(hq layoutHover)" "after reset: default hover chips"
   assert_eq "true" "$(hq ccSection sliders)" "after reset: sliders back"
+  # Lock page: settings.json lock.* (the lock and login screens); a switch writes its key.
+  hq setPage lock >/dev/null; sleep 0.2
+  assert_eq "lock" "$(hq page)" "Lock page opens"
+  for t in Date Name "Reveal on key" "Status line"; do assert_eq "true" "$(hq hasSwitch "$t")" "Lock has the \"$t\" switch"; done
+  hq flip Date >/dev/null; sleep 0.6
+  assert_eq "False" "$($J "import json;print(json.load(open('$f'))['lock']['date'])")" "lock.date false in settings.json"
+  hq flip Date >/dev/null; sleep 0.6
+  assert_eq "true" "$(hq dataOf lock.date)" "lock.date back to true"
   kill "$pid" 2>/dev/null; wait "$pid" 2>/dev/null
   if [[ $had == 1 ]]; then mv "$f.bak-test" "$f"; else rm -f "$f"; fi
 }

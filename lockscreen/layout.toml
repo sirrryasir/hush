@@ -12,6 +12,7 @@ cy = 0.32          # 346 px: centre of the figures
 size = 160
 weight = 100       # Inter Thin, proportional figures as in the mock
 tracking = -4.8    # -0.03 em
+stack = 0          # look C: line pitch of HH over MM as a fraction of size; 0 = one line
 
 [date]
 cy = 0.4033        # 24 px under the figures
@@ -77,3 +78,16 @@ shake_ms = 300
 shake_px = 8
 success_ms = 300
 success_lift = 24
+
+# settings.json lock.clock: "quiet" is the values above; "bold" and "stacked" (mock hush-lock-v3 b and c)
+# replace these. hyprlock takes their size, weight and tracking only (one clock line, usual places).
+[style.bold]
+clock = { size = 150, weight = 800, tracking = -6 }   # -0.04 em
+date = { cy = 0.3996, weight = 600, tracking = 4 }    # 24 px under the shorter figures, 0.25 em
+
+[style.stacked]
+clock = { cy = 0.38, size = 200, tracking = -6, stack = 0.85 }  # cy: the HH-over-MM block, cap top to baseline
+date = { cy = 0.5683, tracking = 8 }                  # 40 px under MM, 0.5 em
+user = { cy = 0.7035 }                                # the pill and its name and status move down 6 %
+pill = { cy = 0.76 }
+status = { cy = 0.8146 }
