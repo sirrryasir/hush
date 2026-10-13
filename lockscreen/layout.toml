@@ -64,8 +64,8 @@ saturation = 0.85  # the screen
 passes = 3         # hyprlock
 size = 8
 contrast = 0.95
-vibrancy = 0.0
-vibrancy_darkness = 0.0
+vibrancy = 0.20         # hyprlock: keeps the wallpaper colour (harbor teal, dusk purple) under the dim
+vibrancy_darkness = 0.10
 noise = 0.011
 
 [motion]

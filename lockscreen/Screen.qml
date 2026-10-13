@@ -218,8 +218,9 @@ Rectangle {
             font.family: root.fontName
             font.pixelSize: root.fs(lay.clockSize)
             font.weight: lay.clockWeight
-            font.variableAxes: { "wght": lay.clockWeight }
+            font.variableAxes: { "wght": lay.clockWeight, "opsz": 32 } // optical size as a browser sets it (Inter's display cut)
             font.letterSpacing: lay.clockTracking * root.s
+            font.features: { "calt": 0 } // the colon on the baseline, as in the mock (Inter's calt raises it)
             renderType: Text.CurveRendering // distance-field text breaks up a 100-weight stroke at this size
         }
         Text {
@@ -230,7 +231,7 @@ Rectangle {
             font.family: root.fontName
             font.pixelSize: root.fs(lay.dateSize)
             font.weight: lay.dateWeight
-            font.variableAxes: { "wght": lay.dateWeight }
+            font.variableAxes: { "wght": lay.dateWeight, "opsz": lay.dateSize }
             font.letterSpacing: lay.dateTracking * root.s
         }
         Text { // user name over the pill
