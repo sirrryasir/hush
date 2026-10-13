@@ -236,7 +236,8 @@ cmd_lock() { # [--hyprlock]  one lock at a time; the Quickshell lock runs as its
   [[ "${1:-}" == --hyprlock ]] && exec hyprlock
   [[ -z "${1:-}" ]] || die "usage: hush lock [--hyprlock]"
   need qs
-  HUSH_ROOT=$HUSH_ROOT exec qs -n -p "$HUSH_ROOT/quickshell/hush/lock.qml"
+  # quiet on the terminal; Quickshell keeps its own log under $XDG_RUNTIME_DIR/quickshell
+  HUSH_ROOT=$HUSH_ROOT exec qs -n -p "$HUSH_ROOT/quickshell/hush/lock.qml" >/dev/null 2>&1
 }
 
 cmd_face() { # image -> round 512 px PNG at ~/.face and the login bundle
