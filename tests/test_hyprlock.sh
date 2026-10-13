@@ -58,7 +58,7 @@ t_variables() {
   for t in harbor paper; do
     render_theme $t
     undefined=""
-    for v in $(cat "$R/a.conf" hyprlock/layouts/layout_default.conf | grep -oE '\$[A-Za-z_0-9]+' | sort -u | grep -vxE '\$(HOME|FPRINTPROMPT|wall)'); do
+    for v in $(cat "$R/a.conf" hyprlock/layouts/layout_default.conf | grep -oE '\$[A-Za-z_0-9]+' | sort -u | grep -vxE '\$(HOME|FPRINTPROMPT|FAIL|ATTEMPTS|wall)'); do
       grep -qE "^\\${v} = rgba\\([0-9a-f]{8}\\)" "$R/$t/hyprlock/colors.conf" || undefined="$undefined $v"; done
     [[ -z "$undefined" ]] && pass "$t: every variable defined" || fail "$t: undefined:$undefined"
   done
