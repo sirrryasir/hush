@@ -43,6 +43,14 @@ shell_screenshot() {
   local d="${HUSH_EVIDENCE_DIR:-$HOME/.cache/hush/evidence}"
   hyprctl dispatch 'hl.dsp.dpms({ action = "on" })' >/dev/null; sleep 1; mkdir -p "$d"; grim "$d/$1.png"
 }
+# ms from the last "$1" mark to the first "$2" mark after it in the island history (-1 if absent).
+history_gap() { shell_ipc islandHistory | python3 -c "
+import json,sys
+h=json.load(sys.stdin); a=None
+for i,(n,t) in enumerate(h):
+  if n=='$1': a=(i,t)
+b=next((t for n,t in h[a[0]+1:] if n=='$2'), None) if a else None
+print(-1 if b is None else b-a[1])"; }
 # Idle CPU % of the shell over 10 s from /proc (utime+stime delta / wall time; no bc needed).
 # Other work may restart the shell mid-sample, so retry up to six times when the pid vanishes.
 shell_cpu_idle() {

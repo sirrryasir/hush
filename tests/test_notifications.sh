@@ -16,14 +16,6 @@ print(m['x'], m['y'], round(m['width']/m['scale']), round(m['height']/m['scale']
 TOP=$(shell_ipc settingsGet island.topGap 2>/dev/null || echo 6)
 PX=$((MX + MW / 2)); PY=$((MY + TOP + 18)); AX=$PX; AY=$((MY + MH / 2))
 owner() { busctl --user status org.freedesktop.Notifications 2>/dev/null | awk -F= '/^Comm=/{print $2}'; }
-# ms from the last "$1" mark to the first "$2" mark after it in the island history (-1 if absent).
-gap() { shell_ipc islandHistory | python3 -c "
-import json,sys
-h=json.load(sys.stdin); a=None
-for i,(n,t) in enumerate(h):
-  if n=='$1': a=(i,t)
-b=next((t for n,t in h[a[0]+1:] if n=='$2'), None) if a else None
-print(-1 if b is None else b-a[1])"; }
 # The state names recorded after the last "$1" mark.
 after() { shell_ipc islandHistory | python3 -c "
 import json,sys
@@ -46,7 +38,7 @@ t_single() {
   assert_eq "false" "$(shell_ipc islandControlVisible criticalMarker)" "a normal card has no critical marker"
   grim "$EVI/notification.png" 2>/dev/null
   shell_wait_state rest 140 && pass "island returns to rest after the hold" || fail "still $(shell_state) after the hold"
-  local g; g=$(gap notification rest)
+  local g; g=$(history_gap notification rest)
   [[ $g -ge 4900 && $g -le 5300 ]] && pass "hold was $g ms (5000)" || fail "hold was $g ms"
 }
 t_hover_pause() {
@@ -75,7 +67,7 @@ t_resume() {
   assert_eq "expanded" "$(shell_state)" "a notification does not cover an open surface"
   assert_eq "1" "$(int_or "$(notif_ipc queued)" 0)" "it waits in the queue"
   shell_ipc closeSurface; shell_wait_state notification
-  local g; g=$(gap @close notification)
+  local g; g=$(history_gap @close notification)
   [[ $g -ge 0 && $g -le 300 ]] && pass "shows $g ms after the surface closed (<= 300)" || fail "resume gap $g ms (state $(shell_state))"
   assert_eq "notification" "$(after @close)" "no rest flash between the surface and the card"
   assert_eq "Queued" "$(notif_ipc current)" "the queued card is the one shown"

@@ -30,14 +30,6 @@ cleanup() {
 }
 trap cleanup EXIT
 dnd() { qs -c hush ipc call notifs dndOn; }
-# ms from the last "$1" mark to the first "$2" mark after it in the island history (-1 if absent).
-gap() { shell_ipc islandHistory | python3 -c "
-import json,sys
-h=json.load(sys.stdin); a=None
-for i,(n,t) in enumerate(h):
-  if n=='$1': a=(i,t)
-b=next((t for n,t in h[a[0]+1:] if n=='$2'), None) if a else None
-print(-1 if b is None else b-a[1])"; }
 # ms from the end of the last OSD (its first following state change) to the next hover.
 osd_gap() { shell_ipc islandHistory | python3 -c "
 import json,sys
@@ -62,7 +54,7 @@ t_hover() {
   for _ in $(seq 20); do [[ "$(shell_state)" == rest ]] && break; sleep 0.5; done
   input_move "$PX" "$PY"
   shell_wait_state hover && pass "pointer on the pill opens the hover face" || fail "no hover face (state $(shell_state))"
-  local g; g=$(gap @in hover)
+  local g; g=$(history_gap @in hover)
   [[ $g -ge 110 && $g -le 200 ]] && pass "hover after $g ms (dwell 120, <= 200)" || fail "hover after $g ms"
   local i; for i in $(seq 30); do [[ "$(shell_ipc islandSize)" == "320x44" ]] && break; sleep 0.1; done # the spring settles within ~3 s under load
   assert_eq "320x44" "$(shell_ipc islandSize)" "hover face is 320x44"
@@ -73,7 +65,7 @@ t_hover() {
   # The grace is read from the shell's own stamps (an IPC poll at 150 ms raced the 300 ms grace).
   input_move "$AX" "$AY"
   shell_wait_state rest
-  g=$(gap @out "$(shell_state)")
+  g=$(history_gap @out "$(shell_state)")
   [[ $g -ge 300 && $g -le 450 ]] && pass "back to $(shell_state) $g ms after leaving (grace 300)" || fail "left hover after $g ms"
 }
 t_rearm() {
