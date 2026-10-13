@@ -5,7 +5,7 @@
   lockshot.py pill PNG             pill: black-run width on its centre row, and the centre pixel
   lockshot.py edge PNG             colour of the pill's top hairline (brightest pixel on the top edge)
   lockshot.py inside PNG           brightest luminance inside the pill's text area (0-255)
-  lockshot.py dots PNG             margins (px) between the outermost dots and the end discs (<0: spill)
+  lockshot.py dots PNG             margins (px) between the outermost dots and the pill's rounded ends (<0: spill)
 """
 import sys, tomllib, os
 from PIL import Image
@@ -29,7 +29,7 @@ def main():
         h = sys.argv[3].lstrip("#")
         want = tuple(int(h[i:i + 2], 16) for i in (0, 2, 4))
         cy = SPEC["clock"]["cy"] * H
-        y0, y1 = int(cy - 0.1 * H), int(cy + 0.08 * H)
+        y0, y1 = int(cy - 0.12 * H), int(cy + 0.12 * H)
         x0, x1 = int(cx - 0.35 * H), int(cx + 0.35 * H)
         ys = [y for y in range(y0, y1) for x in range(x0, x1, 2)
               if sum(abs(a - b) for a, b in zip(px[x, y], want)) < 60]
@@ -63,16 +63,13 @@ def main():
         hh = round(SPEC["pill"]["h"] * s / 2) - 6
         print(int(max(lum(px[x, y]) for x in range(x0, x1) for y in range(pcy - hh, pcy + hh))))
     elif cmd == "dots":
-        # bright pixels on the centre row between the avatar disc and the right end disc
+        # bright pixels on the centre row, inside the hairline; limits a quarter pill height in from the ends
         half = round(SPEC["pill"]["w"] * s / 2)
-        ph = round(SPEC["pill"]["h"] * s)
-        av = SPEC["avatar"]["size"] * s
-        left_lim = cx - half + ph / 2 + av / 2           # right edge of the avatar
-        right_lim = cx + half - 2                        # inside the hairline
-        xs = [x for x in range(int(left_lim) + 2, int(right_lim)) if lum(px[x, pcy]) > 150]
+        lim = half - round(SPEC["pill"]["h"] * s / 4)
+        xs = [x for x in range(cx - half + 2, cx + half - 2) if lum(px[x, pcy]) > 150]
         if not xs:
             print(-1, -1); return
-        print(int(xs[0] - left_lim), int((cx + half - ph + 2) - xs[-1]))
+        print(int(xs[0] - (cx - lim)), int((cx + lim) - xs[-1]))
 
 
 main()

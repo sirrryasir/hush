@@ -36,6 +36,10 @@ t_generator() {
   assert_contains "$R/a.conf" 'position = 0, 12.960%' "clock at +12.96 % (centre y 400 of 1080)"
   assert_contains "$R/a.conf" 'position = 0, -20.370%' "pill at -20.37 % (centre y 760)"
   assert_contains "$R/a.conf" 'font_family = Inter Variable Thin' "clock Inter Variable Thin"
+  assert_contains "$R/a.conf" 'font_size = 210' "clock 280 px (210 pt) at 1080"
+  assert_contains "$R/a.conf" 'fade_on_empty = true' "field hidden until you type"
+  assert_contains "$R/a.conf" 'inner_color = $hushIslandBg' "the field is the black pill"
+  grep -qE '^(shape|image) ' "$R/a.conf" && fail "shape/image blocks left (the field is the pill)" || pass "no shape or image blocks"
   assert_contains "$R/a.conf" "font_features='tnum'" "clock tabular figures"
   assert_contains "$R/a.conf" 'blur_passes = 2' "blur 2 passes"
   assert_contains "$R/a.conf" 'brightness = 0.62' "brightness 0.62"
@@ -111,19 +115,28 @@ t_nested() {
       H=1080; [[ $out == BIG ]] && H=1440
       nest grim -o $out "$EVID/lock-b-$t-$H.png"
       read -r w r g b < <(tests/lockshot.py pill "$EVID/lock-b-$t-$H.png")
-      spec=$(python3 -c "print(2*round(380*$H/1080/2))")
-      [[ "$r$g$b" == 000 ]] && pass "$t $H: pill is black" || fail "$t $H: pill pixel $r,$g,$b"
-      (( w >= spec - 8 && w <= spec + 8 )) && pass "$t $H: pill ${w} px wide (spec $spec)" || fail "$t $H: pill ${w} px (spec $spec)"
+      [[ "$r$g$b" != 000 ]] && pass "$t $H: no pill before a key press" || fail "$t $H: pill shown before a key press"
       read -r got want < <(tests/lockshot.py clock "$EVID/lock-b-$t-$H.png" "$text")
       python3 -c "import sys; sys.exit(0 if abs($got-$want) <= 4 else 1)" 2>/dev/null \
         && pass "$t $H: clock centre y $got (spec $want)" || fail "$t $H: clock centre y $got (spec $want)"
     done
+    nest wtype 'hu'; sleep 1
+    for out in SHOT BIG; do
+      H=1080; [[ $out == BIG ]] && H=1440
+      nest grim -o $out "$EVID/lock-b-$t-$H-key.png"
+      read -r w r g b < <(tests/lockshot.py pill "$EVID/lock-b-$t-$H-key.png")
+      spec=$(python3 -c "print(2*round(380*$H/1080/2))")
+      [[ "$r$g$b" == 000 ]] && pass "$t $H: a key press shows the black pill" || fail "$t $H: pill pixel $r,$g,$b after a key press"
+      (( w >= spec - 8 && w <= spec + 8 )) && pass "$t $H: pill ${w} px wide (spec $spec)" || fail "$t $H: pill ${w} px (spec $spec)"
+    done
+    nest wtype -k BackSpace -k BackSpace; sleep 0.3
+    nest grim -t ppm -o SHOT "$R/empty.ppm"   # placeholder, before the 2 s fade
     if [[ $t == harbor ]]; then
       nest wtype 'hush-not-the-password'; sleep 0.6
       nest grim -o SHOT "$EVID/lock-b-harbor-typing.png"
       (( $(tests/lockshot.py inside "$EVID/lock-b-harbor-typing.png") > 150 )) && pass "typing shows dots" || fail "no dots while typing"
       read -r lo hi < <(tests/lockshot.py dots "$EVID/lock-b-harbor-typing.png")
-      (( lo >= 0 && hi >= 0 )) && pass "21 dots stay between the avatar and the right end (margins $lo/$hi px)" || fail "dots spill over the pill ends ($lo/$hi px)"
+      (( lo >= 0 && hi >= 0 )) && pass "21 dots stay inside the pill (margins $lo/$hi px)" || fail "dots spill over the pill ends ($lo/$hi px)"
       nest wtype -k Return
       local i edge="" err; err=$(hex_of harbor hushIslandFail)
       # PNG encoding of a blurred frame takes ~2 s under hyprlock, longer than the 600 ms fail
@@ -136,7 +149,7 @@ t_nested() {
       [[ $edge == "$err" ]] && pass "wrong password: hairline turns island error #$err" || fail "fail outline #$edge (want #$err)"
       # no fail text: nothing in the pill brighter than the idle placeholder (a fail text draws in
       # the full field colour, the placeholder at 60 %)
-      local inside idle; inside=$(tests/lockshot.py inside "$R/fail.ppm"); idle=$(tests/lockshot.py inside "$EVID/lock-b-harbor-1080.png")
+      local inside idle; inside=$(tests/lockshot.py inside "$R/fail.ppm"); idle=$(tests/lockshot.py inside "$R/empty.ppm")
       (( inside <= idle + 10 )) && pass "no fail text in the pill (max luminance $inside, idle placeholder $idle)" || fail "text in the pill on failure (luminance $inside > idle $idle)"
       grep -qi 'wrong password' "$cfg" "$R/$t/layout.conf" && fail "config still says wrong password" || pass "no 'wrong password' text configured"
     fi

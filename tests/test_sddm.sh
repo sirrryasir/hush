@@ -62,7 +62,6 @@ t_face() {
   assert_eq "512x512" "$(magick identify -format '%wx%h' "$home/.face" 2>/dev/null)" "~/.face is a 512 px square"
   assert_eq "0" "$(magick "$home/.face" -format '%[fx:int(p{2,2}.a*255)]' info: 2>/dev/null)" "corners are transparent (round crop)"
   assert_eq "255" "$(magick "$home/.face" -format '%[fx:int(p{256,256}.a*255)]' info: 2>/dev/null)" "centre is opaque"
-  cmp -s "$home/.face" "$home/.cache/hush/face.png" && pass "lock screen cache updated" || fail "~/.cache/hush/face.png not updated"
   cmp -s "$home/.face" "$home/.cache/hush/sddm/face.png" && pass "sddm bundle updated (sync ran)" || fail "sddm face.png not updated"
   HOME=$home "$HUSH_ROOT/bin/hush" face "$home/missing.png" 2>/dev/null && fail "hush face accepts a missing file" || pass "hush face rejects a missing file"
   rm -rf "$home"
@@ -114,9 +113,7 @@ t_greeter() {
   local text err prim hi w c
   text=$(qcol "$B" wallText); err=$(qcol "$B" islandError); prim=$(qcol "$B" islandPrimary); hi=$(qcol "$B" islandSurfaceHigh)
   shot idle
-  w=$(tests/sddmshot.py width "$R/idle.ppm")
-  (( w >= 372 && w <= 388 )) && pass "idle: pill ${w} px (spec 380)" || fail "idle: pill ${w} px (spec 380)"
-  [[ $(tests/sddmshot.py px "$R/idle.ppm" 110 0) == 000000 ]] && pass "idle: pill is black" || fail "idle: pill pixel #$(tests/sddmshot.py px "$R/idle.ppm" 110 0)"
+  [[ $(tests/sddmshot.py px "$R/idle.ppm" 110 0) != 000000 ]] && pass "idle: no pill before a key press" || fail "idle: pill shown before a key press"
   read -r got want < <(tests/lockshot.py clock "$R/idle.ppm" "$text")
   python3 -c "import sys; sys.exit(0 if abs($got-$want) <= 4 else 1)" 2>/dev/null \
     && pass "idle: clock centre y $got (spec $want)" || fail "idle: clock centre y $got (spec $want)"
@@ -131,6 +128,7 @@ t_greeter() {
   nest wtype 'hush-wrong'; sleep 0.6
   shot typing
   w=$(tests/sddmshot.py width "$R/typing.ppm")
+  [[ $(tests/sddmshot.py px "$R/typing.ppm" 110 0) == 000000 ]] && pass "typing: a key press shows the black pill" || fail "typing: pill pixel #$(tests/sddmshot.py px "$R/typing.ppm" 110 0)"
   (( w >= 412 && w <= 428 )) && pass "typing: pill grew to ${w} px (spec 420)" || fail "typing: pill ${w} px (spec 420)"
   c=$(tests/sddmshot.py px "$R/typing.ppm" $((210 - 12 - 24 - 14)) 0)   # inside the submit button, left of its arrow
   near "$c" "$hi" 24 && pass "typing: submit button (#$c)" || fail "typing: no submit button (#$c, want #$hi)"
@@ -154,6 +152,7 @@ t_greeter() {
   [[ -n $f ]] && cp "$R/$f.ppm" "$R/error.ppm"
   [[ -n $f ]] && pass "error: red hairline (#$edge ~ #$err)" || fail "error: hairline never turned #$err"
   sleep 1
+  nest hyprctl dispatch 'hl.dsp.cursor.move({ x = 30, y = 30 })' >/dev/null 2>&1; sleep 0.4   # the pill hides 2 s after the error: wake it
   shot after-error
   w=$(tests/sddmshot.py width "$R/after-error.ppm")
   (( w >= 372 && w <= 388 )) && pass "after error: field cleared, pill back to ${w} px" || fail "after error: pill ${w} px"
