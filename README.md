@@ -11,7 +11,7 @@
 
 Hush replaces the bar, launcher, notification daemon and control center with one pill at the
 top of each monitor. Six themes recolour the shell and the applications it templates; the
-lock and login screens use the same island. Full-quality demo: [hush-demo.mp4](assets/demo/hush-demo.mp4).
+lock and login screens use the same island. Full-quality demo: [hush-demo.mp4](https://github.com/sirrryasir/hush/releases/download/v0.2.0/hush-demo.mp4).
 
 <table>
   <tr><td><img src="assets/themes/dusk-cc.png" alt="dusk" /><br/><sub>dusk</sub></td><td><img src="assets/themes/ember-cc.png" alt="ember" /><br/><sub>ember</sub></td><td><img src="assets/themes/fog-cc.png" alt="fog" /><br/><sub>fog</sub></td></tr>
