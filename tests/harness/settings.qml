@@ -48,7 +48,6 @@ ShellRoot {
         function stepSlider(title: string, n: int): void { const w = rowItem(title, "cur"); walk(w, c => { if (typeof c.stepAdjust === "function") c.stepAdjust(n) }) }
         function dataOf(path: string): string { return String(path.split(".").reduce((o, k) => o[k], Settings.data)) }
         function unitOf(title: string): string { return rowItem(title, "unit").unit }
-        // Modules composer.
         function setSection(sec: string): void { s.modulesSection = sec }
         // Rendered composer rows of a section, top to bottom ("id,id,..").
         function rows(sec: string): string {

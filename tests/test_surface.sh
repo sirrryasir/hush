@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Island v2 surface: one full-width, fixed-height layer per monitor whose geometry never
+# Island surface: one full-width, fixed-height layer per monitor whose geometry never
 # changes; only the input mask follows the pill. Clicks 2 px outside the pill reach the window below,
 # a click on the pill does not; a fullscreen window retracts the pill. Runs on every monitor.
 source "$(dirname "$0")/lib.sh"; source "$(dirname "$0")/shell_lib.sh"; source "$(dirname "$0")/lib/input.sh"
@@ -94,7 +94,7 @@ t_mask() {
     click "$px" "$py" 0.05 # before the v1 hover-to-expand timer (400 ms) can fire
     assert_eq "$B" "$(active)" "$m: click on the pill does not reach the window below"
     assert_eq "expanded" "$(shell_ipc islandState)" "$m: click on the pill opens the control center"
-    # Leave the pill first, or the v1 hover timer re-expands it after the collapse.
+    # Leave the pill first, or the hover timer re-expands it after the collapse.
     hyprctl dispatch "hl.dsp.cursor.move({ x = $px, y = $((my + mh - 210)) })" >/dev/null; sleep 0.2
     shell_ipc toggleControlCenter >/dev/null; sleep 0.8
     # Fullscreen on this monitor retracts the pill; geometry stays put.

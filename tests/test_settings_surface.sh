@@ -21,7 +21,7 @@ t_settings() {
   assert_eq "160" "$(hq dataWidth)" "Settings.data.island.width == 160"
   hq setWidth 140 >/dev/null; sleep 0.6
   assert_eq "140" "$(hq dataWidth)" "restored to 140"
-  # New keys (v2): switches + the reveal slider on the Behaviour page, round trip through settings.json.
+  # Switches + the reveal slider on the Behaviour page, round trip through settings.json.
   hq setPage behaviour >/dev/null; sleep 0.3
   local t k
   for t in "Now playing OSD:nowPlayingOsd" "Fullscreen reveal:fullscreenReveal" "Fullscreen OSD:fullscreenOsd"; do

@@ -46,7 +46,7 @@ t_launcher() {
   hq setQuery ";WOR" >/dev/null; sleep 0.3
   assert_eq "hello world" "$(hq first)" "; filter is case-insensitive"
 }
-# Opened straight in clip mode (Super+V) the list must load: it used to wait for a mode change.
+# Opened straight in clip mode (Super+V) the list must load.
 t_clip_open() {
   start clip && pass "harness starts in clip mode" || { fail "harness did not start"; return; }
   assert_eq "3" "$(wait_count 3)" "clip mode lists every entry on the first open"

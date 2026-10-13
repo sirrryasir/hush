@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Measure SDDM greeter screenshots (layout B) against lockscreen/layout.toml.
+"""Measure SDDM greeter screenshots against lockscreen/layout.toml.
 
   sddmshot.py width PNG           black-run width of the pill on its centre row, past the avatar
   sddmshot.py px PNG DX DY        colour at (centre + DX, pill centre + DY), layout px scaled to H

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Island v2 hover and input. The pointer is moved with hl.dsp.cursor.move and clicks,
+# Island hover and input. The pointer is moved with hl.dsp.cursor.move and clicks,
 # keys and the wheel go through tests/lib/input.sh (ydotoold live, virtual devices in the sandbox). Timings come
 # from the island's own history (state changes and pointer crossings stamped in the shell), so IPC
 # latency never counts:
@@ -147,7 +147,7 @@ t_clicks() {
     if [[ -n "$sbak" ]]; then printf '%s\n' "$sbak" >"$sj"; else rm -f "$sj"; fi
     brightnessctl -q s "$braw"
   else pass "no backlight: scroll=brightness skipped"; fi
-  # Media at rest is the activity circle (no capsule state); clicking it opens the media surface.
+  # Media at rest is the activity circle; clicking it opens the media surface.
   if python3 -c 'import dbus, gi' 2>/dev/null; then
     python3 tests/fakempris.py & local fp=$!; sleep 3
     assert_eq "rest" "$(shell_state)" "a playing player keeps the island at rest (now-playing card has ended)"

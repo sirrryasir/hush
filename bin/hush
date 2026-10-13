@@ -140,7 +140,6 @@ render() { # theme wallpaper [mode-override] [force-image: 1 derives colours fro
   while read -r out; do
     [[ -s "$RENDER$out" ]] || die "template produced no output for $out"
   done < <(grep -oE "^output_path = '[^']+'" "$MATUGEN_CFG" | sed -E "s|^output_path = '(.*)'|\\1|")
-  # Move into place.
   (cd "$RENDER" && find . -type f -print0) | while IFS= read -r -d '' f; do
     local dest="${f#.}"
     mkdir -p "$(dirname "$dest")" || die "failed to install $dest"

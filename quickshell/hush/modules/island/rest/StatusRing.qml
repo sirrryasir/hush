@@ -8,7 +8,7 @@ import qs.services
 //     (<=15 %, not charging) shows the red battery glyph, and the glyph with its bolt shows for the
 //     2 s after the cable goes in;
 //   "battery": an iOS-style battery glyph with the percent inside (BatteryGlyph) all the time;
-//   "wifi": the previous thin battery arc with the Wi-Fi glyph (bolt while charging) inside.
+//   "wifi": a thin battery arc with the Wi-Fi glyph (bolt while charging) inside.
 // layout.rest.right "none" (Composer) turns the slot off: no statusCenter content and no plug-in
 // bolt; a critical battery and the privacy glyphs still show (warnings, not decoration).
 // A machine without a battery shows the "wifi" ring in battery mode. Mic and camera in use show as

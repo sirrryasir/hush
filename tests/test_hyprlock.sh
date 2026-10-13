@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# hyprlock fallback (`hush lock --hyprlock`), look A: static checks on the generated layout, then real screenshots in a nested
+# hyprlock fallback (`hush lock --hyprlock`): static checks on the generated layout, then real screenshots in a nested
 # Hyprland (headless 1920x1080 and 2560x1440 outputs) for harbor and paper. The live session is never
 # locked: hyprlock runs inside the nested compositor and authenticates against the vlock PAM service
 # (pam_unix only, no faillock), so the wrong-password check cannot lock the account.
@@ -121,18 +121,18 @@ t_nested() {
     text=$(hex_of $t hushWallText)
     for out in SHOT BIG; do
       H=1080; [[ $out == BIG ]] && H=1440
-      nest grim -o $out "$EVID/lock-b-$t-$H.png"
-      read -r w r g b < <(tests/lockshot.py pill "$EVID/lock-b-$t-$H.png")
+      nest grim -o $out "$EVID/lock-$t-$H.png"
+      read -r w r g b < <(tests/lockshot.py pill "$EVID/lock-$t-$H.png")
       [[ "$r$g$b" != 000 ]] && pass "$t $H: no pill before a key press" || fail "$t $H: pill shown before a key press"
-      read -r got want _ < <(tests/lockshot.py clock "$EVID/lock-b-$t-$H.png" "$text")
+      read -r got want _ < <(tests/lockshot.py clock "$EVID/lock-$t-$H.png" "$text")
       python3 -c "import sys; sys.exit(0 if abs($got-$want) <= 4 else 1)" 2>/dev/null \
         && pass "$t $H: clock centre y $got (spec $want)" || fail "$t $H: clock centre y $got (spec $want)"
     done
     nest wtype 'hu'; sleep 1
     for out in SHOT BIG; do
       H=1080; [[ $out == BIG ]] && H=1440
-      nest grim -o $out "$EVID/lock-b-$t-$H-key.png"
-      read -r w r g b < <(tests/lockshot.py pill "$EVID/lock-b-$t-$H-key.png")
+      nest grim -o $out "$EVID/lock-$t-$H-key.png"
+      read -r w r g b < <(tests/lockshot.py pill "$EVID/lock-$t-$H-key.png")
       spec=$(python3 -c "print(2*round(340*$H/1080/2))")
       [[ "$r$g$b" == 000 ]] && pass "$t $H: a key press shows the black pill" || fail "$t $H: pill pixel $r,$g,$b after a key press"
       (( w >= spec - 8 && w <= spec + 8 )) && pass "$t $H: pill ${w} px wide (spec $spec)" || fail "$t $H: pill ${w} px (spec $spec)"
@@ -141,9 +141,9 @@ t_nested() {
     nest grim -t ppm -o SHOT "$R/empty.ppm"   # placeholder, before the 2 s fade
     if [[ $t == harbor ]]; then
       nest wtype 'hush-not-the-password'; sleep 0.6
-      nest grim -o SHOT "$EVID/lock-b-harbor-typing.png"
-      (( $(tests/lockshot.py inside "$EVID/lock-b-harbor-typing.png") > 150 )) && pass "typing shows dots" || fail "no dots while typing"
-      read -r lo hi < <(tests/lockshot.py dots "$EVID/lock-b-harbor-typing.png")
+      nest grim -o SHOT "$EVID/lock-harbor-typing.png"
+      (( $(tests/lockshot.py inside "$EVID/lock-harbor-typing.png") > 150 )) && pass "typing shows dots" || fail "no dots while typing"
+      read -r lo hi < <(tests/lockshot.py dots "$EVID/lock-harbor-typing.png")
       (( lo >= 0 && hi >= 0 )) && pass "21 dots stay inside the pill (margins $lo/$hi px)" || fail "dots spill over the pill ends ($lo/$hi px)"
       nest wtype -k Return
       local i edge="" err; err=$(hex_of harbor hushIslandFail)
@@ -153,7 +153,7 @@ t_nested() {
         nest grim -t ppm -o SHOT "$R/fail.ppm"; edge=$(tests/lockshot.py edge "$R/fail.ppm")
         [[ $edge == "$err" ]] && break; sleep 0.05
       done
-      python3 -c "from PIL import Image; Image.open('$R/fail.ppm').save('$EVID/lock-b-harbor-fail.png')"
+      python3 -c "from PIL import Image; Image.open('$R/fail.ppm').save('$EVID/lock-harbor-fail.png')"
       [[ $edge == "$err" ]] && pass "wrong password: hairline turns island error #$err" || fail "fail outline #$edge (want #$err)"
       # no fail text: nothing in the pill brighter than the idle placeholder (a fail text draws in
       # the full field colour, the placeholder at 60 %)

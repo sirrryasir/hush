@@ -40,7 +40,6 @@ Item {
         onRunningChanged: if (!running) root.bars = []
     }
 
-    // Card: dark base washed with the accent.
     ClippingRectangle {
         anchors.fill: parent; color: "#000000"; radius: Sizes.radiusExpanded
         Rectangle { anchors.fill: parent; color: root.tint; opacity: 0.16 }

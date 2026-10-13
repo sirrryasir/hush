@@ -98,7 +98,7 @@ print(m['x'], m['y'], round(m['width']/m['scale']))")
   hyprctl dispatch "hl.dsp.cursor.move({ x = $((MX + MW / 2)), y = $((MY + 500)) })" >/dev/null
 }
 # Clipboard through the real bind path (Super+V runs this exec_cmd), right after a restart and on each
-# monitor: the list is read on every open (it used to load once, never when opened straight in clip mode).
+# monitor: the list is read on every open.
 t_clip_live() {
   if ! command -v cliphist >/dev/null || [[ "$(cliphist list 2>/dev/null | grep -c .)" == 0 ]]; then pass "cliphist absent or empty: skipped"; return; fi
   local orig m i n; orig=$(focused_monitor)

@@ -223,7 +223,6 @@ FocusScope {
             onClicked: cc.toggleExtra()
         }
     }
-    // Timer: a 5 minute countdown (the `hush timer` activity), a second click stops it.
     Component {
         id: timerTile
         Toggle {
@@ -250,7 +249,6 @@ FocusScope {
         Toggle { toggle: false; icon: "lock"; label: "Lock"; subtitle: "Lock the session"
             onClicked: Quickshell.execDetached([Paths.hush, "lock"]) }
     }
-    // Theme: steps to the next installed theme.
     Component {
         id: themeTile
         Toggle { toggle: false; icon: "palette"; label: "Theme"; subtitle: Cfg.State.theme || ""

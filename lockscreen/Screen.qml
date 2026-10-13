@@ -2,7 +2,7 @@ import QtQuick
 import QtQuick.Effects
 import QtQuick.Shapes
 
-// Hush lock and login screen, look A "Quiet" (B "Bold" and C "Stacked" come in through layoutSource): a thin clock and the date in capitals over the blurred,
+// Hush lock and login screen: a thin clock and the date in capitals over the blurred,
 // dimmed wallpaper; a key, the pointer or a tap reveals the user name, one black pill (the island)
 // holding the password dots, and a status line under it, all hidden again 2 s after the field
 // empties. The pill collapses to a circle with an arc while checking, shakes with a red hairline and a
@@ -214,7 +214,7 @@ Rectangle {
             Behavior on y { NumberAnimation { duration: lay.motionSuccessMs; easing.type: Easing.OutQuint } } }
         Behavior on opacity { NumberAnimation { duration: lay.motionSuccessMs; easing.type: Easing.OutQuint } }
 
-        // look C stacks HH over MM, clockStack x size apart; clockCy is then the block's centre
+        // stacked: HH over MM, clockStack x size apart; clockCy is then the block's centre
         readonly property real pitch: lay.clockStack * lay.clockSize * root.s
         Text {
             id: clock
@@ -227,7 +227,7 @@ Rectangle {
             font.weight: lay.clockWeight
             font.variableAxes: { "wght": lay.clockWeight, "opsz": 32 } // optical size as a browser sets it (Inter's display cut)
             font.letterSpacing: lay.clockTracking * root.s
-            font.features: { "calt": 0 } // the colon on the baseline, as in the mock (Inter's calt raises it)
+            font.features: { "calt": 0 } // the colon on the baseline (Inter's calt raises it)
             renderType: Text.CurveRendering // distance-field text breaks up a 100-weight stroke at this size
         }
         Text {

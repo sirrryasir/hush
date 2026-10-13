@@ -22,7 +22,7 @@ t_static() {
 }
 
 frame() { nest grim -t ppm -o SHOT "$R/$1.ppm"; }
-evidence() { local f; for f in "$@"; do python3 -c "from PIL import Image; Image.open('$R/$f.ppm').save('$EVID/lock-qs-$f.png')"; done; }
+save_pngs() { local f; for f in "$@"; do python3 -c "from PIL import Image; Image.open('$R/$f.ppm').save('$EVID/lock-qs-$f.png')"; done; }
 lock_alive() { session_pgrep -f "$PWD/$LOCK" >/dev/null; }
 start_lock() { # fail|ok
   (nest env HUSH_LOCK_TEST="$1" hush lock >"$R/lock-$1.log" 2>&1 &)
@@ -87,7 +87,7 @@ t_nested() {
   (( bink > qink * 2 )) && pass "bold: clock ink $bink (quiet $qink), height $bh (quiet $qh)" || fail "bold: clock ink $bink not over 2x quiet $qink"
   session_pkill -f "$PWD/$LOCK"; cp "$R/settings.json" "$sj"
   nested_stop
-  evidence idle typing error bold
+  save_pngs idle typing error bold
 }
 
 run_test "static" t_static

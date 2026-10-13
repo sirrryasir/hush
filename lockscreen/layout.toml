@@ -1,4 +1,4 @@
-# Hush lock (Quickshell, hyprlock fallback) and login (SDDM) screen, look A "Quiet".
+# Hush lock (Quickshell, hyprlock fallback) and login (SDDM) screen.
 # One spec for every screen. cy = centre of the element as a fraction of the screen height H.
 # Sizes are pixels at H = 1080 and scale by s = H / 1080 (lengths rounded to even pixels).
 # `hush reload` / `hush lock` turn this into ~/.config/hush/hyprlock-layout.conf (one block set per
@@ -10,9 +10,9 @@ base = 1080
 [clock]
 cy = 0.32          # 346 px: centre of the figures
 size = 160
-weight = 100       # Inter Thin, proportional figures as in the mock
+weight = 100       # Inter Thin, proportional figures
 tracking = -4.8    # -0.03 em
-stack = 0          # look C: line pitch of HH over MM as a fraction of size; 0 = one line
+stack = 0          # stacked: line pitch of HH over MM as a fraction of size; 0 = one line
 
 [date]
 cy = 0.4033        # 24 px under the figures
@@ -79,7 +79,7 @@ shake_px = 8
 success_ms = 300
 success_lift = 24
 
-# settings.json lock.clock: "quiet" is the values above; "bold" and "stacked" (mock hush-lock-v3 b and c)
+# settings.json lock.clock: "quiet" is the values above; "bold" and "stacked"
 # replace these. hyprlock takes their size, weight and tracking only (one clock line, usual places).
 [style.bold]
 clock = { size = 150, weight = 800, tracking = -6 }   # -0.04 em

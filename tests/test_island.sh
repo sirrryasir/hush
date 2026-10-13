@@ -25,7 +25,7 @@ t_state() {
   assert_eq "rest" "$(shell_ipc islandState)" "toggle again collapses"
 }
 t_geometry() {
-  # v2 surface: every island layer is its monitor's full width x 360 and never resizes (test_surface.sh
+  # Surface: every island layer is its monitor's full width x 360 and never resizes (test_surface.sh
   # covers it per state); the body springs to the active state's size inside it.
   local g; g=$(hyprctl layers -j | python3 -c "
 import json,sys

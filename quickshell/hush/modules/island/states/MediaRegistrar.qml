@@ -2,9 +2,7 @@ import QtQuick
 import qs.config
 import qs.services as Svc
 
-// Media at rest is the activity circle (art + progress ring) on the narrow pill;
-// the island never takes a media state while something merely plays. This registrar only raises a
-// short "now playing" card through the arbiter when the track changes while playing (or playback
+// Raises a short "now playing" card through the arbiter when the track changes while playing (or playback
 // starts on a new track): a transient at OSD priority, held Theme.osdHoldMs (1.1 s), keyed by track
 // so a burst of metadata updates coalesces. Settings.island.nowPlayingOsd false turns it off.
 Item {

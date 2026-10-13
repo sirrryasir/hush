@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Install the Hush SDDM theme. Run once by the maintainer: sudo sddm/install.sh [user]
+# Install the Hush SDDM theme, once: sudo sddm/install.sh [user]
 # Copies the theme to /usr/share/sddm/themes/hush, selects it in /etc/sddm.conf.d/hush.conf and
 # links hush/current to the user's ~/.cache/hush/sddm (refreshed by `hush sddm sync`).
 set -euo pipefail

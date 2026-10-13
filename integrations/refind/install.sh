@@ -20,7 +20,7 @@ dest=$refind/themes/hush
 rm -rf "$dest"
 mkdir -p "$dest"
 cp -r "$here/theme.conf" "$here/selection_big.png" "$here/selection_small.png" "$here/icons" "$dest/"
-# The lock's blur block in spirit: blurred, dimmed, a little desaturated.
+# Blurred, dimmed and a little desaturated, like the lock background.
 magick "$themes/$name/wallpaper.png" -resize 1920x1080^ -gravity center -extent 1920x1080 -blur 0x12 -modulate 55,90 -strip "$dest/banner.png"
 echo "installed $dest (banner: $name)"
 line='include themes/hush/theme.conf'

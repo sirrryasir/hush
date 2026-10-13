@@ -38,8 +38,7 @@ shell_log_errors() {
   printf '%s\n' "$hits"; return 1
 }
 shell_log_check() { local e; if e=$(shell_log_errors); then pass "no errors in shell log"; else fail "shell log errors: $e"; fi; }
-# The sandbox (tests/sandbox.sh) points HUSH_EVIDENCE_DIR at its own directory: its headless outputs
-# are not the desktop the evidence images document.
+# The sandbox points HUSH_EVIDENCE_DIR elsewhere so its headless captures stay out of the real cache.
 shell_screenshot() {
   local d="${HUSH_EVIDENCE_DIR:-$HOME/.cache/hush/evidence}"
   hyprctl dispatch 'hl.dsp.dpms({ action = "on" })' >/dev/null; sleep 1; mkdir -p "$d"; grim "$d/$1.png"

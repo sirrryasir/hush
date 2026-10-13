@@ -32,7 +32,7 @@ def lock():  # lock.* in settings.json; a missing or mistyped value keeps its de
     return out
 
 
-def spec(place=True):  # layout.toml with the lock.clock look's [style.*] values over it (place: its cy too)
+def spec(place=True):  # layout.toml with the lock.clock style's [style.*] values over it (place: its cy too)
     S = {k: dict(v) if isinstance(v, dict) else v for k, v in SPEC.items() if k != "style"}
     for sec, vals in SPEC["style"].get(lock()["clock"], {}).items():
         S[sec].update({k: v for k, v in vals.items() if place or k != "cy"})
@@ -56,7 +56,7 @@ def family(weight):
     return ("Inter Variable " + WEIGHTS[weight]).strip()
 
 
-def hyprlock(monitors):  # the look's weight and size on the usual one line: hyprlock cannot stack it
+def hyprlock(monitors):  # the clock style's weight and size on the usual one line: hyprlock cannot stack it
     S = spec(place=False)
     b = S["blur"]
     out = [

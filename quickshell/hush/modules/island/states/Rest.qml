@@ -5,7 +5,6 @@ import "../rest"
 // The island at rest: activity circle (collapses when empty), clock, status ring.
 // layout.rest (Composer) picks the sides: left "activity" | "none", right "status" | "none"; the
 // clock is always the centre.
-// A playing player shows here as the circle (art + progress ring); there is no media capsule state.
 // The pill's width is this row's width on the 8 px grid, so an empty activity slot narrows it.
 StateBase {
     id: rest

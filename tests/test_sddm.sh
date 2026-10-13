@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SDDM greeter (sddm/hush/Main.qml around lockscreen/Screen.qml, look A): theme files, `hush sddm sync` / `hush face`, then the real greeter
+# SDDM greeter (sddm/hush/Main.qml around lockscreen/Screen.qml): theme files, `hush sddm sync` / `hush face`, then the real greeter
 # (sddm-greeter-qt6 --test-mode) in a nested Hyprland with one headless 1920x1080 output: idle,
 # typing, checking, error and the session list, typed with wtype. theme.conf testAuth=fail stands in
 # for the daemon (test mode has none). The live session is never touched.
@@ -80,9 +80,9 @@ greeter_theme() { # bundle dir -> $R/theme (a copy with fonts, current/ and test
 qcol() { sed -n "s/^ *property color $2: \"#\(......\)\"/\1/p" "$1/colors.qml"; }
 near() { python3 -c "import sys; a,b='$1','$2'; sys.exit(0 if len(a)==6 and len(b)==6 and sum(abs(int(a[i:i+2],16)-int(b[i:i+2],16)) for i in (0,2,4)) <= ${3:-40} else 1)"; }
 # frames are grabbed as PPM (PNG encoding of a blurred 1080p frame takes ~1 s and would miss the
-# 600 ms error flash); evidence PNGs are written once the greeter is gone
+# 600 ms error flash); PNGs are saved once the greeter is gone
 shot() { nest grim -t ppm -o SHOT "$R/$1.ppm"; }
-evidence() { local f; for f in "$@"; do python3 -c "from PIL import Image; Image.open('$R/$f.ppm').save('$EVID/sddm-b-$f.png')"; done; }
+save_pngs() { local f; for f in "$@"; do python3 -c "from PIL import Image; Image.open('$R/$f.ppm').save('$EVID/sddm-$f.png')"; done; }
 
 t_greeter() {
   command -v sddm-greeter-qt6 >/dev/null && command -v Hyprland >/dev/null && command -v grim >/dev/null && command -v wtype >/dev/null \
@@ -167,7 +167,7 @@ t_greeter() {
   nest wtype -k Escape; sleep 0.4
   session_pkill -f "sddm-greeter-qt6 --test-mode --theme $R"
   nested_stop
-  evidence idle typing checking after-error sessions; [[ -f "$R/error.ppm" ]] && evidence error
+  save_pngs idle typing checking after-error sessions; [[ -f "$R/error.ppm" ]] && save_pngs error
 }
 
 run_test "theme files" t_theme
