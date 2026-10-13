@@ -330,7 +330,7 @@ with open(sys.argv[2].replace("colors.conf.tmp", "colors.qml.tmp"), "w") as f:
 PY
   mv -f "$out/colors.qml.tmp" "$out/colors.qml"
   mv -f "$out/colors.conf.tmp" "$out/colors.conf"
-  local face="$HOME/.face"; [[ -f "$face" ]] || face="$HUSH_ROOT/assets/brand/social/avatar-256.png"
+  local face="$HOME/.face"; [[ -f "$face" ]] || face="$HUSH_ROOT/sddm/hush/assets/avatar.png"
   [[ -f "$face" ]] && { cp -f "$face" "$out/face.png.tmp" && mv -f "$out/face.png.tmp" "$out/face.png"; }
   python3 "$HUSH_ROOT/lockscreen/gen.py" qml "$out/layout.qml"
   # The greeter runs as another user: it needs x on every directory down to the files.

@@ -3,11 +3,10 @@
 
 Draws the Breath mark (the island pill and its dot) and the "hush" wordmark from one round-ended
 stroke, outlines them with Inkscape and writes the canonical files, one set per use:
-  svg/       symbol and horizontal lockup, black (for light) and white (for dark)
   app/       app icon squircle, dark and light, SVG + 512 PNG
-  social/    README header (dark, light), GitHub social preview, default avatar (lock/login face)
+  social/    README header (dark, light), GitHub social preview
+  sddm/hush/assets/avatar.png            default lock/login face
   matugen/templates/fastfetch-logo.svg   the fastfetch logo, tinted per theme at runtime
-web/favicon.{svg,ico} were exported once from svg/hush-symbol (small cut) and are not rebuilt here.
 Run from anywhere:  python3 assets/brand/src/build.py   (needs inkscape and rsvg-convert)
 """
 import os, re, subprocess, tempfile
@@ -16,7 +15,7 @@ BRAND = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FASTFETCH = os.path.join(BRAND, "..", "..", "matugen", "templates", "fastfetch-logo.svg")
 TMP = tempfile.mkdtemp(prefix="hush-brand-")
 os.chdir(BRAND)
-for d in ("svg", "app", "social"):
+for d in ("app", "social"):
     os.makedirs(d, exist_ok=True)
 
 BLACK, WHITE = "#000000", "#ffffff"
@@ -103,10 +102,6 @@ LOCK_W = LX + ww + 8
 LOCK = outline(tmp("lockup.svg"), LOCK_W, 256, "Hush",
                f'<g transform="translate(0 28)">{breath()}</g>', word("hush", LX, 200)[0])
 
-for tag, col, sym in (("black", BLACK, SYM), ("white", WHITE, SYM_R)):
-    open(f"svg/hush-symbol-{tag}.svg", "w").write(mark_svg(sym, 256, 256, "Hush", col))
-    open(f"svg/hush-lockup-{tag}.svg", "w").write(mark_svg(LOCK, LOCK_W, 256, "Hush", col))
-
 # ------------------------------------------------------------------ composites
 def place(d, vw, vh, x, y, w, fill):
     s = w / vw
@@ -145,7 +140,7 @@ png("social/social-preview-dark.svg", "social/social-preview-dark.png", 1280)
 
 # Default lock/login face 256 (bin/hush falls back to it when ~/.face is missing).
 canvas(tmp("avatar.svg"), 512, 512, centred(SYM_R, 256, 256, 512, 512, 400, WHITE, dy=8), BLACK)
-png(tmp("avatar.svg"), "social/avatar-256.png", 256)
+png(tmp("avatar.svg"), "../../sddm/hush/assets/avatar.png", 256)
 
 # fastfetch: a tight-cropped mark; matugen fills in the theme primary, `hush` rasterises it.
 FF = outline(tmp("ff.svg"), 256, 96, "Hush", breath(cy=48))
