@@ -96,7 +96,7 @@ Preview: copy `lockscreen/Screen.qml` next to `sddm/hush/Main.qml` in a scratch 
 
 ## Boot menu
 
-`integrations/refind/` is an optional rEFInd theme: black, white OS icons, a faint ring on the chosen one.
+`integrations/refind/` is an optional rEFInd theme: white OS glyphs, a small triangle under the chosen one.
 Install with `sudo integrations/refind/install.sh`; it copies the theme to the ESP and includes it from `refind.conf`.
-It is static black and does not follow `hush theme`.
+The banner is the current theme's wallpaper at install time (or `install.sh <theme>`); rerun the installer after `hush theme` to update it.
 Remove: delete the `include themes/hush/theme.conf` line from `refind.conf`.
