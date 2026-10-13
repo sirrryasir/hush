@@ -36,6 +36,10 @@ printf '[Theme]\nCurrent=hush\n' > /etc/sddm.conf.d/hush.conf
 if [[ -f /etc/sddm.conf ]] && grep -Eq '^\s*Current\s*=' /etc/sddm.conf && ! grep -Eq '^\s*Current\s*=\s*hush\s*$' /etc/sddm.conf; then
   echo "note: /etc/sddm.conf sets $(grep -E '^\s*Current\s*=' /etc/sddm.conf | head -1) and overrides hush.conf; fix: sudo sed -i 's/^\s*Current\s*=.*/Current=hush/' /etc/sddm.conf" >&2
 fi
+# Leftovers from other themes: a virtual keyboard input method pops an on-screen keyboard over the greeter.
+if grep -Eqs '^\s*(InputMethod\s*=\s*\S|GreeterEnvironment\s*=.*(QT_IM_MODULE|QML2_IMPORT_PATH))' /etc/sddm.conf /etc/sddm.conf.d/*.conf; then
+  echo "note: an InputMethod or GreeterEnvironment line in /etc/sddm.conf* comes from another theme; remove it or the greeter shows an on-screen keyboard" >&2
+fi
 
 echo "installed $dest (current -> $home/.cache/hush/sddm)"
 sudo -u "$user" env HOME="$home" "$here/../bin/hush" sddm sync || echo "warning: run 'hush sddm sync' as $user" >&2
