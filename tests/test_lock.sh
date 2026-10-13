@@ -35,6 +35,7 @@ t_nested() {
   mkdir -p "$EVID"
   nested_start "$R/nest" SHOT:1920x1080 || { fail "nested Hyprland"; return; }
   nest hyprctl eval 'hl.monitor({ output = "WAYLAND-1", disabled = true })' >/dev/null; sleep 0.5
+  nest hyprctl dismissnotify >/dev/null 2>&1
   nest hyprctl dispatch 'hl.dsp.cursor.move({ x = 20, y = 20 })' >/dev/null 2>&1
   local w r g b edge got want i err
   err=$(python3 -c "import json; print(json.load(open('$CFG/hush/Colors.json')).get('dark', {}).get('error', '#ffb4ab').lstrip('#'))" 2>/dev/null)

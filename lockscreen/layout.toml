@@ -10,7 +10,7 @@ base = 1080
 [clock]
 cy = 0.32          # 346 px: centre of the figures
 size = 160
-weight = 100       # Inter Thin, tabular figures
+weight = 100       # Inter Thin, proportional figures as in the mock
 tracking = -4.8    # -0.03 em
 
 [date]

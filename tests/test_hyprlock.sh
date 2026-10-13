@@ -43,7 +43,6 @@ t_generator() {
   [[ $(grep -c 'Material Symbols' "$R/a.conf") == 2 ]] && pass "icon font only for the top-right glyphs (no pill glyphs)" || fail "icon font labels: $(grep -c 'Material Symbols' "$R/a.conf") (want one per monitor)"
   assert_contains "$R/a.conf" 'inner_color = $hushIslandBg' "the field is the black pill"
   grep -qE '^(shape|image) ' "$R/a.conf" && fail "shape/image blocks left (the field is the pill)" || pass "no shape or image blocks"
-  assert_contains "$R/a.conf" "font_features='tnum'" "clock tabular figures"
   assert_contains "$R/a.conf" 'blur_passes = 3' "blur 3 passes"
   python3 - "$R/a.conf" <<'PY' && pass "brightness follows the theme mode" || fail "brightness does not follow the mode"
 import json, os, re, sys, tomllib

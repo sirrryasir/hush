@@ -69,9 +69,9 @@ def hyprlock(monitors):
         mon = f"    monitor = {name}"
         out += [
             f"\n# ---- {name or 'every monitor'} at H = {h} (s = {s:.4f})",
-            "label { # clock, tabular figures",
+            "label { # clock",
             mon,
-            f"    text = cmd[update:1000] echo \"<span font_features='tnum' letter_spacing='{pango(c['tracking'])}'>$(date +'{"%-I:%M %p" if clock12() else "%H:%M"}')</span>\"",
+            f"    text = cmd[update:1000] echo \"<span letter_spacing='{pango(c['tracking'])}'>$(date +'{"%-I:%M %p" if clock12() else "%H:%M"}')</span>\"",
             "    color = $hushWallText",
             f"    font_size = {PT(c['size'])}",
             f"    font_family = {family(c['weight'])}",

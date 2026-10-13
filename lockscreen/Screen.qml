@@ -220,7 +220,6 @@ Rectangle {
             font.weight: lay.clockWeight
             font.variableAxes: { "wght": lay.clockWeight }
             font.letterSpacing: lay.clockTracking * root.s
-            font.features: { "tnum": 1 }
             renderType: Text.CurveRendering // distance-field text breaks up a 100-weight stroke at this size
         }
         Text {
