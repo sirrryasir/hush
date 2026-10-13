@@ -24,7 +24,11 @@ Draft of the 0.2.0 entry; `VERSION` is bumped and the date set at release.
   center; hot-reloaded `settings.json` with defaults.
 - Theming: circle-reveal wallpaper transition (`--from`), shell colour cross-fade.
 - Island-native lock (hyprlock) and login (SDDM greeter, `sddm/install.sh`, `hush sddm sync`)
-  from one layout spec; `hush face`.
+  from one layout spec: the password pill appears on the first key press; `hush face` sets the
+  login avatar.
+- 12 or 24 hour clock (`island.clock`) on the pill, lock and login.
+- `tests/sandbox.sh` runs the suite in a nested headless Hyprland without touching the session.
+- Demo video and GIF (`assets/demo`), theme screenshots.
 - CLI: `hush lock`, `face`, `settings`, `timer`, `volume`, `brightness`, `plugins`, `overview`;
   optional GloView and dynamic-cursors plugins.
 - Brand kit (icon, wordmark, README header, social images).
@@ -34,6 +38,8 @@ Draft of the 0.2.0 entry; `VERSION` is bumped and the date set at release.
 - Readable light themes in the island, hyprlock, Neovim, kitty ANSI black and p10k.
 - No volume OSD when the default sink switches; scroll to brightness; Media `canSeek` guard.
 - Single-instance rule counts only this compositor; Bluetooth unblocks rfkill when needed.
+- Settings pages scroll; the Live activities switch hides the pill slot; an empty clipboard
+  history no longer reads as a missing cliphist; the first surface after start-up gets keys.
 
 ### Changed
 
