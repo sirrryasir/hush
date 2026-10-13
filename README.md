@@ -29,8 +29,8 @@ At rest: [dusk](assets/themes/dusk.png), [ember](assets/themes/ember.png), [fog]
 - **Live activities**: recording, countdown and now playing at rest; mic and camera in use.
 - **Theming**: `hush theme` recolours the shell, Hyprland, kitty, Neovim, GTK, Qt/Kvantum,
   hyprlock, SDDM, fastfetch and the browser, with a circle-reveal wallpaper transition.
-- **Lock and login**: one QML screen for the session lock and the SDDM greeter; hyprlock fallback.
-- **Optional**: GloView overview and dynamic-cursors plugins, a matching rEFInd boot menu.
+- **Also**: one lock and login screen (Quickshell, SDDM, hyprlock fallback); optional GloView and
+  dynamic-cursors plugins; a rEFInd boot menu.
 
 ## Install
 
@@ -41,8 +41,6 @@ hyprlock (`hush lock --hyprlock`), hyprpm (plugins).
 ```bash
 git clone https://github.com/sirrryasir/hush.git ~/hush
 ~/hush/install.sh          # --no-fonts / --no-theme skip those steps
-sudo ~/hush/sddm/install.sh   # optional login screen; needs root
-sudo ~/hush/integrations/refind/install.sh   # optional boot menu; needs root
 ```
 
 `install.sh` symlinks the shell, matugen, hyprlock and `hush*` into `~/.config` and
@@ -94,12 +92,59 @@ Left and Right step a focused slider (Shift: ten steps); Shift+Up and Shift+Down
 
 ## Configure
 
-`hush settings` opens the settings surface; it writes `~/.config/hush/settings.json`, which
-also works by hand and is hot-reloaded. Every key, the blur rule, lock and login, plugins and the
-boot menu: [docs/configuration.md](docs/configuration.md).
+`hush settings` opens the settings surface; it writes `~/.config/hush/settings.json`, hot-reloaded
+over `quickshell/hush/config/settings.default.json` and editable by hand.
 
-New theme: a `themes/<name>/` folder with a `theme.toml` (copy one) and a `wallpaper.png`, then
-`hush theme <name>`. `hush-wallgen <theme|all>` regenerates the bundled wallpapers.
+**Hyprland.** Each monitor gets a transparent `hush-island` layer (full width, 360 px) whose input
+mask follows the pill: `hl.layer_rule({ match = { namespace = "hush-island" }, blur = true, ignore_alpha = 0.2 })` blurs it.
+`island.mode`: `reserve` (default; `island.reserve` px exclusive zone), `overlay` (none) or
+`autohide` (a 1 px top strip reveals the pill on hover, workspace change and events); a fullscreen
+window retracts it, and the top edge still reveals it.
+
+**Interaction.** Hovering 120 ms opens the hover face; it closes 300 ms after the pointer leaves.
+`island.clickLeft`, `clickRight`, `clickMiddle`: `cc`, `notifs`, `media`, `calendar`, `launcher`,
+`none`. `island.scroll`: `volume`, `brightness`, `none`. `island.clock`: `24` or `12` (pill, lock,
+login). Buttons ignore clicks for the first `motion.armMs` (500 ms); critical notifications stay
+until clicked. Settings, Modules writes the `layout` key: which surfaces exist, the rest pill's
+sides, the hover face chips and control center tiles (1x1 or 2x1); "Reset layout" removes it.
+Over IPC, with a leading space: `qs -c hush ipc call hush settingsSet layout.hover ' [...]'`.
+
+| Variable | Meaning |
+| --- | --- |
+| `HUSH_ROOT` | checkout with themes, templates and the shell (default: where `bin/hush` lives) |
+| `XDG_CONFIG_HOME` | where generated files go (default `~/.config`) |
+| `HUSH_WALL_DIRS` | colon-separated extra wallpaper folders |
+| `HUSH_REDUCED_MOTION` | `1` makes theme and wallpaper changes instant |
+
+**Generated files.** `hush generated` lists them; `hush track off` marks them skip-worktree when
+`~/.config` is a git repo. The browser theme loads unpacked from `~/.config/hush/helium-theme`.
+
+**Themes.** A new theme is a `themes/<name>/` folder with a `theme.toml` (copy one) and a
+`wallpaper.png`; then `hush theme <name>`. `hush-wallgen <theme|all>` redraws the bundled ones.
+
+**Plugins.** `hush plugins install` enables GloView and dynamic-cursors with hyprpm (needs the
+Hyprland headers); then `pcall(dofile, os.getenv("HOME") .. "/.config/hush/plugins.lua")`.
+
+**Lock and login.** One QML screen, `lockscreen/Screen.qml`, sized by `lockscreen/layout.toml`.
+`hush lock` runs `quickshell/hush/lock.qml` as its own process, so a shell restart cannot unlock
+it; the password goes through PAM `login`, and with fprintd a finger works in parallel
+(`lockscreen/pam/fprint`). If the lock dies the session stays locked: from a TTY run
+`hyprctl --instance 0 eval 'hl.clear_crashed_lockscreen()'`, then `hush lock`.
+`hush lock --hyprlock` uses hyprlock with the layout `hush reload` writes to
+`~/.config/hush/hyprlock-layout.conf`; it takes only the clock's weight and size and `lock.date`.
+Settings, Lock (`lock.*`): `clock` `quiet` (default), `bold` (heavy) or `stacked` (hours over
+minutes); `date`, `name`, `status` (`true`) show the date, the user name and the fingerprint /
+wrong-password line; `reveal` (`true`) hides the pill until a key. Changes run `hush sddm sync`.
+
+Login: `sudo ~/hush/sddm/install.sh` copies the greeter and its fonts to
+`/usr/share/sddm/themes/hush`, writes `/etc/sddm.conf.d/hush.conf` and links the theme's `current`
+to `~/.cache/hush/sddm`, which `hush sddm sync` (run by `hush theme` and `hush wall`) refreshes.
+A `Current=` line in `/etc/sddm.conf` overrides it (the installer prints the fix), and `$HOME`
+must be traversable by the `sddm` user (`chmod o+x ~`). `hush face <image>` sets the avatar.
+
+**Boot menu.** `sudo ~/hush/integrations/refind/install.sh [theme]` copies a rEFInd theme to the
+ESP and includes it from `refind.conf`; its banner is the theme's wallpaper (default: the current
+one), so rerun it after `hush theme`. Remove the `include themes/hush/theme.conf` line to uninstall.
 
 ## Contributing
 

@@ -40,7 +40,7 @@ Draft of the 0.2.0 entry; `VERSION` is bumped and the date set at release.
 
 ### Changed
 
-- README rewritten; configuration reference moved to `docs/configuration.md`.
+- README rewritten to cover configuration.
 - hyprlock is now the fallback lock (`hush lock --hyprlock`).
 
 ## [0.1.0] - 2026-10-02
