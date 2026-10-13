@@ -68,6 +68,14 @@ The lock and the login screen are one QML file, `lockscreen/Screen.qml`, sized b
 hidden until a key, a pointer move or a tap, with a status line under it. `hush face <image>`
 sets the login avatar; the lock has none.
 
+Settings, Lock (or `lock.*` in `settings.json`): `lock.clock` `"quiet"` (default), `"bold"` (heavy
+150 px figures) or `"stacked"` (hours over minutes, the pill lower); `lock.date`, `lock.name`,
+`lock.status` (`true`) show the date, the user name over the pill and the fingerprint / wrong
+password line; `lock.reveal` (`true`) hides the pill until a key, `false` keeps it shown.
+`lockscreen/gen.py` reads them into the generated layout, so the lock and the greeter agree; the
+page runs `hush sddm sync` on a change. The hyprlock fallback takes only the clock's weight and size
+(on one line) and `lock.date`.
+
 Lock: `hush lock` runs `quickshell/hush/lock.qml` as its own Quickshell process (a shell restart
 cannot unlock it). The password goes through the PAM service `login`. With fprintd installed a
 second PAM context runs `lockscreen/pam/fprint` (`auth required pam_fprintd.so`) at the same

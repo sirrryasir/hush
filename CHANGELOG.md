@@ -29,6 +29,8 @@ Draft of the 0.2.0 entry; `VERSION` is bumped and the date set at release.
   first key, failures and fingerprint prompts read as text under it; `hush face` sets the login
   avatar. hyprlock stays as `hush lock --hyprlock` with the same geometry.
 - 12 or 24 hour clock (`island.clock`) on the pill, lock and login.
+- Settings, Lock: clock style (quiet, bold, stacked), date, name, reveal and status line for the
+  lock and login (`lock.*`).
 - `tests/sandbox.sh` runs the suite in a nested headless Hyprland without touching the session.
 - Demo video and GIF (`assets/demo`), theme screenshots.
 - CLI: `hush lock [--hyprlock]`, `face`, `settings`, `timer`, `volume`, `brightness`, `plugins`, `overview`;

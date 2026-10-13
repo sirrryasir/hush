@@ -103,7 +103,7 @@ Settings rows move with Shift+Up and Shift+Down.
 
 Settings live in `~/.config/hush/settings.json` (defaults: `quickshell/hush/config/settings.default.json`),
 hot-reloaded. `hush settings` opens the GUI; Settings, Modules composes the rest pill, hover face and
-control center. Keys, modes, click mapping, environment: [docs/configuration.md](docs/configuration.md).
+control center; Settings, Lock picks the lock and login look. Keys, modes, click mapping, environment: [docs/configuration.md](docs/configuration.md).
 
 Add a theme:
 
