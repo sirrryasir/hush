@@ -148,13 +148,9 @@ one), so rerun it after `hush theme`. Remove the `include themes/hush/theme.conf
 
 ## Contributing
 
-- Tests: `bash tests/sandbox.sh` runs the suite in a nested Hyprland without touching your
-  session; `bash tests/run_all.sh` drives the live shell; `tests/test_<name>.sh` runs one.
-- Conventional Commits, subject at most 72 characters, a body that says why. The hooks check the
-  format, scan for personal data (no user names, home paths or monitor names) and run `hush check`.
-- Releases: `chore(release): X.Y.Z` bumps `VERSION` and `CHANGELOG.md`, then an annotated tag.
+`bash tests/sandbox.sh` runs the suite in a nested Hyprland without touching your session;
+`tests/test_<name>.sh` runs one.
 
 ## Credits
 
 Built on [Quickshell](https://quickshell.org) and [matugen](https://github.com/InioX/matugen).
-The caelestia, Tide-island, end-4 and saneAspect configurations were studied as references.
