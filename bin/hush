@@ -52,7 +52,7 @@ usage: hush <command>
   fallback             stop the Hush shell, start Waybar and SwayNC
   sddm sync            refresh ~/.cache/hush/sddm (wallpaper, colours, avatar) for the SDDM theme
   lock                 lock the screen with hyprlock (once)
-  face <image>         set the lock/login avatar: round 512 px crop to ~/.face, then sddm sync
+  face <image>         set the login avatar: round 512 px crop to ~/.face, then sddm sync
   settings             open (or close) the settings surface in the island
   plugins [status|install]  optional Hyprland plugins gloview and dynamic-cursors (hyprpm)
   overview             open the GloView overview (hyprctl gloview)
@@ -211,9 +211,6 @@ set_wallpaper() { # path
        else ln -sfn "$wall" "$cur.tmp" && mv -Tf "$cur.tmp" "$cur"; fi ;;
   esac || echo "hush: could not update $cur (continuing)" >&2
   printf '$wall = %s\n' "$cur" > "$STATE_DIR/hyprlock-wall.conf"
-  # Lock-screen avatar: ~/.face if present, else the brand avatar, at a fixed path.
-  local face="$HOME/.face"; [[ -f "$face" ]] || face="$HUSH_ROOT/assets/brand/social/avatar-256.png"
-  [[ -f "$face" ]] && { ln -sfn "$face" "$CACHE_DIR/face.png.tmp" && mv -Tf "$CACHE_DIR/face.png.tmp" "$CACHE_DIR/face.png"; }
   lock_layout || echo "hush: lock layout generation failed (continuing)" >&2
 }
 
@@ -232,7 +229,7 @@ lock_layout() { # hyprlock widgets from lockscreen/layout.toml, one set per moni
   python3 "$HUSH_ROOT/lockscreen/gen.py" hyprlock "$STATE_DIR/hyprlock-layout.conf" "${mons[@]}"
 }
 
-cmd_face() { # image -> round 512 px PNG at ~/.face and the lock/login caches
+cmd_face() { # image -> round 512 px PNG at ~/.face and the login bundle
   local src="${1:-}"
   [[ -n "$src" ]] || die "usage: hush face <image>"
   [[ -f "$src" ]] || die "no such image: $src"
@@ -242,9 +239,7 @@ cmd_face() { # image -> round 512 px PNG at ~/.face and the lock/login caches
     \( -size 512x512 xc:none -fill white -draw 'circle 255.5,255.5 255.5,0' \) \
     -alpha set -compose DstIn -composite "PNG32:$tmp" || { rm -f "$tmp"; die "could not read $src"; }
   mv -f "$tmp" "$HOME/.face"
-  mkdir -p "$CACHE_DIR"
-  rm -f "$CACHE_DIR/face.png"; cp -f "$HOME/.face" "$CACHE_DIR/face.png"
-  sddm_sync || echo "hush: sddm sync failed (the lock screen avatar is set)" >&2
+  sddm_sync || echo "hush: sddm sync failed (~/.face is set)" >&2
   echo "hush: avatar set from $src"
 }
 

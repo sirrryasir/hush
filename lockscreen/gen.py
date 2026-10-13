@@ -55,10 +55,8 @@ def hyprlock(monitors):
         L = lambda v: even(v * s)
         F = lambda v: int(round(v * s))
         PT = lambda v: int(round(v * s * 0.75))  # hyprlock font_size is in points at 96 dpi
-        c, d, p, a, f, g, st, m = (S[k] for k in ("clock", "date", "pill", "avatar", "field", "glyph", "status", "media"))
+        c, d, p, f, g, st, m = (S[k] for k in ("clock", "date", "pill", "field", "glyph", "status", "media"))
         pw, ph = L(p["w"]), L(p["h"])
-        av = L(a["size"])
-        av_x = -pw // 2 + L(a["inset"]) + av // 2
         gl_x = pw // 2 - L(g["inset"])
         track = int(round(c["tracking"] * s * 1024 * 0.75))  # px -> Pango units (1/1024 pt, 96 dpi)
         mon = f"    monitor = {name}"
@@ -82,29 +80,7 @@ def hyprlock(monitors):
             f"    position = 0, {pct(d['cy'])}",
             "    halign = center", "    valign = center",
             "}",
-            "shape { # the island pill",
-            mon,
-            "    zindex = 1",
-            f"    size = {pw}, {ph}",
-            "    color = $hushIslandBg",
-            f"    rounding = {ph // 2}",
-            "    border_size = 1",
-            "    border_color = $hushIslandEdge",
-            f"    position = 0, {pct(p['cy'])}",
-            "    halign = center", "    valign = center",
-            "}",
-            "image { # avatar inside the pill (above the left cover)",
-            mon,
-            "    zindex = 5",
-            "    path = $HOME/.cache/hush/face.png",
-            f"    size = {av}",
-            "    rounding = -1",
-            "    border_size = 1",
-            "    border_color = $hushIslandEdge",
-            f"    position = {av_x}, {pct(p['cy'])}",
-            "    halign = center", "    valign = center",
-            "}",
-            "input-field { # transparent, on top of the pill: only its hairline and dots show",
+            "input-field { # the island pill itself: hyprlock fades only the field, so it hides until you type",
             mon,
             "    zindex = 3",
             f"    size = {pw}, {ph}",
@@ -113,14 +89,15 @@ def hyprlock(monitors):
             f"    dots_size = {round(f['dot'] / p['h'], 3)}",
             f"    dots_spacing = {round(f['dot_gap'] / f['dot'], 3)}",
             "    dots_center = true",
-            "    inner_color = $hushClear",
+            "    inner_color = $hushIslandBg",
             "    outer_color = $hushIslandEdge",
             "    check_color = $hushIslandCheck",
             "    fail_color = $hushIslandFail",
             "    capslock_color = $hushIslandEdge",
             "    font_color = $hushIslandText",
             "    font_family = Inter Variable",
-            "    fade_on_empty = false",
+            "    fade_on_empty = true",
+            "    fade_timeout = 2000",
             f"    placeholder_text = <span alpha='60%' size='{int(round(f['placeholder'] * s * 0.75 * 1024))}'>Enter password</span>",
             "    fail_text =",
             "    fail_timeout = 600",
@@ -128,20 +105,6 @@ def hyprlock(monitors):
             f"    position = 0, {pct(p['cy'])}",
             "    halign = center", "    valign = center",
             "}",
-        ] + [
-            line for cx in (-pw // 2 + ph // 2, pw // 2 - ph // 2) for line in (
-                "shape { # black disc over a pill end: hyprlock spreads long passwords past the field, this",
-                mon,  # keeps the dots between avatar and glyphs while the 1 px hairline stays visible
-                "    zindex = 4",
-                f"    size = {ph - 4}, {ph - 4}",
-                "    color = $hushIslandBg",
-                "    rounding = -1",
-                "    border_size = 0",
-                f"    position = {cx}, {pct(p['cy'])}",
-                "    halign = center", "    valign = center",
-                "}",
-            )
-        ] + [
             "label { # caps lock glyph, right end of the pill",
             mon,
             "    zindex = 5",

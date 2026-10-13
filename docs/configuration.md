@@ -63,7 +63,8 @@ hl.bind("SUPER + Tab", hl.dsp.exec_cmd("hush overview"))
 ## Lock and login
 
 Both share `lockscreen/layout.toml`: a thin clock and date over the blurred wallpaper and one
-black pill holding the avatar and the password. `hush face <image>` sets the avatar for both.
+black pill for the password, hidden until you type. `hush face <image>` sets the login avatar;
+hyprlock has none.
 
 hyprlock: `hush reload` writes `~/.config/hush/hyprlock-layout.conf`, sourced by the shipped
 `hyprlock.conf`; `hush lock` locks.

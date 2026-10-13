@@ -3,10 +3,11 @@ import QtQuick.Effects
 import QtQuick.Shapes
 
 // Hush login screen, layout B "island-native": the same screen as the hyprlock lock (thin clock,
-// date, one black pill holding the avatar and the password) plus the greeter's controls: three black
-// circles at the bottom (session, sleep, power). The pill morphs: it grows on focus, shows a submit
-// button once there is text, collapses to a circle with an arc while checking, shakes with a red
-// hairline on a wrong password, and dissolves upward on success.
+// date, one black pill holding the password, hidden until a key or the pointer wakes it) plus the
+// greeter's avatar in the pill and three black circles at the bottom (session, sleep, power). The
+// pill morphs: it grows on focus, shows a submit button once there is text, collapses to a circle
+// with an arc while checking, shakes with a red hairline on a wrong password, and dissolves upward
+// on success.
 // Everything user-specific comes from current/ (~/.cache/hush/sddm, written by `hush sddm sync`):
 // colors.qml, layout.qml (from lockscreen/layout.toml), wallpaper.png, face.png. Each one is optional:
 // the baked defaults below match harbor and the shipped layout. No XMLHttpRequest file reads.
@@ -48,11 +49,11 @@ Rectangle {
         property real base: 1080
         property real clockCy: 0.3704
         property real clock12: 0
-        property real clockSize: 168
+        property real clockSize: 280
         property real clockWeight: 100
         property real clockTracking: -2
-        property real dateCy: 0.4815
-        property real dateSize: 24
+        property real dateCy: 0.56
+        property real dateSize: 28
         property real dateWeight: 500
         property real pillCy: 0.7037
         property real pillW: 380
@@ -80,6 +81,7 @@ Rectangle {
         property real blurSddmBlurMax: 32
         property real blurSddmBrightness: -0.12
         property real blurSddmSaturation: 0.10
+        property real motionFadeMs: 250
         property real motionFocusMs: 220
         property real motionSubmitMs: 100
         property real motionCheckMs: 260
@@ -110,6 +112,11 @@ Rectangle {
     // ---- state ------------------------------------------------------------------------------
     // idle | checking | error | success
     property string phase: "idle"
+    // the pill and the user name hide until a key or the pointer wakes them (2 s after the last one)
+    readonly property bool awake: field.text.length > 0 || pillHover.hovered || wake.running || phase !== "idle"
+    Timer { id: wake; interval: 2000 }
+    HoverHandler { onPointChanged: wake.restart() }
+    TapHandler { onTapped: wake.restart() }
     readonly property string userName: userModel.lastUser || (userModel.count > 0 ? userModel.data(userModel.index(0, 0), 257) : "")
     property int sessionIndex: 0
     property var sessionOrder: []   // model indices, Hyprland first
@@ -145,6 +152,7 @@ Rectangle {
         phase = "error";
         field.text = "";
         errorTimer.restart();
+        wake.restart();
         shake.restart();
         field.forceActiveFocus();
     }
@@ -227,6 +235,8 @@ Rectangle {
             font.variableAxes: { "wght": lay.dateWeight }
         }
         Text { // user name under the pill
+            opacity: root.awake ? 1 : 0
+            Behavior on opacity { NumberAnimation { duration: lay.motionFadeMs; easing.type: Easing.OutQuint } }
             anchors.horizontalCenter: parent.horizontalCenter
             y: Math.round(root.height * lay.hintCy - height / 2)
             text: root.userName
@@ -255,12 +265,12 @@ Rectangle {
         border.width: 1
         border.color: root.phase === "error" ? pal.islandError : root.edge
         clip: true
-        opacity: root.phase === "success" ? 0 : 1
+        opacity: root.phase === "success" || !root.awake ? 0 : 1
         scale: root.phase === "success" ? 0.96 : 1
 
         Behavior on width { NumberAnimation { duration: root.phase === "checking" ? lay.motionCheckMs : lay.motionFocusMs; easing.type: Easing.OutQuint } }
         Behavior on border.color { ColorAnimation { duration: 150 } }
-        Behavior on opacity { NumberAnimation { duration: lay.motionSuccessMs; easing.type: Easing.OutQuint } }
+        Behavior on opacity { NumberAnimation { duration: root.phase === "success" ? lay.motionSuccessMs : lay.motionFadeMs; easing.type: Easing.OutQuint } }
         Behavior on scale { NumberAnimation { duration: lay.motionSuccessMs; easing.type: Easing.OutQuint } }
 
         HoverHandler { id: pillHover }
@@ -309,6 +319,7 @@ Rectangle {
             echoMode: TextInput.Password
             enabled: root.phase !== "checking" && root.phase !== "success"
             focus: true
+            Keys.onPressed: wake.restart()
             onAccepted: root.submit()
             Keys.onEscapePressed: text = ""
             Keys.onTabPressed: sessionBtn.forceActiveFocus()

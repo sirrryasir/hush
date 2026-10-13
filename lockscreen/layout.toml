@@ -9,13 +9,13 @@ base = 1080
 
 [clock]
 cy = 0.3704        # 400 px at 1080
-size = 168
+size = 280
 weight = 100       # Inter Thin, tabular figures
 tracking = -2
 
 [date]
-cy = 0.4815        # 520 px
-size = 24
+cy = 0.56          # 605 px
+size = 28
 weight = 500
 
 [pill]
@@ -25,7 +25,7 @@ h = 72
 focus_w = 420      # sddm_only: focus grows the pill
 outline_alpha = 0.12
 
-[avatar]
+[avatar]           # sddm_only (hyprlock has no avatar: its field hides until you type)
 size = 56
 inset = 8
 
