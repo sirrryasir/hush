@@ -12,6 +12,12 @@ https://github.com/user-attachments/assets/c7b52b80-f737-4b0d-b1c2-1ea03514216e
 Hush replaces the bar, launcher, notification daemon and control center with one pill at the
 top of each monitor. The lock and login screens use the same island.
 
+```bash
+yay -S hush-git && /usr/share/hush/install.sh --no-fonts
+```
+
+Nix and manual install below.
+
 <table>
   <tr><td><img src="assets/screens/hover.png" alt="hover face" /><br/><sub>hover</sub></td><td><img src="assets/screens/control-center.png" alt="control center" /><br/><sub>control center</sub></td></tr>
   <tr><td><img src="assets/screens/launcher.png" alt="launcher" /><br/><sub>launcher</sub></td><td><img src="assets/screens/lock.png" alt="lock screen" /><br/><sub>lock</sub></td></tr>
@@ -25,9 +31,9 @@ top of each monitor. The lock and login screens use the same island.
   calculator, clipboard), wallpaper grid and settings open from the pill. OSDs and notifications
   queue by priority. Modes `reserve`, `overlay`, `autohide`; fullscreen retract; keyboard navigation.
 - **Live activities**: recording, countdown and now playing at rest; mic and camera in use.
-- **Colours**: from the wallpaper via matugen, templated into Hyprland, kitty, Neovim, GTK, Qt, hyprlock and SDDM.
 - **Also**: one lock and login screen (Quickshell, SDDM, hyprlock fallback); optional GloView and
-  dynamic-cursors plugins; a rEFInd boot menu.
+  dynamic-cursors plugins; a rEFInd boot menu; colours follow the wallpaper (matugen) across
+  Hyprland, GTK, Qt, kitty and SDDM.
 
 ## Install
 
@@ -44,7 +50,7 @@ Packaged: Arch `yay -S hush-git`, then `/usr/share/hush/install.sh --no-fonts`.
 Nix `nix profile install github:sirrryasir/hush`, then `~/.nix-profile/share/hush/install.sh --no-fonts`.
 
 `install.sh` symlinks the shell, matugen, hyprlock and `hush*` into `~/.config` and
-`~/.local/bin`, installs fonts, enables the git hooks and applies `harbor`. It never uses sudo
+`~/.local/bin`, installs fonts, enables the git hooks and sets the default colours (`harbor`). It never uses sudo
 and never overwrites a real file: anything in the way moves to `~/.cache/hush/backup-<timestamp>/`.
 Then autostart `hush reload` and `hush shell start` from `hyprland.lua`.
 
@@ -59,15 +65,11 @@ Hush ships no keybinds. Suggested ones, as `hl.bind(combo, hl.dsp.exec_cmd(cmd))
 | Super+V | `qs -c hush ipc call hush showLauncher clip` |
 | Super+Shift+N | `qs -c hush ipc call hush toggleDrawer` |
 | Super+Ctrl+W | `qs -c hush ipc call hush toggleWallpapers` |
-| Super+Alt+Right | `hush theme next` |
 | Super+Shift+W | `hush wall random` |
 | Super+Tab | `hush overview` |
 
 | Command | What it does |
 | --- | --- |
-| `hush list` | list the themes |
-| `hush theme <name\|next\|prev> [--from X,Y]` | apply a theme (wallpaper, colours, reloads) |
-| `hush wall <path\|random> [--mode light\|dark] [--from X,Y]` | change the wallpaper, keep the theme's scheme |
 | `hush reload` | re-render templates for the current state |
 | `hush status` | print theme, wallpaper, mode and scheme |
 | `hush check` | validate generated config (exit 1 on problems) |
@@ -83,6 +85,9 @@ Hush ships no keybinds. Suggested ones, as `hl.bind(combo, hl.dsp.exec_cmd(cmd))
 | `hush timer <N>m\|<N>s\|<N>h\|stop` | start or cancel a countdown in the island |
 | `hush volume up\|down\|mute\|mic-mute [step]` | change volume (default 5 %) with the OSD |
 | `hush brightness up\|down [step]` | change brightness (default 5 %) with the OSD |
+| `hush list` | list the themes |
+| `hush theme <name\|next\|prev> [--from X,Y]` | apply a theme (wallpaper, colours, reloads) |
+| `hush wall <path\|random> [--mode light\|dark] [--from X,Y]` | change the wallpaper, keep the theme's scheme |
 | `hush --version` | print the version |
 
 ### Keyboard
