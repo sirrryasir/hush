@@ -10,15 +10,13 @@
 https://github.com/user-attachments/assets/c7b52b80-f737-4b0d-b1c2-1ea03514216e
 
 Hush replaces the bar, launcher, notification daemon and control center with one pill at the
-top of each monitor. A theme is one `theme.toml`, yours to write; `hush theme` recolours the shell
-and the applications it templates from it. The lock and login screens use the same island.
+top of each monitor. The lock and login screens use the same island.
 
 <table>
-  <tr><td><img src="assets/themes/dusk-cc.png" alt="dusk" /><br/><sub>dusk</sub></td><td><img src="assets/themes/ember-cc.png" alt="ember" /><br/><sub>ember</sub></td><td><img src="assets/themes/fog-cc.png" alt="fog" /><br/><sub>fog</sub></td></tr>
-  <tr><td><img src="assets/themes/harbor-cc.png" alt="harbor" /><br/><sub>harbor</sub></td><td><img src="assets/themes/moss-cc.png" alt="moss" /><br/><sub>moss</sub></td><td><img src="assets/themes/paper-cc.png" alt="paper" /><br/><sub>paper</sub></td></tr>
+  <tr><td><img src="assets/screens/hover.png" alt="hover face" /><br/><sub>hover</sub></td><td><img src="assets/screens/control-center.png" alt="control center" /><br/><sub>control center</sub></td></tr>
+  <tr><td><img src="assets/screens/launcher.png" alt="launcher" /><br/><sub>launcher</sub></td><td><img src="assets/screens/lock.png" alt="lock screen" /><br/><sub>lock</sub></td></tr>
 </table>
 
-The bundled defaults, at rest: [dusk](assets/themes/dusk.png), [ember](assets/themes/ember.png), [fog](assets/themes/fog.png), [harbor](assets/themes/harbor.png), [moss](assets/themes/moss.png), [paper](assets/themes/paper.png).
 
 ## Features
 
@@ -27,8 +25,7 @@ The bundled defaults, at rest: [dusk](assets/themes/dusk.png), [ember](assets/th
   calculator, clipboard), wallpaper grid and settings open from the pill. OSDs and notifications
   queue by priority. Modes `reserve`, `overlay`, `autohide`; fullscreen retract; keyboard navigation.
 - **Live activities**: recording, countdown and now playing at rest; mic and camera in use.
-- **Theming**: `hush theme` recolours the shell, Hyprland, kitty, Neovim, GTK, Qt/Kvantum,
-  hyprlock, SDDM, fastfetch and the browser, with a circle-reveal wallpaper transition.
+- **Colours**: from the wallpaper via matugen, templated into Hyprland, kitty, Neovim, GTK, Qt, hyprlock and SDDM.
 - **Also**: one lock and login screen (Quickshell, SDDM, hyprlock fallback); optional GloView and
   dynamic-cursors plugins; a rEFInd boot menu.
 
