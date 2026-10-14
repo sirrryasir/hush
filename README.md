@@ -70,21 +70,21 @@ Hush ships no keybinds. Suggested ones, as `hl.bind(combo, hl.dsp.exec_cmd(cmd))
 
 | Command | What it does |
 | --- | --- |
+| `hush shell <start\|stop\|restart\|status\|log>` | manage the shell |
+| `hush lock [--hyprlock]` | lock the screen (Quickshell session lock; `--hyprlock` uses hyprlock) |
+| `hush settings` | toggle the settings surface |
+| `hush timer <N>m\|<N>s\|<N>h\|stop` | start or cancel a countdown in the island |
+| `hush volume up\|down\|mute\|mic-mute [step]` | change volume (default 5 %) with the OSD |
+| `hush brightness up\|down [step]` | change brightness (default 5 %) with the OSD |
 | `hush reload` | re-render templates for the current state |
 | `hush status` | print theme, wallpaper, mode and scheme |
 | `hush check` | validate generated config (exit 1 on problems) |
 | `hush generated` / `hush track <on\|off>` | list tracked generated files / mark them skip-worktree |
-| `hush shell <start\|stop\|restart\|status\|log>` | manage the shell |
 | `hush fallback` | stop Hush, start Waybar and SwayNC |
-| `hush settings` | toggle the settings surface |
-| `hush lock [--hyprlock]` | lock the screen (Quickshell session lock; `--hyprlock` uses hyprlock) |
 | `hush face <image>` | set the login avatar (`~/.face`, round crop) and refresh the SDDM theme |
 | `hush sddm sync` | refresh the SDDM theme's wallpaper, colours and avatar |
 | `hush plugins [status\|install]` | show or install the optional plugins |
 | `hush overview` | toggle the GloView overview |
-| `hush timer <N>m\|<N>s\|<N>h\|stop` | start or cancel a countdown in the island |
-| `hush volume up\|down\|mute\|mic-mute [step]` | change volume (default 5 %) with the OSD |
-| `hush brightness up\|down [step]` | change brightness (default 5 %) with the OSD |
 | `hush list` | list the themes |
 | `hush theme <name\|next\|prev> [--from X,Y]` | apply a theme (wallpaper, colours, reloads) |
 | `hush wall <path\|random> [--mode light\|dark] [--from X,Y]` | change the wallpaper, keep the theme's scheme |
