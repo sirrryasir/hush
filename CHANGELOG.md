@@ -4,6 +4,18 @@ All notable changes to Hush are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/). Commit rules are in the README (Contributing).
 
+## [Unreleased]
+
+### Added
+
+- Control center: log out (ends the Hyprland session) next to lock.
+- Login: the name over the pill opens the user list when the machine has more than one account.
+
+### Fixed
+
+- Boot menu: the Windows icon applies to Windows 8 and later (`os_win8.png`), and Linux boots
+  without the rEFInd text screen.
+
 ## [0.2.0] - 2026-10-13
 
 ### Added

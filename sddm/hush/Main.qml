@@ -39,7 +39,11 @@ Item {
         anchors.fill: parent
         mode: "login"
         userName: userModel.lastUser || (userModel.count > 0 ? userModel.data(userModel.index(0, 0), 257) : "")
-        avatarSource: config.stringValue("avatar") || "current/face.png"
+        users: Array.from({ length: userModel.count }, function (_, i) { return userModel.data(userModel.index(i, 0), 257); })
+        // current/ is the last user's cache: another user gets SDDM's icon for them (role 260)
+        avatarSource: userName !== userModel.lastUser && users.indexOf(userName) >= 0
+            ? userModel.data(userModel.index(users.indexOf(userName), 0), 260)
+            : (config.stringValue("avatar") || "current/face.png")
         avatarFallback: config.stringValue("fallbackAvatar") || "assets/avatar.png"
         background: config.stringValue("background") || "current/wallpaper.png"
         colorsSource: config.stringValue("colorsQml") || "current/colors.qml"

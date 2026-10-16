@@ -146,6 +146,7 @@ Login: `sudo ~/hush/sddm/install.sh` copies the greeter and its fonts to
 to `~/.cache/hush/sddm`, which `hush sddm sync` (run by `hush theme` and `hush wall`) refreshes.
 A `Current=` line in `/etc/sddm.conf` overrides it (the installer prints the fix), and `$HOME`
 must be traversable by the `sddm` user (`chmod o+x ~`). `hush face <image>` sets the avatar.
+With more than one account, the name over the pill opens the list of users.
 
 **Boot menu.** `sudo ~/hush/integrations/refind/install.sh [theme]` copies a rEFInd theme to the
 ESP and includes it from `refind.conf`; its banner is the theme's wallpaper (default: the current

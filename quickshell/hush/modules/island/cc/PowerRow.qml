@@ -2,13 +2,14 @@ import QtQuick
 import Quickshell
 import qs.config
 
-// lock / sleep / reboot / power off. Lock goes through `hush lock`; destructive ones need a second click within 2 s.
+// lock / logout / sleep / reboot / power off. Lock goes through `hush lock`; the rest need a second click within 2 s.
 Row {
     id: row
     spacing: 6
     property string armed: ""
     readonly property var actions: [
         { id: "lock", glyph: "lock", cmd: [Paths.hush, "lock"], confirm: false },
+        { id: "logout", glyph: "logout", cmd: ["hyprctl", "dispatch", "exit"], confirm: true },
         { id: "sleep", glyph: "bedtime", cmd: ["systemctl", "suspend"], confirm: true },
         { id: "reboot", glyph: "restart_alt", cmd: ["systemctl", "reboot"], confirm: true },
         { id: "poweroff", glyph: "power_settings_new", cmd: ["systemctl", "poweroff"], confirm: true }
@@ -40,7 +41,7 @@ Row {
                 font.family: Theme.fontIcon; font.pixelSize: 18
             }
             MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: row.press(btn.modelData)
-                Accessible.role: Accessible.Button; Accessible.name: btn.isArmed ? "Confirm " + btn.modelData.id : ({ lock: "Lock", sleep: "Sleep", reboot: "Reboot", poweroff: "Power off" })[btn.modelData.id] }
+                Accessible.role: Accessible.Button; Accessible.name: btn.isArmed ? "Confirm " + btn.modelData.id : ({ lock: "Lock", logout: "Log out", sleep: "Sleep", reboot: "Reboot", poweroff: "Power off" })[btn.modelData.id] }
         }
     }
 }

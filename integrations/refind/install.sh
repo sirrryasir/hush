@@ -20,6 +20,7 @@ dest=$refind/themes/hush
 rm -rf "$dest"
 mkdir -p "$dest"
 cp -r "$here/theme.conf" "$here/selection_big.png" "$here/selection_small.png" "$here/icons" "$dest/"
+cp "$dest/icons/os_win.png" "$dest/icons/os_win8.png"   # rEFInd asks for os_win8 on Windows 8 and later
 # Blurred, dimmed and a little desaturated, like the lock background.
 magick "$themes/$name/wallpaper.png" -resize 1920x1080^ -gravity center -extent 1920x1080 -blur 0x12 -modulate 55,90 -strip "$dest/banner.png"
 echo "installed $dest (banner: $name)"

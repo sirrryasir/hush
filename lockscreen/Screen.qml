@@ -24,6 +24,7 @@ Rectangle {
     property url background: ""
     property url colorsSource: ""
     property url layoutSource: ""
+    property var users: []                     // login: user names; the name over the pill picks one
     property var sessions: []                  // login: [{label, value}], Hyprland first
     property int sessionIndex: 0               // login: the chosen session's value
     property bool canSuspend: false
@@ -262,6 +263,13 @@ Rectangle {
             font.family: root.fontName
             font.pixelSize: root.fs(lay.userSize)
             font.letterSpacing: lay.userTracking * root.s
+            MouseArea {
+                id: userBtn
+                anchors.fill: parent; anchors.margins: -root.px(8)
+                enabled: root.users.length > 1
+                cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                onClicked: menu.toggle("user", userBtn)
+            }
         }
         Text { // status under the pill: the host's message, or the last failure in the error colour
             objectName: "status"
@@ -494,16 +502,16 @@ Rectangle {
         property string kind: "session"
         property Item anchorItem: sessionBtn
         property int current: 0
-        readonly property var items: kind === "session"
-            ? root.sessions
+        readonly property var items: kind === "session" ? root.sessions
+            : kind === "user" ? root.users.map(function (u) { return { label: u, value: u }; })
             : [{ label: "Restart", value: "reboot" }, { label: "Shut down", value: "poweroff" }]
+        readonly property var selectedValue: kind === "session" ? root.sessionIndex : kind === "user" ? root.userName : undefined
 
         function toggle(k, from) {
             if (open && kind === k) { close(); return; }
             kind = k; anchorItem = from; measure(); open = true;
             current = 0;
-            if (k === "session")
-                for (var j = 0; j < items.length; j++) if (items[j].value === root.sessionIndex) current = j;
+            for (var j = 0; j < items.length; j++) if (items[j].value === selectedValue) current = j;
             forceActiveFocus();
         }
         function close() { open = false; field.forceActiveFocus(); }
@@ -511,6 +519,7 @@ Rectangle {
             var it = items[j];
             if (!it) return;
             if (kind === "session") { root.sessionIndex = it.value; close(); }
+            else if (kind === "user") { root.userName = it.value; close(); }
             else root.power(it.value);
         }
 
@@ -527,9 +536,9 @@ Rectangle {
         color: "black"
         border.width: 1
         border.color: root.edge
-        x: Math.round(Math.min(root.width - width - root.px(16), Math.max(root.px(16),
-           powerRow.x + anchorItem.x + anchorItem.width / 2 - width / 2)))
-        y: powerRow.y - height - root.px(12)
+        readonly property point at: anchorItem.mapToItem(root, anchorItem.width / 2, 0)
+        x: Math.round(Math.min(root.width - width - root.px(16), Math.max(root.px(16), at.x - width / 2)))
+        y: kind === "user" ? Math.round(at.y + anchorItem.height + root.px(12)) : powerRow.y - height - root.px(12)
         opacity: open ? 1 : 0
         visible: opacity > 0
         transform: Translate { y: menu.open ? 0 : root.px(8); Behavior on y { NumberAnimation { duration: 180; easing.type: Easing.OutQuint } } }
@@ -550,12 +559,12 @@ Rectangle {
                 Rectangle {
                     required property var modelData
                     required property int index
-                    readonly property bool selected: menu.kind === "session" && modelData.value === root.sessionIndex
+                    readonly property bool selected: modelData.value === menu.selectedValue
                     width: menu.width - root.px(12)
                     height: root.px(lay.powerMenuItem)
                     radius: height / 2
                     color: index === menu.current || rowArea.containsMouse ? pal.islandSurfaceHigh : "transparent"
-                    Rectangle { // selected session dot
+                    Rectangle { // selected session or user dot
                         visible: parent.selected
                         width: root.px(6); height: width; radius: width / 2
                         color: pal.islandPrimary
