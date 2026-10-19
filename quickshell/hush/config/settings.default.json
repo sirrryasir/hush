@@ -21,6 +21,7 @@
     "cc": {
       "tiles": [
         { "id": "wifi", "enabled": true, "size": "2x1" }, { "id": "bluetooth", "enabled": true, "size": "2x1" },
+        { "id": "vpn", "enabled": true, "size": "1x1" },
         { "id": "dnd", "enabled": true, "size": "2x1" }, { "id": "nightlight", "enabled": true, "size": "2x1" },
         { "id": "timer", "enabled": false, "size": "1x1" }, { "id": "recording", "enabled": false, "size": "1x1" },
         { "id": "lock", "enabled": false, "size": "1x1" }, { "id": "theme", "enabled": false, "size": "1x1" },

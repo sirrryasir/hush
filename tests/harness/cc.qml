@@ -68,14 +68,18 @@ ShellRoot {
         function rowFor(pageName, key): var {
             const pg = find(cc, pageName); if (!pg) return null
             const kids = pg.listView.contentItem.children
-            for (let i = 0; i < kids.length; i++) { const m = kids[i].modelData; if (m && (m.ssid === key || m.name === key || m.id === key)) return kids[i] }
+            for (let i = 0; i < kids.length; i++) { const m = kids[i].modelData; if (m && (m.ssid === key || m.name === key || m.label === key || m.id === key)) return kids[i] }
             return null
         }
         function rowCount(pageName: string): int { const pg = find(cc, pageName); return pg ? pg.listView.count : -1 }
         // Clicks the row itself (objName "") or the named control inside it; false when hidden or absent.
         function press(pageName: string, key: string, objName: string): bool {
             const r = rowFor(pageName, key); if (!r) return false
-            if (objName === "") { if (pageName === "wifiPage") cc.wifiClicked(r.modelData); else Svc.Bt.toggleDevice(r.modelData.dev); return true }
+            if (objName === "") {
+                if (pageName === "wifiPage") cc.wifiClicked(r.modelData); else if (pageName === "btPage") Svc.Bt.toggleDevice(r.modelData.dev)
+                else find(cc, pageName).rowClicked(r.modelData)
+                return true
+            }
             const b = find(r, objName); if (!b || !b.visible) return false
             b.clicked(); return true
         }
@@ -85,6 +89,14 @@ ShellRoot {
         function typePassword(ssid: string, pw: string): bool { const r = rowFor("wifiPage", ssid); const f = r ? find(r, "wifiPassword") : null; if (!f) return false; f.text = pw; return true }
         function passwordFocused(ssid: string): bool { const r = rowFor("wifiPage", ssid); const f = r ? find(r, "wifiPassword") : null; return !!f && f.activeFocus }
         function askSsid(): string { return cc.askSsid }
+        // Grid tiles by Composer id (the Loader "ccTile_<id>"; absent when the tile hides).
+        function tileShown(id: string): bool { return find(cc, "ccTile_" + id) !== null }
+        function tileSub(id: string): string { const t = find(cc, "ccTile_" + id); return t ? t.item.subtitle : "" }
+        function tileChecked(id: string): bool { const t = find(cc, "ccTile_" + id); return !!t && t.item.checked }
+        function pressTile(id: string): bool { const t = find(cc, "ccTile_" + id); if (!t) return false; t.item.clicked(); return true }
+        function pressTileChevron(id: string): bool { const t = find(cc, "ccTile_" + id); if (!t) return false; t.item.chevronClicked(); return true }
+        function netPoll(): void { Svc.Net.poll() }
+        function vpnCount(): int { return Svc.Net.vpns.length }
         function wifiEnabled(): bool { return Networking.wifiEnabled }
         function hiddenSsid(): string { const r = rowFor("wifiPage", "hidden"); return r ? r.hiddenSsid : "" }
         function passwordEcho(key: string): int { const r = rowFor("wifiPage", key); const f = r ? find(r, "wifiPassword") : null; return f ? f.echoMode : -1 }

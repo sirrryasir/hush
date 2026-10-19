@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Network group of the control center in the cc harness (tests/harness/cc.qml) on stub nmcli and
-# rfkill scripts: Wi-Fi details, forget, hidden network, hotspot. Saves PNGs of each surface to
+# rfkill scripts: Wi-Fi details, forget, hidden network, hotspot, VPN tile. Saves PNGs of each surface to
 # $HUSH_SHOTS (default ../cc-shots next to the checkout).
 source "$(dirname "$0")/lib.sh"
 cd "$(dirname "$0")/.."
@@ -12,7 +12,8 @@ cc() { local o i; for i in 1 2 3 4 5 6 7 8; do o=$("${H[@]}" ipc call cc "$@" 2>
 STUB=$(mktemp -d)
 # nmcli: logs every call to nmlog. HomeNet joined (uuid-home, 5 GHz, WPA2, 10.0.0.5), Saved Net saved;
 # the Hotspot profile is up once "dev wifi hotspot" ran and down again after "connection down Hotspot".
-echo down >"$STUB/hotspot"
+# VPN profiles follow the vpn file: none, down (Office VPN), up, or two (Office VPN down, Home WG up).
+echo down >"$STUB/hotspot"; echo down >"$STUB/vpn"
 cat >"$STUB/nmcli" <<EOF
 #!/bin/sh
 echo "\$*" >>"$STUB/nmlog"
@@ -21,10 +22,17 @@ case "\$*" in
   *"connection show --active"*) echo "uuid-home:802-11-wireless" ;;
   *"connection show"*)
     printf 'HomeNet:802-11-wireless:uuid-home:wlan0\nSaved Net:802-11-wireless:uuid-saved:\nlo:loopback:uuid-lo:lo\n'
-    [ "\$(cat "$STUB/hotspot")" = up ] && echo "Hotspot:802-11-wireless:uuid-hs:wlan0" ;;
+    [ "\$(cat "$STUB/hotspot")" = up ] && echo "Hotspot:802-11-wireless:uuid-hs:wlan0"
+    case "\$(cat "$STUB/vpn")" in
+      down) echo "Office VPN:vpn:uuid-vpn:" ;;
+      up) echo "Office VPN:vpn:uuid-vpn:tun0" ;;
+      two) printf 'Office VPN:vpn:uuid-vpn:\nHome WG:wireguard:uuid-wg:wg0\n' ;;
+    esac ;;
   *"dev show"*) printf 'GENERAL.TYPE:loopback\nIP4.ADDRESS[1]:127.0.0.1/8\nGENERAL.TYPE:wifi\nIP4.ADDRESS[1]:10.0.0.5/24\n' ;;
   *"dev wifi hotspot"*) echo up >"$STUB/hotspot" ;;
   *"connection down Hotspot"*) echo down >"$STUB/hotspot" ;;
+  *"connection up uuid uuid-vpn"*) echo up >"$STUB/vpn" ;;
+  *"connection down uuid uuid-vpn"*) echo down >"$STUB/vpn" ;;
   *"wifi connect"*) echo "Device 'wlan0' successfully activated." ;;
 esac
 exit 0
@@ -101,7 +109,37 @@ t_hotspot() {
   assert_eq "Start" "$(cc textIn wifiPage hotspot hotspotToggle)" "row back to Start"
   cc back >/dev/null
 }
+# VPN tile: hidden without a profile, toggles the only one on tap, lists several on a sub-page.
+t_vpn() {
+  : >"$STUB/nmlog"
+  assert_eq "true" "$(cc tileShown vpn)" "VPN tile in the grid with a profile"
+  assert_eq "Off" "$(cc tileSub vpn)" "tile says Off"
+  cc pressTile vpn >/dev/null
+  local i; for i in $(seq 20); do [[ "$(cc tileChecked vpn)" == true ]] && break; sleep 0.3; done
+  assert_contains <(cat "$STUB/nmlog") "connection up uuid uuid-vpn" "tap runs nmcli connection up uuid"
+  assert_eq "true" "$(cc tileChecked vpn)" "tile on once the profile has a device"
+  assert_eq "Office VPN" "$(cc tileSub vpn)" "tile names the connected VPN"
+  cc pressTile vpn >/dev/null
+  for i in $(seq 20); do [[ "$(cc tileChecked vpn)" == false ]] && break; sleep 0.3; done
+  assert_contains <(cat "$STUB/nmlog") "connection down uuid uuid-vpn" "second tap downs it"
+  echo two >"$STUB/vpn"; cc netPoll >/dev/null
+  for i in $(seq 20); do [[ "$(cc vpnCount)" == 2 ]] && break; sleep 0.3; done
+  assert_eq "2" "$(cc vpnCount)" "two profiles listed"
+  assert_eq "Home WG" "$(cc tileSub vpn)" "tile names the active one of two"
+  cc pressTile vpn >/dev/null; sleep 0.4
+  assert_eq "vpn" "$(cc page)" "tap with several profiles opens the VPN page"
+  assert_eq "2" "$(cc rowCount vpnPage)" "both profiles on the page"
+  shot vpn-row
+  : >"$STUB/nmlog"; cc press vpnPage 'Office VPN' "" >/dev/null
+  for i in $(seq 20); do grep -q "connection up" "$STUB/nmlog" && break; sleep 0.3; done
+  assert_contains <(cat "$STUB/nmlog") "connection up uuid uuid-vpn" "a row brings its profile up"
+  cc back >/dev/null; assert_eq "main" "$(cc page)" "back from the VPN page"
+  echo none >"$STUB/vpn"; cc netPoll >/dev/null
+  for i in $(seq 20); do [[ "$(cc tileShown vpn)" == false ]] && break; sleep 0.3; done
+  assert_eq "false" "$(cc tileShown vpn)" "tile hidden without a VPN profile"
+  echo down >"$STUB/vpn"; cc netPoll >/dev/null
+}
 t_log() { local e; e=$(grep -E 'ERROR|TypeError|ReferenceError|Unable to assign' "$LOG" || true); [[ -z "$e" ]] && pass "no QML errors" || fail "QML errors: $e"; }
 run_test up t_up; run_test details t_details; run_test forget t_forget; run_test hidden t_hidden; run_test hotspot t_hotspot
-run_test log t_log
+run_test vpn t_vpn; run_test log t_log
 finish

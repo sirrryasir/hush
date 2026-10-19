@@ -14,7 +14,7 @@ import "../cc"
 // layout.cc.tiles (Composer; Wi-Fi opens an in-place page with a password field, Bluetooth one with
 // pair / connect / forget), volume and brightness, battery and the power row, theme strip plus a
 // Wallpapers button; layout.cc.{sliders, media, themeStrip, power} switch those sections off.
-// `page` is "main" | "wifi" | "bluetooth"; back() steps out of a sub-page and
+// `page` is "main" | "wifi" | "bluetooth" | "vpn"; back() steps out of a sub-page and
 // Esc does the same, or asks the host to close (closeRequested) from the main page.
 FocusScope {
     id: cc
@@ -31,6 +31,7 @@ FocusScope {
 
     function openWifi() { page = "wifi"; askSsid = ""; Svc.Net.scan() }
     function openBluetooth() { page = "bluetooth"; Svc.Bt.scan() }
+    function openVpn() { page = "vpn"; Svc.Net.poll() }
     function back() {
         if (page === "main") return false
         if (askSsid !== "") { askSsid = ""; return true }
@@ -121,6 +122,7 @@ FocusScope {
                 const out = []; let r = 0, c = 0
                 for (const t of Composer.tilesShown) {
                     if (t.id === "nightlight" && cc.extra === "") continue
+                    if (t.id === "vpn" && Svc.Net.vpns.length === 0) continue
                     const span = t.size === "2x1" ? 2 : 1
                     if (c + span > 4) { r++; c = 0 }
                     out.push({ id: t.id, span: span, row: r, col: c })
@@ -185,7 +187,7 @@ FocusScope {
     }
 
     // --- tiles (ids from Composer.tileIds) ---
-    readonly property var tileComps: ({ wifi: wifiTile, bluetooth: btTile, dnd: dndTile, nightlight: nightTile,
+    readonly property var tileComps: ({ wifi: wifiTile, bluetooth: btTile, vpn: vpnTile, dnd: dndTile, nightlight: nightTile,
         timer: timerTile, recording: recTile, lock: lockTile, theme: themeTile, wallpapers: wallTile, settings: settingsTile })
     Component {
         id: wifiTile
@@ -206,6 +208,17 @@ FocusScope {
             checked: Svc.Bt.enabled
             onClicked: Svc.Bt.toggle()
             onChevronClicked: cc.openBluetooth()
+        }
+    }
+    // One VPN profile toggles on tap; with several the tile opens a page listing them.
+    Component {
+        id: vpnTile
+        Toggle {
+            icon: Svc.Net.vpnActive !== "" ? "vpn_lock" : "vpn_key"; label: "VPN"; chevron: Svc.Net.vpns.length > 1
+            subtitle: Svc.Net.vpnActive !== "" ? Svc.Net.vpnActive : "Off"
+            checked: Svc.Net.vpnActive !== ""
+            onClicked: Svc.Net.vpns.length === 1 ? Svc.Net.toggleVpn(Svc.Net.vpns[0]) : cc.openVpn()
+            onChevronClicked: cc.openVpn()
         }
     }
     Component {
@@ -302,6 +315,18 @@ FocusScope {
         // Under the networks: the hidden-network entry and the hotspot row (WifiRow renders both).
         model: Networking.wifiEnabled ? Svc.Net.networks.concat([{ id: "hidden", hidden: true }, { id: "hotspot", hotspot: true }]) : Svc.Net.networks
         delegate: Component { WifiRow { host: cc } }
+    }
+
+    SubPage {
+        objectName: "vpnPage"
+        anchors.fill: parent; anchors.margins: 12
+        visible: opacity > 0; opacity: cc.page === "vpn" ? 1 : 0
+        Behavior on opacity { NumberAnimation { duration: Theme.durationShort } }
+        title: "VPN"; subtitle: Svc.Net.vpnActive !== "" ? "Connected to " + Svc.Net.vpnActive : ""
+        emptyText: "No VPN profiles"
+        onBack: cc.back(); onRefresh: Svc.Net.poll()
+        model: Svc.Net.vpns.map(v => ({ icon: v.active ? "vpn_lock" : "vpn_key", label: v.name, trail: v.active ? "On" : "", active: v.active, uuid: v.uuid }))
+        onRowClicked: row => Svc.Net.toggleVpn(row)
     }
 
     SubPage {

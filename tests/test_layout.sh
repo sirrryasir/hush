@@ -73,7 +73,7 @@ t_rest_reset() {
   shell_ipc settingsReset layout >/dev/null; sleep 0.5
   assert_eq "no" "$(python3 -c "import json;print('yes' if 'layout' in json.load(open('$F')) else 'no')" 2>/dev/null || echo no)" "settingsReset drops the layout override"
   assert_eq "workspaces,date,media,bluetooth,network,battery" "$(shell_ipc layoutHover)" "after reset: default hover chips"
-  assert_eq "wifi:2x1,bluetooth:2x1,dnd:2x1,nightlight:2x1" "$(shell_ipc layoutTiles)" "after reset: default tiles"
+  assert_eq "wifi:2x1,bluetooth:2x1,vpn:1x1,dnd:2x1,nightlight:2x1" "$(shell_ipc layoutTiles)" "after reset: default tiles"
   shell_ipc openSurface expanded >/dev/null; shell_wait_state expanded; sleep 0.3
   assert_eq "wifi,bluetooth,dnd,nightlight" "$(tiles)" "after reset: the grid has the four default tiles"
   assert_eq "true" "$(shell_ipc islandControlVisible volumeSlider)" "after reset: sliders back"
