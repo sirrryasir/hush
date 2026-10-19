@@ -24,8 +24,10 @@ FocusScope {
     signal openNotifications()
     signal openSettings()
     signal closeRequested()
-    // The network whose password field is open on the Wi-Fi page ("" none).
+    // The network whose password field is open on the Wi-Fi page ("" none; hiddenKey: the "Join
+    // hidden network" entry, whose field asks the name first).
     property string askSsid: ""
+    readonly property string hiddenKey: "\n"
 
     function openWifi() { page = "wifi"; askSsid = ""; Svc.Net.scan() }
     function openBluetooth() { page = "bluetooth"; Svc.Bt.scan() }
@@ -38,6 +40,8 @@ FocusScope {
     // A row on the Wi-Fi page: secured and never joined asks for the password in place; anything
     // else joins at once (a saved profile whose key no longer works asks for a new one).
     function wifiClicked(n) {
+        if (n.hotspot) return
+        if (n.hidden) { askSsid = askSsid === hiddenKey ? "" : hiddenKey; return }
         if (n.active || Svc.Net.connecting !== "") return
         if (Svc.Net.needsPassword(n.ssid)) { askSsid = askSsid === n.ssid ? "" : n.ssid; return }
         askSsid = ""
@@ -53,6 +57,7 @@ FocusScope {
             if (n && n.secure && /password/i.test(Svc.Net.lastError)) cc.askSsid = n.ssid
         }
     }
+    Component.onCompleted: Svc.Net.poll()
     Component.onDestruction: Svc.Bt.stopScan()
     focus: true
     Keys.onEscapePressed: if (!back()) closeRequested()
@@ -294,7 +299,8 @@ FocusScope {
         onSwitched: { Networking.wifiEnabled = !Networking.wifiEnabled; if (Networking.wifiEnabled) scanLater.restart() }
         Timer { id: scanLater; interval: 1500; onTriggered: Svc.Net.scan() }
         onBack: cc.back(); onRefresh: Svc.Net.scan()
-        model: Svc.Net.networks
+        // Under the networks: the hidden-network entry and the hotspot row (WifiRow renders both).
+        model: Networking.wifiEnabled ? Svc.Net.networks.concat([{ id: "hidden", hidden: true }, { id: "hotspot", hotspot: true }]) : Svc.Net.networks
         delegate: Component { WifiRow { host: cc } }
     }
 

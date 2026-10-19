@@ -24,9 +24,9 @@ cat >"$STUB/nmcli" <<EOF
 #!/bin/sh
 echo "\$*" >>"$STUB/nmlog"
 case "\$*" in
-  *"dev wifi list"*) printf '*:HomeNet:80:WPA2\n:Saved Net:45:WPA2\n:Neighbour:30:WPA2\n:CafeOpen:60:\n:Neighbour:20:WPA2\n' ;;
+  *"dev wifi list"*) printf '*:HomeNet:80:WPA2:5180 MHz\n:Saved Net:45:WPA2:2437 MHz\n:Neighbour:30:WPA2:2412 MHz\n:CafeOpen:60::2462 MHz\n:Neighbour:20:WPA2:5200 MHz\n' ;;
   *"connection show --active"*) echo "uuid-home:802-11-wireless" ;;
-  *"connection show"*) printf 'HomeNet:802-11-wireless\nSaved Net:802-11-wireless\nlo:loopback\n' ;;
+  *"connection show"*) printf 'HomeNet:802-11-wireless:uuid-home:wlan0\nSaved Net:802-11-wireless:uuid-saved:\nlo:loopback:uuid-lo:lo\n' ;;
   *"wifi connect Neighbour password right"*) echo "Device 'wlan0' successfully activated." ;;
   *"wifi connect Neighbour"*) echo "Error: Connection activation failed: Secrets were required, but not provided." >&2; exit 4 ;;
   *"wifi connect"*) echo "Device 'wlan0' successfully activated." ;;
@@ -53,7 +53,7 @@ t_networks() {
   cc openWifi >/dev/null; local i c=0; for i in $(seq 20); do c=$(cc networkCount); (( c == 4 )) && break; sleep 0.3; done
   assert_eq "4" "$c" "stub networks listed once each (duplicate SSID merged)"
   sleep 0.3
-  assert_eq "4" "$(cc rowCount wifiPage)" "four rows on the Wi-Fi page"
+  assert_eq "6" "$(cc rowCount wifiPage)" "four network rows plus the hidden and hotspot entries"
   assert_eq "true" "$(cc visibleIn wifiPage HomeNet wifiDisconnect)" "active network offers Disconnect"
   assert_eq "false" "$(cc visibleIn wifiPage Neighbour wifiDisconnect)" "inactive network has no Disconnect"
   assert_eq "true" "$(cc visibleIn wifiPage HomeNet wifiBars)" "rows carry signal bars"

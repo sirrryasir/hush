@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Io
+import Quickshell.Networking
 import qs.config
 import qs.services as Svc
 import "modules/island/surfaces"
@@ -67,7 +68,7 @@ ShellRoot {
         function rowFor(pageName, key): var {
             const pg = find(cc, pageName); if (!pg) return null
             const kids = pg.listView.contentItem.children
-            for (let i = 0; i < kids.length; i++) { const m = kids[i].modelData; if (m && (m.ssid === key || m.name === key)) return kids[i] }
+            for (let i = 0; i < kids.length; i++) { const m = kids[i].modelData; if (m && (m.ssid === key || m.name === key || m.id === key)) return kids[i] }
             return null
         }
         function rowCount(pageName: string): int { const pg = find(cc, pageName); return pg ? pg.listView.count : -1 }
@@ -84,6 +85,9 @@ ShellRoot {
         function typePassword(ssid: string, pw: string): bool { const r = rowFor("wifiPage", ssid); const f = r ? find(r, "wifiPassword") : null; if (!f) return false; f.text = pw; return true }
         function passwordFocused(ssid: string): bool { const r = rowFor("wifiPage", ssid); const f = r ? find(r, "wifiPassword") : null; return !!f && f.activeFocus }
         function askSsid(): string { return cc.askSsid }
+        function wifiEnabled(): bool { return Networking.wifiEnabled }
+        function hiddenSsid(): string { const r = rowFor("wifiPage", "hidden"); return r ? r.hiddenSsid : "" }
+        function passwordEcho(key: string): int { const r = rowFor("wifiPage", key); const f = r ? find(r, "wifiPassword") : null; return f ? f.echoMode : -1 }
         function netError(): string { return Svc.Net.errorSsid + "|" + Svc.Net.lastError }
         function netConnecting(): string { return Svc.Net.connecting }
         function btLog(): string { return Svc.Bt.fakeLog.join(",") }

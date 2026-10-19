@@ -36,11 +36,19 @@ Singleton {
         root.connected = conn; root.wifi = isWifi; root.ssid = name; root.strength = str;
     }
 
-    // Wi-Fi list for the control center: [{ssid, signal 0..100, secure, active, saved}], strongest first.
+    // Wi-Fi list for the control center: [{ssid, signal 0..100, secure, security ("WPA2"), band
+    // ("5 GHz"), active}], strongest first.
     property var networks: []
     property bool scanning: false
-    // Saved Wi-Fi profiles by name (NetworkManager names a profile after its SSID).
+    // Saved Wi-Fi profiles by name (NetworkManager names a profile after its SSID) -> profile uuid.
     property var saved: ({})
+    // IPv4 address of the Wi-Fi device ("" when none).
+    property string ip4: ""
+    // The "Hotspot" profile nmcli creates is active.
+    property bool hotspot: false
+    // VPN and WireGuard profiles: [{name, uuid, active}]; vpnActive is the first active one's name.
+    property var vpns: []
+    readonly property string vpnActive: { const v = vpns.find(x => x.active); return v ? v.name : "" }
     // The SSID a connect() is running for, the SSID the last failure belongs to and its message
     // (shown inline under that network's row; Hush never raises a notification for it).
     property string connecting: ""
@@ -62,25 +70,44 @@ Singleton {
         if (scanning) return
         scanning = true
         lister.running = true
+        addr.running = true
     }
     // A secured network with no saved profile needs a password before it can join.
     function needsPassword(ssid) {
         const n = networks.find(x => x.ssid === ssid)
         return !!n && n.secure && !saved[ssid]
     }
-    // Joins ssid (password only for a network without a saved profile). A failed first join with a
-    // password leaves no half-made profile behind: nmcli creates one even when the key is wrong.
-    function connect(ssid, password) {
+    // Joins ssid (password only for a network without a saved profile; `hidden` for one that does not
+    // broadcast). A failed first join with a password leaves no half-made profile behind: nmcli
+    // creates one even when the key is wrong.
+    function connect(ssid, password, hidden) {
         if (connector.running) return
         lastError = ""; errorSsid = ""; connecting = ssid
         const pw = password || ""
         const fresh = !saved[ssid]
         lastAction = pw ? "connect-password" : "connect"
         connector.command = ["sh", "-c",
-            "if [ -n \"$2\" ]; then nmcli --wait 20 dev wifi connect \"$1\" password \"$2\"; else nmcli --wait 20 dev wifi connect \"$1\"; fi 2>&1; rc=$?; "
+            "if [ -n \"$2\" ]; then nmcli --wait 20 dev wifi connect \"$1\" password \"$2\" $4; else nmcli --wait 20 dev wifi connect \"$1\" $4; fi 2>&1; rc=$?; "
             + "if [ $rc -ne 0 ] && [ -n \"$2\" ] && [ \"$3\" = 1 ]; then nmcli connection delete id \"$1\" >/dev/null 2>&1; fi; echo \"::$rc\"",
-            "sh", ssid, pw, fresh ? "1" : "0"]
+            "sh", ssid, pw, fresh ? "1" : "0", hidden ? "hidden yes" : ""]
         connector.running = true
+    }
+    // Deletes the saved profile of ssid (NetworkManager drops the connection when it is active).
+    function forget(ssid) {
+        if (!saved[ssid] || acter.running) return
+        acter.command = ["nmcli", "connection", "delete", "uuid", saved[ssid]]
+        acter.running = true
+    }
+    // `nmcli dev wifi hotspot` makes (or reuses) the "Hotspot" profile with a generated key.
+    function toggleHotspot() {
+        if (acter.running) return
+        acter.command = hotspot ? ["nmcli", "connection", "down", "Hotspot"] : ["nmcli", "dev", "wifi", "hotspot"]
+        acter.running = true
+    }
+    function toggleVpn(v) {
+        if (acter.running) return
+        acter.command = ["nmcli", "connection", v.active ? "down" : "up", "uuid", v.uuid]
+        acter.running = true
     }
     // Drops the active Wi-Fi connection (the profile stays saved).
     function disconnect() {
@@ -95,7 +122,7 @@ Singleton {
     }
     Process {
         id: lister
-        command: ["nmcli", "-t", "-f", "IN-USE,SSID,SIGNAL,SECURITY", "dev", "wifi", "list"]
+        command: ["nmcli", "-t", "-f", "IN-USE,SSID,SIGNAL,SECURITY,FREQ", "dev", "wifi", "list"]
         stdout: StdioCollector {
             onStreamFinished: {
                 const seen = {}, list = []
@@ -103,9 +130,16 @@ Singleton {
                     if (!line) continue
                     const f = root.splitNmcli(line)
                     if (f.length < 4 || f[1] === "") continue
-                    const n = { ssid: f[1], signal: parseInt(f[2]) || 0, secure: f[3] !== "" && f[3] !== "--", active: f[0] === "*" }
+                    const mhz = parseInt(f[4]) || 0
+                    const n = { ssid: f[1], signal: parseInt(f[2]) || 0, secure: f[3] !== "" && f[3] !== "--", security: f[3] === "--" ? "" : f[3],
+                        band: mhz >= 5925 ? "6 GHz" : mhz >= 4900 ? "5 GHz" : "2.4 GHz", active: f[0] === "*" }
                     const i = seen[f[1]]
-                    if (i !== undefined) { if (n.active) list[i].active = true; if (n.signal > list[i].signal) list[i].signal = n.signal; continue }
+                    // Same SSID on several access points: the joined one wins, else the strongest.
+                    if (i !== undefined) {
+                        if (n.active || (!list[i].active && n.signal > list[i].signal)) { list[i].signal = n.signal; list[i].band = n.band }
+                        if (n.active) list[i].active = true
+                        continue
+                    }
                     seen[f[1]] = list.length
                     list.push(n)
                 }
@@ -117,17 +151,39 @@ Singleton {
     }
     Process {
         id: profiles
-        command: ["nmcli", "-t", "-f", "NAME,TYPE", "connection", "show"]
+        command: ["nmcli", "-t", "-f", "NAME,TYPE,UUID,DEVICE", "connection", "show"]
         stdout: StdioCollector {
             onStreamFinished: {
-                const m = {}
+                const m = {}, v = []; let hs = false
                 for (const line of text.split("\n")) {
                     const f = root.splitNmcli(line)
-                    if (f.length >= 2 && f[1] === "802-11-wireless" && f[0]) m[f[0]] = true
+                    if (f.length < 4 || !f[0]) continue
+                    if (f[1] === "802-11-wireless") { m[f[0]] = f[2]; if (f[0] === "Hotspot" && f[3] !== "") hs = true }
+                    else if (f[1] === "vpn" || f[1] === "wireguard") v.push({ name: f[0], uuid: f[2], active: f[3] !== "" })
                 }
-                root.saved = m
+                root.saved = m; root.hotspot = hs; root.vpns = v
             }
         }
+    }
+    Process {
+        id: addr
+        command: ["nmcli", "-t", "-f", "GENERAL.TYPE,IP4.ADDRESS", "dev", "show"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                let ip = "", wifi = false
+                for (const line of text.split("\n")) {
+                    const f = root.splitNmcli(line)
+                    if (f[0] === "GENERAL.TYPE") wifi = f[1] === "wifi"
+                    else if (wifi && !ip && f[0] === "IP4.ADDRESS[1]") ip = (f[1] || "").split("/")[0]
+                }
+                root.ip4 = ip
+            }
+        }
+    }
+    // One nmcli action at a time (forget, hotspot, VPN up or down); the lists refresh after it.
+    Process {
+        id: acter
+        onExited: { root.refresh(); root.scan() }
     }
     Process {
         id: connector
@@ -148,7 +204,10 @@ Singleton {
         onExited: { root.refresh(); root.scan() }
     }
 
-    Component.onCompleted: refresh()
+    // Re-reads the profiles (saved networks, hotspot, VPNs); the control center calls it when it opens.
+    function poll() { if (!profiles.running) profiles.running = true }
+
+    Component.onCompleted: { refresh(); poll() }
     Connections { target: Networking.devices; function onValuesChanged() { root.refresh() } }
     Timer { interval: 3000; running: true; repeat: true; onTriggered: root.refresh() }
 }

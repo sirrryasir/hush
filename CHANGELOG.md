@@ -11,6 +11,9 @@ All notable changes to Hush are documented here. The format follows
 - Control center: log out (ends the Hyprland session) next to lock.
 - Login: the name over the pill opens the user list when the machine has more than one account.
 
+- Control center, Wi-Fi page: the joined network's signal, band, security and IPv4; Forget on a
+  saved network (asks twice); "Join hidden network"; a hotspot row (`nmcli dev wifi hotspot`).
+
 ### Fixed
 
 - Boot menu: the Windows icon applies to Windows 8 and later (`os_win8.png`), and Linux boots
