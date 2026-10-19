@@ -32,7 +32,9 @@ Nix and manual install below.
   forgets and details networks, joins hidden ones and runs a hotspot; a VPN tile toggles a
   NetworkManager VPN or WireGuard profile and an airplane mode tile (off by default) blocks every
   radio through rfkill. OSDs and notifications queue by priority. Modes `reserve`, `overlay`, `autohide`; fullscreen retract; keyboard navigation.
-- **Live activities**: recording, countdown and now playing at rest; mic and camera in use.
+- **Live activities**: recording, countdown and now playing at rest; mic and camera in use. The
+  timer tile's page runs a focus session (25 min focus, 5 min break, 15 min long break after the
+  fourth block) with do not disturb on while it runs; the pill shows the ring and the block count.
 - **Also**: one lock and login screen (Quickshell, SDDM, hyprlock fallback); optional GloView and
   dynamic-cursors plugins; a rEFInd boot menu; colours follow the wallpaper (matugen) across
   Hyprland, GTK, Qt, kitty and SDDM.

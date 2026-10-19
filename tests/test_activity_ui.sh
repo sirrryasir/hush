@@ -3,6 +3,7 @@
 source "$(dirname "$0")/lib.sh"
 cd "$HUSH_ROOT"
 EV="$HOME/.cache/hush/evidence"; mkdir -p "$EV"
+SHOTS="${HUSH_SHOTS:-$EV}"; mkdir -p "$SHOTS"
 QS=(qs -p tests/harness/activity_ui.qml)
 LOG=$(mktemp)
 cleanup() { session_pkill -f "qs -p tests/harness/activity_ui.qml" 2>/dev/null; rm -f "$LOG"; }
@@ -30,6 +31,11 @@ t_activity_ui() {
   local w1 w2; w1=$(h width); h set false true 5 false false false false >/dev/null; sleep 0.3; w2=$(h width)
   [[ "$w2" -gt 24 ]] && pass "timer slot widens for mm:ss (${w2}px)" || fail "timer slot width ($w2)"
   assert_eq "00:05" "$(h timeText | tr -d '"')" "zero padded"
+  assert_eq "" "$(h cycleText | tr -d '"')" "plain timer: no block count"
+  h set false true 1120 false false false false >/dev/null; h focus 2 >/dev/null; sleep 0.3
+  assert_eq "2/4" "$(h cycleText | tr -d '"')" "focus session: block count after the time"
+  shot focus; cp "$EV/activity-focus.png" "$SHOTS/focus-pill.png"
+  h focus 0 >/dev/null
   h set false false 0 false true false false >/dev/null; sleep 0.3
   assert_eq "mic" "$(h glyph | tr -d '"')" "mic glyph"; shot mic
   h set false false 0 false true true false >/dev/null; sleep 0.3

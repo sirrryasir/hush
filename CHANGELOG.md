@@ -16,6 +16,9 @@ All notable changes to Hush are documented here. The format follows
   profile toggles on tap, several open a page listing them.
 - Control center: `airplane` tile (off by default, hidden without an rfkill switch), `rfkill block
   all` / `unblock all`; the rfkill probe moved from Bt into `services/Rfkill.qml`.
+- Control center: a focus page behind the timer tile (25 / 5 / 15 min, long break after the fourth
+  block, a notification at each phase change); do not disturb is on for the session and restored
+  after; the rest pill shows the block count ("2/4"); the session survives a shell restart.
 
 ### Fixed
 

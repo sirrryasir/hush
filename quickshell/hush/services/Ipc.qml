@@ -150,6 +150,9 @@ Singleton {
         function timerStart(sec: int): void { Countdown.start(sec, "") }
         function timerStop(): void { Countdown.stop() }
         function timerRemaining(): int { return Countdown.remaining }
+        function focusStart(): void { Countdown.focusStart("focus") }
+        function focusPhase(): string { return Countdown.phaseLabel }
+        function focusCycle(): int { return Countdown.cycle }
         function recording(): bool { return Recording.active }
         function micInUse(): bool { return Privacy.micInUse }
         function cameraInUse(): bool { return Privacy.cameraInUse }

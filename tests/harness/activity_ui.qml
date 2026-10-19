@@ -40,5 +40,7 @@ ShellRoot {
         function timeText(): string { return act.timeText }
         function glyph(): string { return ring.glyph }
         function width(): int { return act.width }
+        function focus(c: int): void { act.focusCycle = c }
+        function cycleText(): string { for (let i = 0; i < act.children.length; i++) { const t = act.children[i]; if (t.objectName === "cycleLabel") return t.visible ? t.text : "" } return "" }
     }
 }

@@ -36,6 +36,11 @@ EOF
 chmod +x "$STUB/nmcli"
 LOG=$(mktemp); PATH="$STUB:$PATH" HUSH_BT_NO_ADAPTER=1 "${H[@]}" -n >"$LOG" 2>&1 & HPID=$!
 trap 'kill $HPID 2>/dev/null; rm -rf "$LOG" "$STUB"' EXIT
+SHOTS="${HUSH_SHOTS:-$HOME/.cache/hush/evidence}"; mkdir -p "$SHOTS"
+shot() { # name: grim the harness layer
+  local g; g=$(hyprctl layers -j | jq -r '[.. | objects | select((.namespace? // "") == "hush-harness-cc")][0] | "\(.x),\(.y) \(.w)x\(.h)"')
+  sleep 0.6; grim -g "$g" "$SHOTS/$1.png" 2>/dev/null && assert_file "$SHOTS/$1.png" "screenshot $1"
+}
 t_up() {
   local i; for i in $(seq 20); do [[ "$(cc page)" == main ]] && break; sleep 0.5; done
   assert_eq "main" "$(cc page)" "harness starts on the main page"
@@ -148,6 +153,26 @@ t_bt() {
   assert_eq "No adapter" "$s" "after the unblock the tile no longer claims rfkill"
   grep -qx 'block bluetooth' "$STUB/log" && fail "Hush ran rfkill block" || pass "never runs rfkill block"
 }
+# Focus page from the timer tile: Start runs the first 25 min block, a duration chip jumps to that
+# phase, Stop ends the session; the tile reads the phase.
+t_focus() {
+  cc enableTile timer >/dev/null; sleep 0.3
+  cc openFocus >/dev/null; assert_eq "focus" "$(cc page)" "openFocus opens the focus page"
+  assert_eq "25:00" "$(cc focusText focusTime | tr -d '"')" "idle page shows the focus length"
+  assert_eq "Start" "$(cc focusText focusButton | tr -d '"')" "idle page offers Start"
+  cc pressFocus focusButton >/dev/null; sleep 0.6
+  assert_eq "focus/1" "$(cc focusPhase | tr -d '"')" "Start begins the first focus block"
+  assert_eq "Stop" "$(cc focusText focusButton | tr -d '"')" "running page offers Stop"
+  assert_eq "Focus · 25 min" "$(cc focusText focusPhase | tr -d '"')" "phase and length under the ring"
+  assert_contains <(cc focusText focusSubtitle) "First of four" "subtitle counts the block"
+  assert_contains <(cc tileSub timer) "Focus" "timer tile reads the phase"
+  cc pressFocus focusChip_break >/dev/null; sleep 0.3
+  assert_eq "break/1" "$(cc focusPhase | tr -d '"')" "a duration chip jumps to that phase"
+  cc pressFocus focusChip_focus >/dev/null; shot focus-page
+  cc pressFocus focusButton >/dev/null; sleep 0.3
+  assert_eq "/0" "$(cc focusPhase | tr -d '"')" "Stop ends the session"
+  cc back >/dev/null; assert_eq "main" "$(cc page)" "back from the focus page"
+}
 t_log() { local e; e=$(grep -E 'ERROR|TypeError|ReferenceError|Unable to assign' "$LOG" || true); [[ -z "$e" ]] && pass "no QML errors" || fail "QML errors: $e"; }
 # Bluetooth device page on a fake radio (HUSH_BT_FAKE=1): rows, actions, discovery spinner, battery.
 t_btpage() {
@@ -180,5 +205,5 @@ t_btpage() {
   cc back >/dev/null
 }
 run_test up t_up; run_test pages t_pages; run_test networks t_networks; run_test wifi_password t_wifi_password
-run_test layout t_layout; run_test keys t_keys; run_test bt t_bt; run_test btpage t_btpage; run_test log t_log
+run_test layout t_layout; run_test focus t_focus; run_test keys t_keys; run_test bt t_bt; run_test btpage t_btpage; run_test log t_log
 finish

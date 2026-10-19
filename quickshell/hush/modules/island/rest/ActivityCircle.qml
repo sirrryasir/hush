@@ -13,6 +13,10 @@ Item {
     property bool recording: Recording.active
     property bool timerOn: Countdown.running
     property int timerSecs: Countdown.remaining
+    // Focus session: the block count ("2/4") after the time; 0 for a plain timer.
+    property int focusCycle: Countdown.cycle
+    property string phase: Countdown.phase
+    onPhaseChanged: timerTotal = 0
     property bool mediaOn: Media.player !== null && Media.playing
     property real mediaProgress: Media.length > 0 ? Math.max(0, Math.min(1, Media.position / Media.length)) : 0
     property string artUrl: Media.artUrl
@@ -27,7 +31,7 @@ Item {
     property real timerProgress: timerTotal > 0 ? Math.max(0, Math.min(1, timerSecs / timerTotal)) : 0
     onTimerSecsChanged: if (timerOn && timerSecs > timerTotal) timerTotal = timerSecs
     onTimerOnChanged: if (!timerOn) timerTotal = 0; else if (timerSecs > timerTotal) timerTotal = timerSecs
-    implicitWidth: mode === "timer" ? 24 + 6 + timeLabel.implicitWidth : 24; implicitHeight: 24
+    implicitWidth: mode === "timer" ? 24 + 6 + timeLabel.implicitWidth + (cycleLabel.visible ? 6 + cycleLabel.implicitWidth : 0) : 24; implicitHeight: 24
     width: implicitWidth; height: implicitHeight
 
     Rectangle {
@@ -47,6 +51,14 @@ Item {
         visible: root.mode === "timer"
         anchors.left: ringBox.right; anchors.leftMargin: 6; anchors.verticalCenter: parent.verticalCenter
         text: root.timeText; color: Colors.darkOnSurface
+        font.family: Theme.fontMono; font.pixelSize: 11
+    }
+    Text {
+        id: cycleLabel
+        objectName: "cycleLabel"
+        visible: root.mode === "timer" && root.focusCycle > 0
+        anchors.left: timeLabel.right; anchors.leftMargin: 6; anchors.verticalCenter: parent.verticalCenter
+        text: root.focusCycle + "/4"; color: Colors.darkOnSurface; opacity: 0.6
         font.family: Theme.fontMono; font.pixelSize: 11
     }
     Item { id: ringBox; x: 0; width: 24; height: 24 }

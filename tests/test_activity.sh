@@ -12,6 +12,31 @@ cleanup() { [[ -n $SLEEPER ]] && kill "$SLEEPER" 2>/dev/null; session_pkill -f "
 trap cleanup EXIT
 start() { "${QS[@]}" >"$LOG" 2>&1 & for _ in $(seq 40); do "${QS[@]}" ipc call activity timerRemaining >/dev/null 2>&1 && return; sleep 0.25; done; }
 a() { "${QS[@]}" ipc call activity "$@"; }
+f() { "${QS[@]}" ipc call focustest "$@"; }
+# Focus session: 25 min focus, a 5 min break, the next block; the harness runs each phase down to a
+# second (focustest hurry). DND goes on at the start, stays on through the break, comes back at stop.
+t_focus() {
+  start
+  f dnd false >/dev/null; a focusStart >/dev/null; sleep 0.5
+  assert_eq "Focus" "$(a focusPhase | tr -d '"')" "focus session starts in Focus"
+  assert_eq "1" "$(a focusCycle)" "first of four"
+  local r; r=$(a timerRemaining); [[ $r -ge 1495 && $r -le 1500 ]] && pass "focus block is 25 min ($r)" || fail "focus remaining ($r)"
+  assert_eq "true" "$(f dndOn)" "DND on while focused"
+  f hurry >/dev/null; sleep 1.6
+  assert_eq "Break" "$(a focusPhase | tr -d '"')" "focus ends in a break"
+  r=$(a timerRemaining); [[ $r -ge 295 && $r -le 300 ]] && pass "break is 5 min ($r)" || fail "break remaining ($r)"
+  assert_eq "true" "$(f dndOn)" "DND stays on through the break"
+  f hurry >/dev/null; sleep 1.6
+  assert_eq "Focus" "$(a focusPhase | tr -d '"')" "break ends in the next focus block"
+  assert_eq "2" "$(a focusCycle)" "second of four"
+  session_pkill -f "qs -p $T/cfg"; sleep 0.5; start
+  assert_eq "Focus/2" "$(a focusPhase | tr -d '"')/$(a focusCycle)" "session survives a restart"
+  assert_eq "true" "$(f dndOn)" "DND re-applied after the restart"
+  a timerStop >/dev/null; sleep 0.3
+  assert_eq "" "$(f phase | tr -d '"')" "stop ends the session"
+  assert_eq "false" "$(f dndOn)" "stop restores DND"
+  assert_eq "{}" "$(cat "$TJ")" "stop clears the file"
+}
 t_timer() {
   start
   a timerStart 60 >/dev/null; sleep 1.2
@@ -41,5 +66,5 @@ t_booleans() {
   done
 }
 t_log() { local e; e=$(grep -E 'ERROR|WARN' "$LOG" | grep -v "Failed to create.*display\|No platform" | head -3); [[ -z $e ]] && pass "no errors in harness log" || fail "log: $e"; }
-run_test "timer" t_timer; run_test "recording" t_recording; run_test "privacy and charging" t_booleans; run_test "log" t_log
+run_test "timer" t_timer; run_test "focus" t_focus; run_test "recording" t_recording; run_test "privacy and charging" t_booleans; run_test "log" t_log
 finish

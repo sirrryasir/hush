@@ -67,7 +67,8 @@ Singleton {
         if (n.lastGeneration) return
         const centerOpen = Ipc.island && Ipc.island.state === "notifCenter"
         if (!centerOpen) root.unread++
-        if (root.dnd || centerOpen) { if (n.transient) n.expire(); return }
+        // The shell's own notices (the focus timer's phase changes) show through do not disturb.
+        if ((root.dnd && n.appName !== "hush") || centerOpen) { if (n.transient) n.expire(); return }
         // A replacement (same id) updates the toast in place; the arbiter dedupes on the key.
         if (root.toasts.indexOf(n) < 0) root.toasts = root.toasts.concat([n])
         root.toast(n)

@@ -14,7 +14,8 @@ import "../cc"
 // layout.cc.tiles (Composer; Wi-Fi opens an in-place page with a password field, Bluetooth one with
 // pair / connect / forget), volume and brightness, battery and the power row, theme strip plus a
 // Wallpapers button; layout.cc.{sliders, media, themeStrip, power} switch those sections off.
-// `page` is "main" | "wifi" | "bluetooth" | "vpn"; back() steps out of a sub-page and
+// `page` is "main" | "wifi" | "bluetooth" | "vpn" | "focus" (the timer tile's chevron; a focus session on
+// the countdown); back() steps out of a sub-page and
 // Esc does the same, or asks the host to close (closeRequested) from the main page.
 FocusScope {
     id: cc
@@ -32,6 +33,7 @@ FocusScope {
     function openWifi() { page = "wifi"; askSsid = ""; Svc.Net.scan() }
     function openBluetooth() { page = "bluetooth"; Svc.Bt.scan() }
     function openVpn() { page = "vpn"; Svc.Net.poll() }
+    function openFocus() { page = "focus" }
     function back() {
         if (page === "main") return false
         if (askSsid !== "") { askSsid = ""; return true }
@@ -256,10 +258,11 @@ FocusScope {
         id: timerTile
         Toggle {
             readonly property int s: Math.max(0, Svc.Countdown.remaining)
-            icon: "timer"; label: "Timer"
-            subtitle: Svc.Countdown.running ? Math.floor(s / 60) + ":" + (s % 60 < 10 ? "0" : "") + (s % 60) : "5 min"
+            icon: "timer"; label: "Timer"; chevron: true
+            subtitle: Svc.Countdown.running ? (Svc.Countdown.phaseLabel !== "" ? Svc.Countdown.phaseLabel + " " : "") + Math.floor(s / 60) + ":" + (s % 60 < 10 ? "0" : "") + (s % 60) : "5 min"
             checked: Svc.Countdown.running
             onClicked: Svc.Countdown.running ? Svc.Countdown.stop() : Svc.Countdown.start(300, "")
+            onChevronClicked: cc.openFocus()
         }
     }
     // Screen recording through wf-recorder into ~/Videos; a recording another tool started shows
@@ -338,6 +341,14 @@ FocusScope {
         onBack: cc.back(); onRefresh: Svc.Net.poll()
         model: Svc.Net.vpns.map(v => ({ icon: v.active ? "vpn_lock" : "vpn_key", label: v.name, trail: v.active ? "On" : "", active: v.active, uuid: v.uuid }))
         onRowClicked: row => Svc.Net.toggleVpn(row)
+    }
+
+    FocusPage {
+        objectName: "focusPage"
+        anchors.fill: parent; anchors.margins: 12
+        visible: opacity > 0; opacity: cc.page === "focus" ? 1 : 0
+        Behavior on opacity { NumberAnimation { duration: Theme.durationShort } }
+        onBack: cc.back()
     }
 
     SubPage {

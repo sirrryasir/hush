@@ -46,6 +46,10 @@ ShellRoot {
         function page(): string { return cc.page }
         function openWifi(): void { cc.openWifi() }
         function openBluetooth(): void { cc.openBluetooth() }
+        function openFocus(): void { cc.openFocus() }
+        function focusText(name: string): string { const t = find(cc, name); return t ? t.text : "" }
+        function pressFocus(name: string): bool { const b = find(cc, name); if (!b) return false; b.clicked(); return true }
+        function focusPhase(): string { return Svc.Countdown.phase + "/" + Svc.Countdown.cycle }
         function back(): bool { return cc.back() }
         function networkCount(): int { return Svc.Net.networks.length }
         function scanning(): bool { return Svc.Net.scanning }
