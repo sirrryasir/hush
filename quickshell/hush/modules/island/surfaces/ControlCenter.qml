@@ -4,6 +4,7 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Bluetooth
 import Quickshell.Networking
+import Quickshell.Services.SystemTray
 import qs.config
 import qs.config as Cfg
 import qs.services as Svc
@@ -14,9 +15,10 @@ import "../cc"
 // layout.cc.tiles (Composer; Wi-Fi opens an in-place page with a password field, Bluetooth one with
 // pair / connect / forget), volume and brightness, battery and the power row, theme strip plus a
 // Wallpapers button; layout.cc.{sliders, media, themeStrip, power} switch those sections off.
-// `page` is "main" | "wifi" | "bluetooth" | "vpn" | "focus" (the timer tile's chevron; a focus session on
-// the countdown); back() steps out of a sub-page and
-// Esc does the same, or asks the host to close (closeRequested) from the main page.
+// App status icons (StatusNotifierItem) sit behind a button in the top row, so the pill never grows
+// with them. `page` is "main" | "wifi" | "bluetooth" | "vpn" | "tray" | "focus" (the timer tile's
+// chevron; a focus session on the countdown); back() steps out of a sub-page and Esc does the same,
+// or asks the host to close (closeRequested) from the main page.
 FocusScope {
     id: cc
     readonly property size size: Sizes.expanded
@@ -34,9 +36,14 @@ FocusScope {
     function openBluetooth() { page = "bluetooth"; Svc.Bt.scan() }
     function openVpn() { page = "vpn"; Svc.Net.poll() }
     function openFocus() { page = "focus" }
+    // The tray item whose menu is listed on the tray page, and the menu (its own, or a submenu entry).
+    property var trayItem: null
+    property var trayMenu: null
+    function openTrayMenu(item) { trayItem = item; trayMenu = item.menu }
     function back() {
         if (page === "main") return false
         if (askSsid !== "") { askSsid = ""; return true }
+        if (trayMenu) { trayMenu = null; trayItem = null; return true }
         if (page === "bluetooth") Svc.Bt.stopScan()
         page = "main"; return true
     }
@@ -101,12 +108,29 @@ FocusScope {
         Behavior on opacity { NumberAnimation { duration: Theme.durationShort } }
 
         // Media when a player exists (and layout.cc.media is on), else the notifications summary:
-        // the row is always there, so the panel has no empty band at the bottom.
-        MediaRow { id: media; Layout.fillWidth: true; Layout.preferredHeight: 44; visible: shown && Composer.media }
-        NotifSummary {
-            objectName: "notifSummary"
-            Layout.fillWidth: true; Layout.preferredHeight: 44; visible: !media.visible
-            onOpenCenter: cc.openNotifications()
+        // the row is always there, so the panel has no empty band at the bottom. The tray button
+        // (app icons, with their count) sits at its right end while an app registers an icon.
+        RowLayout {
+            Layout.fillWidth: true; Layout.preferredHeight: 44; spacing: 12
+            MediaRow { id: media; Layout.fillWidth: true; Layout.preferredHeight: 44; visible: shown && Composer.media }
+            NotifSummary {
+                objectName: "notifSummary"
+                Layout.fillWidth: true; Layout.preferredHeight: 44; visible: !media.visible
+                onOpenCenter: cc.openNotifications()
+            }
+            Rectangle {
+                objectName: "trayButton"
+                readonly property int count: SystemTray.items.values.length
+                visible: count > 0
+                Layout.preferredWidth: 56; Layout.preferredHeight: 44; radius: 10; color: Colors.islandSurfaceHigh
+                Row {
+                    anchors.centerIn: parent; spacing: 4
+                    Text { anchors.verticalCenter: parent.verticalCenter; text: "apps"; color: Colors.islandFg; font.family: Theme.fontIcon; font.pixelSize: 22 }
+                    Text { anchors.verticalCenter: parent.verticalCenter; text: parent.parent.count; color: Colors.islandFg; font.family: Theme.fontUi; font.pixelSize: 12; font.weight: Font.Medium }
+                }
+                MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: cc.page = "tray"
+                    Accessible.role: Accessible.Button; Accessible.name: parent.count + " app icons" }
+            }
         }
 
         // Tiles in layout.cc.tiles order on a 4-column grid: a 2x1 tile spans two columns, a tile
@@ -364,5 +388,23 @@ FocusScope {
         onBack: cc.back(); onRefresh: Svc.Bt.scan()
         model: Svc.Bt.devices
         delegate: Component { BtRow {} }
+    }
+
+    // App icons: a TrayRow per item (tap activates, right click or the trailing glyph lists its menu
+    // here through Quickshell's menu opener), or per entry of the open menu (a submenu lists its
+    // entries, back returns to the icons).
+    QsMenuOpener { id: menuOpener; menu: cc.trayMenu }
+    SubPage {
+        objectName: "trayPage"
+        anchors.fill: parent; anchors.margins: 12
+        visible: opacity > 0; opacity: cc.page === "tray" ? 1 : 0
+        Behavior on opacity { NumberAnimation { duration: Theme.durationShort } }
+        title: cc.trayItem ? cc.trayItem.title : "App icons"
+        emptyText: cc.trayMenu ? "Empty menu" : "No app icons"
+        onBack: cc.back()
+        model: cc.trayMenu
+            ? menuOpener.children.values.filter(e => !e.isSeparator).map(e => ({ label: e.text, entry: e }))
+            : SystemTray.items.values.map(it => ({ label: it.title || it.id, item: it }))
+        delegate: Component { TrayRow { host: cc } }
     }
 }

@@ -19,6 +19,9 @@ All notable changes to Hush are documented here. The format follows
 - Control center: a focus page behind the timer tile (25 / 5 / 15 min, long break after the fourth
   block, a notification at each phase change); do not disturb is on for the session and restored
   after; the rest pill shows the block count ("2/4"); the session survives a shell restart.
+- Control center: app status icons (StatusNotifierItem) behind a button in the top row, shown with
+  their count while an app registers one; the page lists them, a tap activates, a right click or the
+  trailing glyph lists the item's menu in place.
 
 ### Fixed
 

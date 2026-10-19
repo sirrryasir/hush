@@ -3,6 +3,7 @@ import Quickshell
 import Quickshell.Wayland
 import Quickshell.Io
 import Quickshell.Networking
+import Quickshell.Services.SystemTray
 import qs.config
 import qs.services as Svc
 import "modules/island/surfaces"
@@ -122,6 +123,12 @@ ShellRoot {
         }
         function mediaShown(): bool { return Svc.Media.player !== null }
         function surfaceHeight(): int { return cc.height }
+        // Tray (test_cc_tray runs tests/fakesni.py): the header button, the page's rows, a row's tap or menu.
+        function trayCount(): int { return SystemTray.items.values.length }
+        function trayButtonVisible(): bool { const b = find(cc, "trayButton"); return !!b && b.visible }
+        function openTray(): void { cc.page = "tray" }
+        function trayTap(title: string, menu: bool): bool { const r = rowFor("trayPage", title); if (!r) return false; r.tap(menu); return true }
+        function trayMenuOpen(): bool { return cc.trayMenu !== null }
         function sliderValue(): string { const sl = find(cc, "volumeSlider"); return sl ? sl.value.toFixed(2) : "" }
     }
 }
