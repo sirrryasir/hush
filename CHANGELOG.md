@@ -22,6 +22,8 @@ All notable changes to Hush are documented here. The format follows
 - Control center: app status icons (StatusNotifierItem) behind a button in the top row, shown with
   their count while an app registers one; the page lists them, a tap activates, a right click or the
   trailing glyph lists the item's menu in place.
+- Control center: sound page behind the volume slider's end glyph: output devices (tap picks the
+  default), the microphone and each playing application, each with a level and a mute.
 
 ### Fixed
 

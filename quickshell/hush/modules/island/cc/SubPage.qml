@@ -15,6 +15,8 @@ Item {
     // Trailing switch (the radio on/off), shown when `switchable`.
     property bool switchable: false
     property bool switchOn: false
+    // The refresh button; off on a page that follows its source live (sound).
+    property bool refreshable: true
     // Row delegate for the list (a Component whose root takes `required property var modelData`);
     // null uses the plain icon / label / trailing-text row.
     property Component delegate: null
@@ -47,6 +49,7 @@ Item {
             }
         }
         Rectangle {
+            visible: page.refreshable
             Layout.preferredWidth: 36; Layout.preferredHeight: 36; radius: 18; color: Colors.islandSurfaceHigh
             Text {
                 id: rg; anchors.centerIn: parent; text: "refresh"; color: Colors.islandFg; font.family: Theme.fontIcon; font.pixelSize: 20

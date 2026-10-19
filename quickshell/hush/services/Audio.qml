@@ -16,8 +16,14 @@ Singleton {
     property bool ready: false
 
     function setVolume(v) { if (sink && sink.audio) sink.audio.volume = Math.max(0, Math.min(1, v)) }
+    // Output devices and playing application streams (the control center's sound page); a playback
+    // stream is a sink in the graph (it takes the application's audio), so isSink marks both.
+    readonly property var sinks: Pipewire.nodes.values.filter(n => n.audio && n.isSink && !n.isStream)
+    readonly property var streams: Pipewire.nodes.values.filter(n => n.audio && n.isStream && n.isSink)
+    function setSink(n) { Pipewire.preferredDefaultAudioSink = n }
 
     PwObjectTracker { objects: [Pipewire.defaultAudioSink, Pipewire.defaultAudioSource] }
+    PwObjectTracker { objects: root.sinks.concat(root.streams) }
     Timer { interval: 2000; running: true; onTriggered: root.ready = true }
     // A default-device switch (a Bluetooth headset connecting or dropping) swaps the node: its
     // volume reads 0 until bound, then jumps to the device's level. That is not a user change,

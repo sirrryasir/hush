@@ -51,6 +51,12 @@ ShellRoot {
         function focusText(name: string): string { const t = find(cc, name); return t ? t.text : "" }
         function pressFocus(name: string): bool { const b = find(cc, name); if (!b) return false; b.clicked(); return true }
         function focusPhase(): string { return Svc.Countdown.phase + "/" + Svc.Countdown.cycle }
+        function openAudio(): void { cc.openAudio() }
+        // Sound page: "kind:name" per row, the default sink's node.name, a row's level (moveLevel drags its slider).
+        function audioRows(): string { const pg = find(cc, "audioPage"); return pg ? pg.model.map(m => m.kind + ":" + m.name).join(",") : "" }
+        function sinkName(): string { return Svc.Audio.sink ? Svc.Audio.sink.name : "" }
+        function nodeVolume(key: string): string { const r = rowFor("audioPage", key); return r && r.node.audio ? r.node.audio.volume.toFixed(2) : "" }
+        function moveLevel(key: string, v: real): bool { const r = rowFor("audioPage", key); const s = r ? find(r, "audioLevel") : null; if (!s) return false; s.moved(v); return true }
         function back(): bool { return cc.back() }
         function networkCount(): int { return Svc.Net.networks.length }
         function scanning(): bool { return Svc.Net.scanning }
@@ -82,6 +88,7 @@ ShellRoot {
             const r = rowFor(pageName, key); if (!r) return false
             if (objName === "") {
                 if (pageName === "wifiPage") cc.wifiClicked(r.modelData); else if (pageName === "btPage") Svc.Bt.toggleDevice(r.modelData.dev)
+                else if (pageName === "audioPage") Svc.Audio.setSink(r.modelData.node)
                 else find(cc, pageName).rowClicked(r.modelData)
                 return true
             }

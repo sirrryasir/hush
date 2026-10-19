@@ -16,9 +16,9 @@ import "../cc"
 // pair / connect / forget), volume and brightness, battery and the power row, theme strip plus a
 // Wallpapers button; layout.cc.{sliders, media, themeStrip, power} switch those sections off.
 // App status icons (StatusNotifierItem) sit behind a button in the top row, so the pill never grows
-// with them. `page` is "main" | "wifi" | "bluetooth" | "vpn" | "tray" | "focus" (the timer tile's
-// chevron; a focus session on the countdown); back() steps out of a sub-page and Esc does the same,
-// or asks the host to close (closeRequested) from the main page.
+// with them. `page` is "main" | "wifi" | "bluetooth" | "vpn" | "tray" | "audio" | "focus" (the timer
+// tile's chevron; a focus session on the countdown); back() steps out of a sub-page and Esc does the
+// same, or asks the host to close (closeRequested) from the main page.
 FocusScope {
     id: cc
     readonly property size size: Sizes.expanded
@@ -40,6 +40,7 @@ FocusScope {
     property var trayItem: null
     property var trayMenu: null
     function openTrayMenu(item) { trayItem = item; trayMenu = item.menu }
+    function openAudio() { page = "audio" }
     function back() {
         if (page === "main") return false
         if (askSsid !== "") { askSsid = ""; return true }
@@ -182,6 +183,7 @@ FocusScope {
                 Layout.fillWidth: true; Layout.minimumWidth: 90; Layout.preferredWidth: 150; Layout.alignment: Qt.AlignVCenter
                 objectName: "volumeSlider"; label: "Volume"; icon: Svc.Audio.muted ? "volume_off" : "volume_up"; value: Svc.Audio.volume
                 onMoved: v => Svc.Audio.setVolume(v)
+                chevron: true; onChevronClicked: cc.openAudio()
             }
             Slider {
                 visible: Composer.sliders
@@ -373,6 +375,22 @@ FocusScope {
         visible: opacity > 0; opacity: cc.page === "focus" ? 1 : 0
         Behavior on opacity { NumberAnimation { duration: Theme.durationShort } }
         onBack: cc.back()
+    }
+
+    // Sound: every output device (tap makes it the default), the default microphone and each playing
+    // application, the last two with a level and a mute.
+    SubPage {
+        objectName: "audioPage"
+        anchors.fill: parent; anchors.margins: 12
+        visible: opacity > 0; opacity: cc.page === "audio" ? 1 : 0
+        Behavior on opacity { NumberAnimation { duration: Theme.durationShort } }
+        title: "Sound"; subtitle: Svc.Audio.sink ? Svc.Audio.sink.description : ""
+        emptyText: "No audio devices"; refreshable: false
+        onBack: cc.back()
+        model: Svc.Audio.sinks.map(n => ({ kind: "sink", icon: "speaker", name: n.description || n.name, node: n }))
+            .concat(Svc.Audio.source ? [{ kind: "source", icon: "mic", name: Svc.Audio.source.description || Svc.Audio.source.name, node: Svc.Audio.source }] : [])
+            .concat(Svc.Audio.streams.map(n => ({ kind: "stream", icon: "graphic_eq", name: n.properties["application.name"] || n.description || n.name, node: n })))
+        delegate: Component { AudioRow {} }
     }
 
     SubPage {
