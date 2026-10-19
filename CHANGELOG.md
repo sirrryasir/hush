@@ -15,6 +15,8 @@ All notable changes to Hush are documented here. The format follows
   saved network (asks twice); "Join hidden network"; a hotspot row (`nmcli dev wifi hotspot`).
 - Control center: `vpn` tile (on by default, hidden without a VPN or WireGuard profile); one
   profile toggles on tap, several open a page listing them.
+- Control center: `airplane` tile (off by default, hidden without an rfkill switch), `rfkill block
+  all` / `unblock all`; the rfkill probe moved from Bt into `services/Rfkill.qml`.
 
 ### Fixed
 

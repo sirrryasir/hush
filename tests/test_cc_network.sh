@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Network group of the control center in the cc harness (tests/harness/cc.qml) on stub nmcli and
-# rfkill scripts: Wi-Fi details, forget, hidden network, hotspot, VPN tile. Saves PNGs of each surface to
+# rfkill scripts: Wi-Fi details, forget, hidden network, hotspot, VPN and airplane tiles. Saves PNGs of each surface to
 # $HUSH_SHOTS (default ../cc-shots next to the checkout).
 source "$(dirname "$0")/lib.sh"
 cd "$(dirname "$0")/.."
@@ -38,6 +38,19 @@ esac
 exit 0
 EOF
 chmod +x "$STUB/nmcli"
+# rfkill: a wlan and a bluetooth switch, both unblocked; "block all" / "unblock all" flip both.
+echo unblocked >"$STUB/wlan"; echo unblocked >"$STUB/bluetooth"
+cat >"$STUB/rfkill" <<EOF
+#!/bin/sh
+echo "\$*" >>"$STUB/log"
+case "\$*" in
+  "block all") echo blocked >"$STUB/wlan"; echo blocked >"$STUB/bluetooth" ;;
+  "unblock all") echo unblocked >"$STUB/wlan"; echo unblocked >"$STUB/bluetooth" ;;
+  "unblock bluetooth") echo unblocked >"$STUB/bluetooth" ;;
+  -J) printf '{"rfkilldevices":[{"id":0,"type":"wlan","device":"phy0","soft":"%s","hard":"unblocked"},{"id":1,"type":"bluetooth","device":"hci0","soft":"%s","hard":"unblocked"}]}\n' "\$(cat "$STUB/wlan")" "\$(cat "$STUB/bluetooth")" ;;
+esac
+EOF
+chmod +x "$STUB/rfkill"
 LOG=$(mktemp); PATH="$STUB:$PATH" HUSH_BT_NO_ADAPTER=1 "${H[@]}" -n >"$LOG" 2>&1 & HPID=$!
 trap 'kill $HPID 2>/dev/null; rm -rf "$LOG" "$STUB"' EXIT
 # Crops the harness layer out of the output into $SHOTS/$1.png.
@@ -139,7 +152,28 @@ t_vpn() {
   assert_eq "false" "$(cc tileShown vpn)" "tile hidden without a VPN profile"
   echo down >"$STUB/vpn"; cc netPoll >/dev/null
 }
+# Airplane tile (off in the default layout; the test switches it on the way the Modules page does):
+# tap runs rfkill block all, Bluetooth reads blocked, a second tap unblocks.
+t_airplane() {
+  : >"$STUB/log"; cc enableTile airplane >/dev/null
+  local i; for i in $(seq 20); do [[ "$(cc tileShown airplane)" == true ]] && break; sleep 0.3; done
+  assert_eq "true" "$(cc tileShown airplane)" "airplane tile in the grid once enabled"
+  assert_eq "Off" "$(cc tileSub airplane)" "tile says Off with every switch unblocked"
+  cc pressTile airplane >/dev/null
+  for i in $(seq 20); do [[ "$(cc tileChecked airplane)" == true ]] && break; sleep 0.3; done
+  assert_contains <(cat "$STUB/log") "block all" "tap runs rfkill block all"
+  assert_eq "true" "$(cc tileChecked airplane)" "tile on once rfkill reports every switch blocked"
+  for i in $(seq 10); do [[ "$(cc btSubtitle | tr -d '"')" == "Blocked by rfkill" ]] && break; sleep 0.3; done
+  assert_eq "Blocked by rfkill" "$(cc btSubtitle | tr -d '"')" "Bluetooth tile reads blocked while airplane is on"
+  sleep 0.4; shot airplane-on
+  cc pressTile airplane >/dev/null
+  for i in $(seq 20); do [[ "$(cc tileChecked airplane)" == false ]] && break; sleep 0.3; done
+  assert_contains <(cat "$STUB/log") "unblock all" "second tap runs rfkill unblock all"
+  assert_eq "false" "$(cc tileChecked airplane)" "tile off again"
+  for i in $(seq 10); do [[ "$(cc btSubtitle | tr -d '"')" == "No adapter" ]] && break; sleep 0.3; done
+  assert_eq "No adapter" "$(cc btSubtitle | tr -d '"')" "Bluetooth tile no longer claims rfkill"
+}
 t_log() { local e; e=$(grep -E 'ERROR|TypeError|ReferenceError|Unable to assign' "$LOG" || true); [[ -z "$e" ]] && pass "no QML errors" || fail "QML errors: $e"; }
 run_test up t_up; run_test details t_details; run_test forget t_forget; run_test hidden t_hidden; run_test hotspot t_hotspot
-run_test vpn t_vpn; run_test log t_log
+run_test vpn t_vpn; run_test airplane t_airplane; run_test log t_log
 finish

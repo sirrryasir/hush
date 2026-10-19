@@ -30,7 +30,8 @@ Nix and manual install below.
   and track; control center, media, calendar, notification center, launcher (apps, windows,
   calculator, clipboard), wallpaper grid and settings open from the pill. The Wi-Fi page joins,
   forgets and details networks, joins hidden ones and runs a hotspot; a VPN tile toggles a
-  NetworkManager VPN or WireGuard profile. OSDs and notifications queue by priority. Modes `reserve`, `overlay`, `autohide`; fullscreen retract; keyboard navigation.
+  NetworkManager VPN or WireGuard profile and an airplane mode tile (off by default) blocks every
+  radio through rfkill. OSDs and notifications queue by priority. Modes `reserve`, `overlay`, `autohide`; fullscreen retract; keyboard navigation.
 - **Live activities**: recording, countdown and now playing at rest; mic and camera in use.
 - **Also**: one lock and login screen (Quickshell, SDDM, hyprlock fallback); optional GloView and
   dynamic-cursors plugins; a rEFInd boot menu; colours follow the wallpaper (matugen) across

@@ -58,7 +58,7 @@ FocusScope {
             if (n && n.secure && /password/i.test(Svc.Net.lastError)) cc.askSsid = n.ssid
         }
     }
-    Component.onCompleted: Svc.Net.poll()
+    Component.onCompleted: { Svc.Net.poll(); Svc.Rfkill.probe() }
     Component.onDestruction: Svc.Bt.stopScan()
     focus: true
     Keys.onEscapePressed: if (!back()) closeRequested()
@@ -123,6 +123,7 @@ FocusScope {
                 for (const t of Composer.tilesShown) {
                     if (t.id === "nightlight" && cc.extra === "") continue
                     if (t.id === "vpn" && Svc.Net.vpns.length === 0) continue
+                    if (t.id === "airplane" && Svc.Rfkill.count === 0) continue
                     const span = t.size === "2x1" ? 2 : 1
                     if (c + span > 4) { r++; c = 0 }
                     out.push({ id: t.id, span: span, row: r, col: c })
@@ -187,7 +188,7 @@ FocusScope {
     }
 
     // --- tiles (ids from Composer.tileIds) ---
-    readonly property var tileComps: ({ wifi: wifiTile, bluetooth: btTile, vpn: vpnTile, dnd: dndTile, nightlight: nightTile,
+    readonly property var tileComps: ({ wifi: wifiTile, bluetooth: btTile, vpn: vpnTile, airplane: airTile, dnd: dndTile, nightlight: nightTile,
         timer: timerTile, recording: recTile, lock: lockTile, theme: themeTile, wallpapers: wallTile, settings: settingsTile })
     Component {
         id: wifiTile
@@ -219,6 +220,16 @@ FocusScope {
             checked: Svc.Net.vpnActive !== ""
             onClicked: Svc.Net.vpns.length === 1 ? Svc.Net.toggleVpn(Svc.Net.vpns[0]) : cc.openVpn()
             onChevronClicked: cc.openVpn()
+        }
+    }
+    // rfkill block all: the Wi-Fi and Bluetooth tiles read off through their own services.
+    Component {
+        id: airTile
+        Toggle {
+            icon: Svc.Rfkill.airplane ? "airplanemode_active" : "airplanemode_inactive"; label: "Airplane"
+            subtitle: Svc.Rfkill.airplane ? "On" : "Off"
+            checked: Svc.Rfkill.airplane
+            onClicked: Svc.Rfkill.setAirplane(!Svc.Rfkill.airplane)
         }
     }
     Component {

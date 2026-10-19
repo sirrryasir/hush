@@ -19,8 +19,8 @@ Singleton {
     // Inquiry running (the device page shows a spinner and "Searching").
     property bool fakeDiscovering: false
     readonly property bool discovering: fake ? fakeDiscovering : !!(adapter && adapter.discovering)
-    // A bluetooth rfkill switch is soft or hard blocked (from `rfkill -J`).
-    property bool rfkillBlocked: false
+    // A bluetooth rfkill switch is soft or hard blocked (Rfkill reads `rfkill -J`).
+    readonly property bool rfkillBlocked: Rfkill.bluetooth
     readonly property bool blocked: fake ? false : rfkillBlocked || !adapter || adapter.state === BluetoothAdapterState.Blocked
     // toggle() asked for "on" and is waiting for the adapter to come back (5 s budget).
     property bool pending: false
@@ -59,21 +59,7 @@ Singleton {
         command: ["rfkill", "unblock", "bluetooth"]
         onExited: code => { if (code !== 0) console.log("hush: rfkill unblock bluetooth exited " + code); root.probe() }
     }
-    function probe() { if (!rfkillProc.running) rfkillProc.running = true }
-    Process {
-        id: rfkillProc
-        command: ["rfkill", "-J"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                let b = false
-                try {
-                    const j = JSON.parse(text), devs = j[""] || j.rfkilldevices || []
-                    for (const d of devs) if (d.type === "bluetooth" && (d.soft === "blocked" || d.hard === "blocked")) b = true
-                } catch (e) { b = false }
-                root.rfkillBlocked = b
-            }
-        }
-    }
+    function probe() { Rfkill.probe() }
     onAdapterChanged: probe()
 
     // Paired and nearby devices for the control center, connected first, then paired, then the rest:

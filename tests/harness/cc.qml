@@ -96,6 +96,7 @@ ShellRoot {
         function pressTile(id: string): bool { const t = find(cc, "ccTile_" + id); if (!t) return false; t.item.clicked(); return true }
         function pressTileChevron(id: string): bool { const t = find(cc, "ccTile_" + id); if (!t) return false; t.item.chevronClicked(); return true }
         function netPoll(): void { Svc.Net.poll() }
+        function enableTile(id: string): void { Composer.setEnabled("cc", id, true) }
         function vpnCount(): int { return Svc.Net.vpns.length }
         function wifiEnabled(): bool { return Networking.wifiEnabled }
         function hiddenSsid(): string { const r = rowFor("wifiPage", "hidden"); return r ? r.hiddenSsid : "" }
