@@ -12,7 +12,7 @@ All notable changes to Hush are documented here. The format follows
   (tick or cross, command, duration, exit code, terminal and workspace; Open focuses it), through
   `integrations/shell/hush.sh` for zsh and bash.
 - Island: a file shelf. Drag files onto the pill to keep them for 24 h, then drag them out of the strip into any app, copy or remove them.
-- Reminders: a time and a text kept in `~/.config/hush/reminders.json`; due ones raise a notification (service and `reminders` IPC; calendar and pill follow).
+- Reminders: a time and a text kept in `~/.config/hush/reminders.json`; due ones raise a notification, the calendar shows a dot on days that have one, lists the selected day and adds or removes them (it replaces the khal list), and the next one within the hour shows on the rest pill.
 - Control center: log out (ends the Hyprland session) next to lock.
 - Login: the name over the pill opens the user list when the machine has more than one account.
 - Control center, Wi-Fi page: the joined network's signal, band, security and IPv4; Forget on a

@@ -6,7 +6,7 @@ import qs.config
 import qs.modules.island.surfaces
 
 // Harness: the Calendar surface alone, at its declared size on a black pill, centred near the top.
-// Run with: qs -p tests/harness/calendar.qml   (IPC target "harness-calendar": todayText, monthTitle, upcomingCount, next/prev)
+// Run with: qs -p tests/harness/calendar.qml   (IPC target "harness-calendar": todayText, monthTitle, next/prev)
 ShellRoot {
     PanelWindow {
         id: win
@@ -26,7 +26,6 @@ ShellRoot {
         target: "harness-calendar"
         function todayText(): string { return cal.todayText }
         function monthTitle(): string { return cal.monthTitle }
-        function upcomingCount(): int { return cal.upcoming.length }
         function size(): string { return cal.size.width + "x" + cal.size.height }
         function next(): void { cal.shift(1) }
         function prev(): void { cal.shift(-1) }

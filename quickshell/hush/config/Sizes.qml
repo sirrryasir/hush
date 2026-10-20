@@ -15,7 +15,7 @@ Singleton {
     readonly property size notification: Qt.size(520, 36)
     readonly property size notificationTall: Qt.size(520, 56)
     readonly property size expanded: Qt.size(560, 304)
-    readonly property size calendar: Qt.size(360, 300)
+    readonly property size calendar: Qt.size(360, 336)
     readonly property size wallpapers: Qt.size(656, 320)
     // Settings grows past the other panels so the Modules composer lists fit without scrolling;
     // 336 + the largest top gap (24) is the island window's fixed 360 px height.
