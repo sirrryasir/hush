@@ -217,7 +217,7 @@ FocusScope {
     }
 
     // --- tiles (ids from Composer.tileIds) ---
-    readonly property var tileComps: ({ wifi: wifiTile, bluetooth: btTile, vpn: vpnTile, airplane: airTile, dnd: dndTile, nightlight: nightTile,
+    readonly property var tileComps: ({ wifi: wifiTile, bluetooth: btTile, vpn: vpnTile, airplane: airTile, dnd: dndTile, nightlight: nightTile, caffeine: caffeineTile,
         timer: timerTile, recording: recTile, lock: lockTile, theme: themeTile, wallpapers: wallTile, settings: settingsTile })
     Component {
         id: wifiTile
@@ -279,6 +279,14 @@ FocusScope {
             subtitle: cc.extraOn ? "On" : "Off"
             checked: cc.extraOn
             onClicked: cc.toggleExtra()
+        }
+    }
+    Component {
+        id: caffeineTile
+        Toggle {
+            icon: "coffee"; label: "Stay awake"; subtitle: Svc.Caffeine.on ? "Until off" : "Off"
+            checked: Svc.Caffeine.on
+            onClicked: Svc.Caffeine.on = !Svc.Caffeine.on
         }
     }
     Component {

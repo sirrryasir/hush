@@ -46,6 +46,7 @@ Singleton {
         function batteryCharging(): bool { return Battery.charging }
         function batterySummary(): string { return Battery.present ? Battery.percent + " % · " + Battery.stateText : "" }
         // What the rest status ring shows in its centre: "percent:80", "glyph:<name>" or "none".
+        function ringGlyph(): string { const r = root.island ? root.findNamed(root.island, "statusRing") : null; return r ? r.glyph : "" }
         function ringCenter(): string { const r = root.island ? root.findNamed(root.island, "statusRing") : null; return r ? r.center : "" }
         function netConnected(): bool { return Net.connected }
         // Bluetooth: the control center's toggle (lifts an rfkill block when the adapter is missing).
@@ -157,6 +158,8 @@ Singleton {
         function micInUse(): bool { return Privacy.micInUse }
         function cameraInUse(): bool { return Privacy.cameraInUse }
         function justPlugged(): bool { return Battery.justPlugged }
+        function caffeine(on: bool): void { Caffeine.on = on }
+        function caffeineOn(): bool { return Caffeine.on }
     }
     // --- end activity IPC ---
     // The shown surface item of that name on the driven island, once loaded.

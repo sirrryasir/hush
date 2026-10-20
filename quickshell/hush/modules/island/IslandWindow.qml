@@ -70,6 +70,9 @@ Scope {
             Region { item: scope.modalOpen ? catcher : null }
         }
 
+        // Stay awake (the control center's caffeine tile): idle-inhibit-unstable-v1, which hypridle honours.
+        IdleInhibitor { window: win; enabled: Caffeine.on }
+
         // Under a modal surface the whole island surface takes input; a click off the pill closes it.
         MouseArea {
             id: catcher

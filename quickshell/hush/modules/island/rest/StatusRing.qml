@@ -12,12 +12,13 @@ import qs.services
 // layout.rest.right "none" (Composer) turns the slot off: no statusCenter content and no plug-in
 // bolt; a critical battery and the privacy glyphs still show (warnings, not decoration).
 // A machine without a battery shows the "wifi" ring in battery mode. Mic and camera in use show as
-// small glyphs in every mode (privacy).
+// small glyphs in every mode (privacy), and a cup while Caffeine (stay awake) is on.
 Item {
     id: root
     objectName: "statusRing"
     property bool mic: Privacy.micInUse
     property bool camera: Privacy.cameraInUse
+    property bool caffeine: Caffeine.on
     property bool plugged: Battery.justPlugged
     property bool charging: Battery.charging
     readonly property bool critical: Battery.present && !charging && Battery.percent <= 15
@@ -32,7 +33,7 @@ Item {
     readonly property string netGlyph: !Net.connected ? "signal_wifi_off" : Bt.connectedName !== "" ? "bluetooth_connected" : Net.icon
     readonly property string ringGlyph: charging ? "bolt" : netGlyph
     // The indicator that applies right now (tests): camera, mic, the charging bolt, else the ring glyph.
-    readonly property string glyph: camera ? "videocam" : mic ? "mic" : charging && (batteryShown || ringShown || slotOn && plugged) ? "bolt" : ringShown ? netGlyph : ""
+    readonly property string glyph: camera ? "videocam" : mic ? "mic" : caffeine ? "coffee" : charging && (batteryShown || ringShown || slotOn && plugged) ? "bolt" : ringShown ? netGlyph : ""
     // What the slot shows, for tests: "battery:80", "glyph:<ring glyph>" or "none".
     readonly property string center: batteryShown ? "battery:" + Battery.percent : ringShown ? "glyph:" + ringGlyph : "none"
     readonly property color fg: Colors.islandFg
@@ -54,6 +55,11 @@ Item {
             objectName: "privacyMic"
             visible: root.mic; anchors.verticalCenter: parent.verticalCenter
             text: "mic"; color: root.privacyColor; font.family: Theme.fontIcon; font.pixelSize: 14
+        }
+        Text {
+            objectName: "caffeineGlyph"
+            visible: root.caffeine; anchors.verticalCenter: parent.verticalCenter
+            text: "coffee"; color: Colors.darkPrimary; font.family: Theme.fontIcon; font.pixelSize: 14
         }
         BatteryGlyph {
             id: battery
