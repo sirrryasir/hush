@@ -5,14 +5,16 @@ import qs.config
 import qs.services as Svc
 import "../rest"
 
-// The hover face, 320x44: chips in layout.hover order (default: this monitor's
+// The hover face, 44 px tall and 320 px wide (wider with many chips, up to 656): chips in layout.hover order (default: this monitor's
 // workspaces as dots with the active one drawn as a pill, the date, the media title while something
 // plays, Bluetooth, Wi-Fi, battery; optional volume, brightness, timer, recording). A dot goes to
 // its workspace and the date opens the calendar; the active dot or a long press opens the GloView
 // overview; any other left click goes to the pill's click mapping.
 StateBase {
     id: face
-    name: "hover"; size: Sizes.hover; priority: 1
+    name: "hover"; priority: 1
+    // 320 px at least; grows with the shown chips (and their gaps), 656 px (the widest surface) at most.
+    size: Qt.size(Math.max(Sizes.hover.width, Math.min(Sizes.wallpapers.width, Sizes.snap(row.implicitWidth + 2 * row.anchors.leftMargin))), Sizes.hover.height)
     readonly property color fg: island ? island.fg : Colors.darkOnSurface
     readonly property var workspaces: Svc.Hypr.workspacesFor(island ? island.screenName : Svc.Hypr.focusedMonitorName)
     readonly property string title: Svc.Media.playing ? (Svc.Media.title || "") : ""

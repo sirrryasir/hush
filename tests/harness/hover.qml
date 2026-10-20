@@ -15,7 +15,7 @@ ShellRoot {
         anchors.top: true
         margins.top: 60
         exclusionMode: ExclusionMode.Ignore
-        implicitWidth: 320; implicitHeight: 44
+        implicitWidth: face.size.width; implicitHeight: 44
         color: "transparent"
         Rectangle {
             anchors.fill: parent; color: "#000000"; radius: 22
@@ -38,6 +38,14 @@ ShellRoot {
         target: "hover"
         function kbdShown(): bool { const c = chip(); return !!c && c.visible }
         function kbdText(): string { const c = chip(); return c && c.item ? c.item.text : "" }
+        // allOn: every hover chip enabled and a timer running; chips: "faceWidth|id:right,..." of the shown chips.
+        function allOn(): void { for (const id of Composer.hoverIds) Composer.setEnabled("hover", id, true); Svc.Countdown.start(600, "t") }
+        function chips(): string {
+            const out = []
+            const walk = it => { for (const c of it.children) { if (c.objectName.startsWith("hoverChip_") && c.visible) out.push(c.objectName.slice(10) + ":" + Math.round(c.mapToItem(face, c.width, 0).x)); walk(c) } }
+            walk(face)
+            return Math.round(face.size.width) + "|" + out.join(",")
+        }
         function kbdTap(): void { chip().item.children[0].clicked(null) }
     }
 }

@@ -3,7 +3,7 @@
 # keys and the wheel go through tests/lib/input.sh (ydotoold live, virtual devices in the sandbox). Timings come
 # from the island's own history (state changes and pointer crossings stamped in the shell), so IPC
 # latency never counts:
-#   pointer onto the pill -> hover face (320x44) within 200 ms, not before the 120 ms dwell;
+#   pointer onto the pill -> hover face (44 px tall, 320+ wide) within 200 ms, not before the 120 ms dwell;
 #   pointer away -> rest no sooner than the 300 ms grace;
 #   pointer parked on the pill during an OSD -> hover within 350 ms of the OSD ending (re-arm);
 #   a click 100 ms after the control center opened, on its DND button, does nothing (arming);
@@ -56,8 +56,9 @@ t_hover() {
   shell_wait_state hover && pass "pointer on the pill opens the hover face" || fail "no hover face (state $(shell_state))"
   local g; g=$(history_gap @in hover)
   [[ $g -ge 110 && $g -le 200 ]] && pass "hover after $g ms (dwell 120, <= 200)" || fail "hover after $g ms"
-  local i; for i in $(seq 30); do [[ "$(shell_ipc islandSize)" == "320x44" ]] && break; sleep 0.1; done # the spring settles within ~3 s under load
-  assert_eq "320x44" "$(shell_ipc islandSize)" "hover face is 320x44"
+  local i; for i in $(seq 30); do [[ "$(shell_ipc islandSize)" == *x44 ]] && break; sleep 0.1; done # the spring settles within ~3 s under load
+  local sz; sz=$(shell_ipc islandSize)
+  [[ "$sz" == *x44 && ${sz%x*} -ge 320 ]] && pass "hover face is $sz (44 tall, 320 wide or more with its chips)" || fail "hover face is $sz"
   assert_eq "true" "$(shell_ipc islandControlVisible hoverWifi)" "hover face shows the Wi-Fi state"
   if [[ "$(shell_ipc batteryPresent)" == "true" ]]; then
     assert_eq "true" "$(shell_ipc islandControlVisible hoverBattery)" "hover face shows the battery glyph"
@@ -185,5 +186,25 @@ EOF2
   assert_contains "$D/log" "switchxkblayout at-kbd next" "tap runs hyprctl switchxkblayout <device> next"
   kill $pid 2>/dev/null; wait $pid 2>/dev/null; rm -rf "$D"
 }
-run_test "files" t_files; run_test "hover" t_hover; run_test "rearm" t_rearm; run_test "clicks" t_clicks; run_test "overview" t_overview; run_test "kbd" t_kbd; run_test "log" shell_log_check
+# Every hover chip enabled (fake radio, backlight, wf-recorder, two layouts, a running timer): the face
+# grows past 320 px and no chip's right edge passes its width.
+t_all() {
+  local D; D=$(mktemp -d); local HC=(qs -p "$PWD/tests/harness/hover.qml")
+  mkdir -p "$D/bl/x"; echo 100 >"$D/bl/x/max_brightness"; echo 50 >"$D/bl/x/brightness"
+  printf '#!/bin/sh\necho "$*" | grep -q wf-recorder && echo "1 wf-recorder"\nexit 0\n' >"$D/pgrep"
+  printf '#!/bin/sh\ncase "$*" in *devices*) echo '"'"'{"keyboards":[{"name":"k","main":true,"layout":"us,de","active_keymap":"English (US)"}]}'"'"' ;; esac\nexit 0\n' >"$D/hyprctl"
+  chmod +x "$D/pgrep" "$D/hyprctl"
+  HUSH_ROOT="$PWD" QS_DISABLE_CRASH_HANDLER=1 HUSH_BT_FAKE=1 HUSH_BACKLIGHT_DIR="$D/bl" PATH="$D:$PATH" "${HC[@]}" -n >"$D/qs.log" 2>&1 & local pid=$!
+  hv() { local o i; for i in 1 2 3 4 5 6 7 8; do o=$("${HC[@]}" ipc call hover "$@" 2>/dev/null) && { echo "$o"; return 0; }; sleep 0.5; done; return 1; }
+  hv allOn >/dev/null; sleep 3
+  local out w; out=$(hv chips | tr -d '"'); w=${out%%|*}
+  (( w > 320 )) && pass "face grew to $w px with every chip on" || fail "face stayed $w px"
+  local c bad="" n=0; for c in $(tr ',' ' ' <<<"${out#*|}"); do n=$((n + 1)); (( ${c#*:} <= w )) || bad+=" $c"; done
+  [[ -z "$bad" && $n -ge 7 ]] && pass "$n chips shown, none clipped (face $w px)" || fail "clipped or missing chips (n=$n, face $w):$bad [$out]"
+  HUSH_SHOTS="${HUSH_SHOTS:-$PWD/.claude/cc-shots}"; mkdir -p "$HUSH_SHOTS"; sleep 0.6
+  local g; g=$(hyprctl layers -j | jq -r '[.. | objects | select((.namespace? // "") == "hush-harness-hover")][0] | "\(.x),\(.y) \(.w)x\(.h)"')
+  grim -g "$g" "$HUSH_SHOTS/hover-all-chips.png" 2>/dev/null; [[ -f "$HUSH_SHOTS/hover-all-chips.png" ]] && pass "screenshot hover-all-chips" || echo "  (no screenshot)"
+  kill $pid 2>/dev/null; wait $pid 2>/dev/null; rm -rf "$D"
+}
+run_test "files" t_files; run_test "hover" t_hover; run_test "rearm" t_rearm; run_test "clicks" t_clicks; run_test "overview" t_overview; run_test "kbd" t_kbd; run_test "all" t_all; run_test "log" shell_log_check
 finish
