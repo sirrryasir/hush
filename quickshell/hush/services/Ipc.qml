@@ -182,6 +182,13 @@ Singleton {
         }
     }
     // --- end activity IPC ---
+    IpcHandler {
+        target: "reminders"
+        function add(secs: int, text: string): bool { return Reminders.add(Date.now() + secs * 1000, text) }
+        function clear(): void { Reminders.items = []; Reminders.save() }
+        function count(): int { return Reminders.items.length }
+        function pill(): string { return Reminders.pill }
+    }
     // The shown surface item of that name on the driven island, once loaded.
     function surface(name) { return root.island ? root.island.surfaceItem(name) : null }
     function findNamed(item, name) {

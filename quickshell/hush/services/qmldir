@@ -13,6 +13,7 @@ singleton Notifs 1.0 Notifs.qml
 singleton Recording 1.0 Recording.qml
 singleton Privacy 1.0 Privacy.qml
 singleton Countdown 1.0 Countdown.qml
+singleton Reminders 1.0 Reminders.qml
 singleton Rfkill 1.0 Rfkill.qml
 singleton Caffeine 1.0 Caffeine.qml
 singleton Shelf 1.0 Shelf.qml
