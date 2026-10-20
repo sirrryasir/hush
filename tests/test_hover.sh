@@ -155,5 +155,35 @@ t_overview() {
   shell_ipc overview >/dev/null; sleep 0.8; shell_ipc overview >/dev/null; sleep 0.6
   local e; e=$(shell_log_errors); [[ -z "$e" ]] && pass "overview IPC runs without errors" || fail "overview: $e"
 }
-run_test "files" t_files; run_test "hover" t_hover; run_test "rearm" t_rearm; run_test "clicks" t_clicks; run_test "overview" t_overview; run_test "log" shell_log_check
+# Keyboard layout chip, in its own harness with a fake hyprctl: one layout shows nothing; two show
+# the active layout's short name, and a tap runs `hyprctl switchxkblayout <device> next`.
+t_kbd() {
+  local D; D=$(mktemp -d); local HC=(qs -p "$PWD/tests/harness/hover.qml") i
+  cat >"$D/hyprctl" <<EOF2
+#!/bin/sh
+echo "\$*" >>"$D/log"
+case "\$*" in
+  *devices*) cat "$D/devices" ;;
+esac
+exit 0
+EOF2
+  chmod +x "$D/hyprctl"
+  kbd_json() { printf '{"keyboards":[{"name":"at-kbd","main":true,"layout":"%s","active_keymap":"%s"}]}\n' "$1" "$2" >"$D/devices"; }
+  kbd_json us "English (US)"
+  HUSH_ROOT="$PWD" QS_DISABLE_CRASH_HANDLER=1 PATH="$D:$PATH" "${HC[@]}" -n >"$D/qs.log" 2>&1 & local pid=$!
+  hv() { local o; for i in 1 2 3 4 5 6 7 8; do o=$("${HC[@]}" ipc call hover "$@" 2>/dev/null) && { echo "$o"; return 0; }; sleep 0.5; done; return 1; }
+  hv kbdShown >/dev/null; sleep 1
+  assert_eq "false" "$(hv kbdShown)" "one layout: no keyboard chip"
+  kill $pid 2>/dev/null; wait $pid 2>/dev/null
+  kbd_json us,de "German"
+  HUSH_ROOT="$PWD" QS_DISABLE_CRASH_HANDLER=1 PATH="$D:$PATH" "${HC[@]}" -n >"$D/qs.log" 2>&1 & pid=$!
+  hv kbdShown >/dev/null
+  for i in $(seq 20); do [[ "$(hv kbdShown)" == true ]] && break; sleep 0.3; done
+  assert_eq "true" "$(hv kbdShown)" "two layouts: the keyboard chip shows"
+  assert_eq "de" "$(hv kbdText)" "chip text is the active layout's two letters"
+  hv kbdTap >/dev/null; sleep 0.5
+  assert_contains "$D/log" "switchxkblayout at-kbd next" "tap runs hyprctl switchxkblayout <device> next"
+  kill $pid 2>/dev/null; wait $pid 2>/dev/null; rm -rf "$D"
+}
+run_test "files" t_files; run_test "hover" t_hover; run_test "rearm" t_rearm; run_test "clicks" t_clicks; run_test "overview" t_overview; run_test "kbd" t_kbd; run_test "log" shell_log_check
 finish

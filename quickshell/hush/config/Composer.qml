@@ -11,19 +11,19 @@ import Quickshell
 // malformed list falls back to the defaults.
 Singleton {
     id: root
-    readonly property var hoverIds: ["workspaces", "date", "media", "battery", "network", "bluetooth", "volume", "brightness", "timer", "recording"]
+    readonly property var hoverIds: ["workspaces", "date", "media", "battery", "network", "bluetooth", "volume", "brightness", "timer", "recording", "keyboard"]
     readonly property var tileIds: ["wifi", "bluetooth", "vpn", "airplane", "dnd", "nightlight", "caffeine", "timer", "recording", "screenshot", "lock", "theme", "wallpapers", "settings"]
     readonly property var sectionKeys: ["sliders", "media", "themeStrip", "power"]
     readonly property var labels: ({
         workspaces: "Workspaces", date: "Date", media: "Now playing", battery: "Battery", network: "Network",
-        bluetooth: "Bluetooth", volume: "Volume", brightness: "Brightness", timer: "Timer", recording: "Recording",
+        bluetooth: "Bluetooth", volume: "Volume", brightness: "Brightness", timer: "Timer", recording: "Recording", keyboard: "Keyboard layout",
         screenshot: "Screenshot", wifi: "Wi-Fi", vpn: "VPN", airplane: "Airplane mode", dnd: "Do not disturb", nightlight: "Night light", caffeine: "Stay awake", lock: "Lock", theme: "Theme",
         wallpapers: "Wallpapers", settings: "Settings",
         sliders: "Sliders", themeStrip: "Theme strip", power: "Power row"
     })
     readonly property var sectionLabels: ({ sliders: "Sliders", media: "Media", themeStrip: "Themes", power: "Power" })
     // Built-in fallbacks for a settings.default.json without a layout block.
-    readonly property var builtinHover: ["workspaces", "date", "media", "bluetooth", "network", "battery"]
+    readonly property var builtinHover: ["workspaces", "date", "media", "bluetooth", "network", "battery", "keyboard"]
     readonly property var builtinTiles: ["wifi", "bluetooth", "dnd", "nightlight"]
 
     readonly property var defaults: Settings.defaults.layout || ({})

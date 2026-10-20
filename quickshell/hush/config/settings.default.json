@@ -14,7 +14,7 @@
     "rest": { "left": "activity", "right": "status" },
     "hover": [
       { "id": "workspaces", "enabled": true }, { "id": "date", "enabled": true }, { "id": "media", "enabled": true },
-      { "id": "bluetooth", "enabled": true }, { "id": "network", "enabled": true }, { "id": "battery", "enabled": true },
+      { "id": "bluetooth", "enabled": true }, { "id": "network", "enabled": true }, { "id": "battery", "enabled": true }, { "id": "keyboard", "enabled": true },
       { "id": "volume", "enabled": false }, { "id": "brightness", "enabled": false },
       { "id": "timer", "enabled": false }, { "id": "recording", "enabled": false }
     ],

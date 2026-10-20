@@ -1,6 +1,7 @@
 module qs.services
 singleton Ipc 1.0 Ipc.qml
 singleton Hypr 1.0 Hypr.qml
+singleton Kbd 1.0 Kbd.qml
 singleton Net 1.0 Net.qml
 singleton Bt 1.0 Bt.qml
 singleton Battery 1.0 Battery.qml

@@ -35,7 +35,7 @@ StateBase {
     }
     readonly property var chipComps: ({ workspaces: wsChip, date: dateChip, media: mediaChip, battery: batteryChip,
         network: netChip, bluetooth: btChip, volume: volChip, brightness: briChip, timer: timerChip,
-        recording: recChip, _spacer: spacerChip })
+        recording: recChip, keyboard: kbdChip, _spacer: spacerChip })
     RowLayout {
         id: row
         anchors.left: parent.left; anchors.right: parent.right; anchors.leftMargin: 18; anchors.rightMargin: 18
@@ -144,6 +144,19 @@ StateBase {
             readonly property bool shown: Svc.Battery.present
             bodyW: 30; bodyH: 15
             Accessible.role: Accessible.StaticText; Accessible.name: "Battery " + Svc.Battery.percent + " percent"
+        }
+    }
+    // Only while Hyprland has more than one layout; a tap switches to the next.
+    Component {
+        id: kbdChip
+        Text {
+            objectName: "hoverKbd"
+            readonly property bool shown: Svc.Kbd.count > 1
+            text: Svc.Kbd.short
+            color: Colors.alpha(face.fg, 0.8)
+            font.family: Theme.fontUi; font.pixelSize: Theme.textIsland; font.weight: Font.Medium
+            Accessible.role: Accessible.Button; Accessible.name: "Keyboard layout " + text + ", switch to next"
+            MouseArea { anchors.fill: parent; anchors.margins: -6; onClicked: Svc.Kbd.next() }
         }
     }
     Component {
