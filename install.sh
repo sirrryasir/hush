@@ -44,6 +44,7 @@ link "$HUSH_ROOT/matugen"                    "$CFG/matugen"
 link "$HUSH_ROOT/hyprlock"                   "$CFG/hyprlock"
 link "$HUSH_ROOT/hyprlock/hyprlock.conf"     "$CFG/hypr/hyprlock.conf"
 link "$HUSH_ROOT/hypr/plugins.lua"           "$CFG/hush/plugins.lua"
+link "$HUSH_ROOT/integrations/shell/hush.sh"  "$CFG/hush/shell.sh"
 for b in hush hush-wallgen hush-fonts hush-gtk; do link "$HUSH_ROOT/bin/$b" "$BIN/$b"; done
 if [[ -d "$CFG/nvim/lua/plugins" ]]; then
   link "$HUSH_ROOT/integrations/nvim/hush-theme.lua" "$CFG/nvim/lua/plugins/hush-theme.lua"

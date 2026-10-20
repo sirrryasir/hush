@@ -35,6 +35,9 @@ Nix and manual install below.
   center's top row, never on the pill: the page lists them, a tap activates one, a right click lists
   its menu. The volume slider's end glyph opens the sound page: output devices (tap picks the
   default), the microphone and each playing application, with level and mute. OSDs and
+  a Stay awake tile (off by default) holds an idle inhibitor. A command that ran 20 s or more in a
+  terminal raises a result card when it ends (add `source ~/.config/hush/shell.sh` to your
+  `~/.zshrc` or `~/.bashrc`; `HUSH_JOB_SECS` changes the threshold, a focused terminal stays quiet).
   notifications queue by priority. The battery chip opens the power-profile page when
   powerprofilesctl is installed. Modes `reserve`, `overlay`, `autohide`; fullscreen retract; keyboard navigation.
 - **Live activities**: recording, countdown and now playing at rest; mic and camera in use. The

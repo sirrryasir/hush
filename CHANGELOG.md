@@ -8,6 +8,9 @@ All notable changes to Hush are documented here. The format follows
 
 ### Added
 
+- Job done: a terminal command that ran 20 s or more raises a card on the island when it ends
+  (tick or cross, command, duration, exit code, terminal and workspace; Open focuses it), through
+  `integrations/shell/hush.sh` for zsh and bash.
 - Control center: log out (ends the Hyprland session) next to lock.
 - Login: the name over the pill opens the user list when the machine has more than one account.
 - Control center, Wi-Fi page: the joined network's signal, band, security and IPv4; Forget on a
@@ -16,6 +19,8 @@ All notable changes to Hush are documented here. The format follows
   profile toggles on tap, several open a page listing them.
 - Control center: `airplane` tile (off by default, hidden without an rfkill switch), `rfkill block
   all` / `unblock all`; the rfkill probe moved from Bt into `services/Rfkill.qml`.
+- Control center: `caffeine` tile ("Stay awake", off by default) holds a Wayland idle inhibitor until
+  turned off; the rest pill's status ring shows a cup meanwhile.
 - Control center: a focus page behind the timer tile (25 / 5 / 15 min, long break after the fourth
   block, a notification at each phase change); do not disturb is on for the session and restored
   after; the rest pill shows the block count ("2/4"); the session survives a shell restart.

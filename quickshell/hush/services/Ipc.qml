@@ -97,6 +97,11 @@ Singleton {
             const it = root.island && root.island.item ? root.findNamed(root.island.item, name) : null
             return !!it && it.visible
         }
+        // The named control's text in the shown state ("" when absent).
+        function islandControlText(name: string): string {
+            const it = root.island && root.island.item ? root.findNamed(root.island.item, name) : null
+            return it && it.text !== undefined ? String(it.text) : ""
+        }
         // --- end hover and input ---
         // --- modes, fullscreen overlay, keyboard ---
         function osdOverlayVisible(): bool { return root.island ? root.island.overlayOsd : false }
