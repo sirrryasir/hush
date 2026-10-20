@@ -34,6 +34,7 @@ Singleton {
         case "mediaSurface": return mediaSurface
         case "osd": return osd
         case "notification": return notification
+        case "device": return notificationTall
         case "expanded": return expanded
         case "calendar": return calendar
         case "wallpapers": return wallpapers

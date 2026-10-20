@@ -17,7 +17,7 @@ Item {
     state: "rest"
     states: [
         QQ.State { name: "rest" }, QQ.State { name: "hover" }, QQ.State { name: "media" },
-        QQ.State { name: "notification" }, QQ.State { name: "osd" }, QQ.State { name: "expanded" },
+        QQ.State { name: "notification" }, QQ.State { name: "device" }, QQ.State { name: "osd" }, QQ.State { name: "expanded" },
         QQ.State { name: "mediaSurface" }, QQ.State { name: "calendar" }, QQ.State { name: "notifCenter" },
         QQ.State { name: "launcher" }, QQ.State { name: "wallpapers" }, QQ.State { name: "settings" },
         QQ.State { name: "shelf" }, QQ.State { name: "shelfDrop" }
@@ -64,6 +64,7 @@ Item {
             for (const n of islandRoot.modals) declare(n, Priorities.modal, {})
             declare("critical", Priorities.critical, { sticky: true })
             declare("notification", Priorities.notification, { holdMs: Theme.notificationHoldMs })
+            declare("device", Priorities.notification, { holdMs: Theme.notificationHoldMs })
             declare("osd", Priorities.osd, { holdMs: Theme.osdHoldMs, coalesce: true })
             declare("hover", Priorities.hover, {})
             // A file dragged over the pill: the drop capsule, above toasts, until the drag leaves or drops.
@@ -76,7 +77,7 @@ Item {
     readonly property var payload: arbiter.payload
     readonly property int priority: arbiter.currentPriority
     // A notification card under the pointer keeps its hold (sticky critical ones never time out).
-    readonly property bool holdPaused: hover.hovered && state === "notification"
+    readonly property bool holdPaused: hover.hovered && (state === "notification" || state === "device")
     onHoldPausedChanged: arbiter.pause(holdPaused)
 
     function stateFor(name) { return name === "critical" ? "notification" : (name || "rest") }
@@ -362,6 +363,7 @@ Item {
     OsdRegistrar { id: osdReg; island: islandRoot }
     Loader { source: "states/MediaRegistrar.qml"; onLoaded: item.island = islandRoot }
     NotificationRegistrar { island: islandRoot }
+    DeviceRegistrar { island: islandRoot }
     Component {
         id: ccComp
         Surf.ControlCenter {
