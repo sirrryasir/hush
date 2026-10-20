@@ -44,8 +44,14 @@ Nix and manual install below.
   notifications queue by priority. The battery chip opens the power-profile page when
 =======
   notifications queue by priority; a removable drive raises a card with Mount, Open (xdg-open) and
+<<<<<<< HEAD
   Eject (unmount, power off, then "Safe to remove"), needs udisks2. The battery chip opens the power-profile page when
 >>>>>>> 84a2769 (feat(devices): card with Mount, Open and Eject)
+||||||| parent of c9f1f4b (feat(devices): USB glyph on the rest pill)
+  Eject (unmount, power off, then "Safe to remove"), needs udisks2. The battery chip opens the power-profile page when
+=======
+  Eject (unmount, power off, then "Safe to remove") and a USB glyph sits on the rest pill while one is plugged in; needs udisks2. The battery chip opens the power-profile page when
+>>>>>>> c9f1f4b (feat(devices): USB glyph on the rest pill)
   powerprofilesctl is installed. Modes `reserve`, `overlay`, `autohide`; fullscreen retract; keyboard navigation.
 - **Live activities**: recording, countdown and now playing at rest; mic and camera in use. The
   timer tile's page runs a focus session (25 min focus, 5 min break, 15 min long break after the

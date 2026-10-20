@@ -35,7 +35,7 @@ import json,sys
 for o in json.load(sys.stdin).values():
   for lv in o['levels'].values():
     for l in lv:
-      if l['namespace']=='hush-harness-device': print('%d,%d %dx%d' % (l['x'],l['y'],l['w'],l['h']))")
+      if l['namespace']=='hush-harness-device$2': print('%d,%d %dx%d' % (l['x'],l['y'],l['w'],l['h']))")
   [[ -n "$g" ]] && grim -g "$g" "$SHOTS/$1.png" 2>/dev/null
   assert_file "$SHOTS/$1.png" "saved $SHOTS/$1.png"
 }
@@ -43,13 +43,15 @@ for o in json.load(sys.stdin).values():
 t_card() {
   dv current >/dev/null; sleep 1.5
   assert_eq "" "$(dv current)" "no card at start"
+  assert_eq "false" "$(dv usb)" "no USB glyph on the rest pill without a removable drive"
   touch "$STUB/plugged"
   wait_for '[[ "$(dv current)" == device ]]'
   assert_eq "device" "$(dv current)" "plugging a removable drive raises the device card"
   assert_eq "Kingston DataTraveler" "$(dv title)" "card names the drive (the internal disk is skipped)"
   assert_eq "28.9 GB · exfat · not mounted" "$(dv sub)" "size, filesystem, mount state"
   assert_eq "Mount,Open,eject" "$(dv buttons)" "Mount, Open, Eject"
-  sleep 0.6; shot device-card
+  assert_eq "true" "$(dv usb)" "USB glyph on the rest pill while it is plugged in"
+  sleep 0.6; shot device-card; shot device-glyph -ring
 }
 t_mount() {
   dv press mount >/dev/null
@@ -66,6 +68,8 @@ t_eject() {
   assert_eq "Kingston DataTraveler unmounted and powered off" "$(dv sub)" "and names the drive"
   assert_eq "unmount unmount -b /dev/sdb1|power-off power-off -b /dev/sdb1" "$(sed -n '2,3p' "$STUB/calls" | paste -sd'|')" "unmount, then power-off"
   assert_eq "device" "$(dv current)" "the card is up"
+  wait_for '[[ "$(dv usb)" == false ]]'
+  assert_eq "false" "$(dv usb)" "the glyph goes with the drive"
   sleep 0.6; shot device-safe
   wait_for '[[ "$(dv current)" == "" ]]' && pass "the card goes after its hold" || fail "card still up"
 }

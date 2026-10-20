@@ -12,7 +12,13 @@ import qs.services
 // layout.rest.right "none" (Composer) turns the slot off: no statusCenter content and no plug-in
 // bolt; a critical battery and the privacy glyphs still show (warnings, not decoration).
 // A machine without a battery shows the "wifi" ring in battery mode. Mic and camera in use show as
+<<<<<<< HEAD
 // small glyphs in every mode (privacy), and a cup while Caffeine (stay awake) is on.
+||||||| parent of c9f1f4b (feat(devices): USB glyph on the rest pill)
+// small glyphs in every mode (privacy).
+=======
+// small glyphs in every mode (privacy). A USB glyph shows while a removable drive is plugged in.
+>>>>>>> c9f1f4b (feat(devices): USB glyph on the rest pill)
 Item {
     id: root
     objectName: "statusRing"
@@ -23,6 +29,8 @@ Item {
     property bool charging: Battery.charging
     readonly property bool critical: Battery.present && !charging && Battery.percent <= 15
     readonly property bool privacy: camera || mic
+    // A removable drive is plugged in (the USB glyph, shown while the slot is on).
+    readonly property bool usb: Devices.present && slotOn
     readonly property string centerMode: {
         const m = String(Settings.island.statusCenter || "none")
         return m === "wifi" || m === "battery" ? m : "none"
@@ -40,7 +48,9 @@ Item {
     readonly property color privacyColor: Colors.dark.tertiary || Colors.tertiary
     implicitWidth: row.implicitWidth; implicitHeight: 24
     width: implicitWidth; height: implicitHeight
-    visible: implicitWidth > 0
+    // From the model, not from implicitWidth: a Row skips children that are not effectively visible, so
+    // a hidden ring could never get wide enough to show.
+    visible: privacy || usb || batteryShown || ringShown
 
     Row {
         id: row
@@ -57,9 +67,17 @@ Item {
             text: "mic"; color: root.privacyColor; font.family: Theme.fontIcon; font.pixelSize: 14
         }
         Text {
+<<<<<<< HEAD
             objectName: "caffeineGlyph"
             visible: root.caffeine; anchors.verticalCenter: parent.verticalCenter
             text: "coffee"; color: Colors.darkPrimary; font.family: Theme.fontIcon; font.pixelSize: 14
+||||||| parent of c9f1f4b (feat(devices): USB glyph on the rest pill)
+=======
+            id: usbGlyph
+            objectName: "deviceGlyph"
+            visible: root.usb; anchors.verticalCenter: parent.verticalCenter
+            text: "usb"; color: Colors.alpha(root.fg, 0.78); font.family: Theme.fontIcon; font.pixelSize: 14
+>>>>>>> c9f1f4b (feat(devices): USB glyph on the rest pill)
         }
         BatteryGlyph {
             id: battery

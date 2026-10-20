@@ -17,8 +17,15 @@ All notable changes to Hush are documented here. The format follows
 ||||||| parent of 84a2769 (feat(devices): card with Mount, Open and Eject)
 =======
 - Island: a removable drive raises a card (name, size, filesystem, Mount, Open, Eject; "Safe to
+<<<<<<< HEAD
   remove" after an eject) from `udisksctl monitor` and `dump`.
 >>>>>>> 84a2769 (feat(devices): card with Mount, Open and Eject)
+||||||| parent of c9f1f4b (feat(devices): USB glyph on the rest pill)
+  remove" after an eject) from `udisksctl monitor` and `dump`.
+=======
+  remove" after an eject) from `udisksctl monitor` and `dump`; a USB glyph on the rest pill while
+  one is plugged in.
+>>>>>>> c9f1f4b (feat(devices): USB glyph on the rest pill)
 - Control center: log out (ends the Hyprland session) next to lock.
 - Login: the name over the pill opens the user list when the machine has more than one account.
 - Control center, Wi-Fi page: the joined network's signal, band, security and IPv4; Forget on a
