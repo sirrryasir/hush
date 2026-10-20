@@ -8,6 +8,7 @@ All notable changes to Hush are documented here. The format follows
 
 ### Added
 
+- Control center: a Focus tile (on by default) opens the focus session page and reads the running phase and time; the control center grid places tiles first-fit, so a 2x1 no longer leaves empty cells.
 - Job done: a terminal command that ran 20 s or more raises a card on the island when it ends
   (tick or cross, command, duration, exit code, terminal and workspace; Open focuses it), through
   `integrations/shell/hush.sh` for zsh and bash.

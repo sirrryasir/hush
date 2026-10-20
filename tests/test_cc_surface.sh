@@ -157,10 +157,10 @@ t_bt() {
   assert_eq "No adapter" "$s" "after the unblock the tile no longer claims rfkill"
   grep -qx 'block bluetooth' "$STUB/log" && fail "Hush ran rfkill block" || pass "never runs rfkill block"
 }
-# Focus page from the timer tile: Start runs the first 25 min block, a duration chip jumps to that
+# Focus page from the Focus tile or the timer tile: Start runs the first 25 min block, a duration chip jumps to that
 # phase, Stop ends the session; the tile reads the phase.
 t_focus() {
-  cc enableTile timer >/dev/null; sleep 0.3
+  cc enableTile timer >/dev/null; cc enableTile focus >/dev/null; sleep 0.5
   cc openFocus >/dev/null; assert_eq "focus" "$(cc page)" "openFocus opens the focus page"
   assert_eq "25:00" "$(cc focusText focusTime | tr -d '"')" "idle page shows the focus length"
   assert_eq "Start" "$(cc focusText focusButton | tr -d '"')" "idle page offers Start"
@@ -176,6 +176,11 @@ t_focus() {
   cc pressFocus focusButton >/dev/null; sleep 0.3
   assert_eq "/0" "$(cc focusPhase | tr -d '"')" "Stop ends the session"
   cc back >/dev/null; assert_eq "main" "$(cc page)" "back from the focus page"
+  cc pressTile focus >/dev/null; assert_eq "focus" "$(cc page)" "tapping the Focus tile opens the focus page"
+  cc back >/dev/null
+  assert_eq "25 min" "$(cc tileSub focus | tr -d '"')" "idle Focus tile says 25 min"
+  cc pressTile timer >/dev/null; sleep 0.3; assert_eq "main" "$(cc page)" "a 1x1 Timer tap still starts the timer"
+  cc pressTile timer >/dev/null
 }
 # First-fit grid: a 2x1 that does not fit the rest of a row leaves it for later 1x1 tiles, so mixed
 # sizes leave no hole: rows == ceil(cells/4) and every row is gap-free up to its last tile.

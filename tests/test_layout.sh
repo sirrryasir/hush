@@ -55,7 +55,7 @@ t_hover() {
 t_cc() {
   shell_ipc openSurface expanded >/dev/null; shell_wait_state expanded || { fail "control center did not open"; return; }
   sleep 0.3
-  assert_eq "wifi,bluetooth,dnd,nightlight" "$(tiles)" "default tiles"
+  assert_eq "wifi,bluetooth,dnd,nightlight,focus" "$(tiles)" "default tiles"
   assert_eq "true" "$(shell_ipc islandControlVisible volumeSlider)" "sliders shown by default"
   shell_ipc settingsSet layout.cc.tiles ' [{"id":"wifi","enabled":true,"size":"2x1"},{"id":"bluetooth","enabled":false,"size":"2x1"},{"id":"dnd","enabled":true,"size":"1x1"},{"id":"lock","enabled":true,"size":"1x1"},{"id":"nightlight","enabled":true,"size":"2x1"}]' >/dev/null
   local got; got=$(wait_eq "wifi,dnd,lock,nightlight" tiles)
@@ -73,9 +73,9 @@ t_rest_reset() {
   shell_ipc settingsReset layout >/dev/null; sleep 0.5
   assert_eq "no" "$(python3 -c "import json;print('yes' if 'layout' in json.load(open('$F')) else 'no')" 2>/dev/null || echo no)" "settingsReset drops the layout override"
   assert_eq "workspaces,date,media,bluetooth,network,battery,keyboard,shelf" "$(shell_ipc layoutHover)" "after reset: default hover chips"
-  assert_eq "wifi:2x1,bluetooth:2x1,vpn:1x1,dnd:2x1,nightlight:2x1" "$(shell_ipc layoutTiles)" "after reset: default tiles"
+  assert_eq "wifi:2x1,bluetooth:2x1,vpn:1x1,dnd:2x1,nightlight:2x1,focus:1x1" "$(shell_ipc layoutTiles)" "after reset: default tiles"
   shell_ipc openSurface expanded >/dev/null; shell_wait_state expanded; sleep 0.3
-  assert_eq "wifi,bluetooth,dnd,nightlight" "$(tiles)" "after reset: the grid has the four default tiles"
+  assert_eq "wifi,bluetooth,dnd,nightlight,focus" "$(tiles)" "after reset: the grid has the five default tiles"
   assert_eq "true" "$(shell_ipc islandControlVisible volumeSlider)" "after reset: sliders back"
   shell_ipc closeSurface >/dev/null; shell_wait_state rest
 }

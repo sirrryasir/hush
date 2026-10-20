@@ -220,7 +220,7 @@ FocusScope {
 
     // --- tiles (ids from Composer.tileIds) ---
     readonly property var tileComps: ({ wifi: wifiTile, bluetooth: btTile, vpn: vpnTile, airplane: airTile, dnd: dndTile, nightlight: nightTile, caffeine: caffeineTile,
-        timer: timerTile, recording: recTile, screenshot: shotTile, lock: lockTile, theme: themeTile, wallpapers: wallTile, settings: settingsTile })
+        timer: timerTile, focus: focusTile, recording: recTile, screenshot: shotTile, lock: lockTile, theme: themeTile, wallpapers: wallTile, settings: settingsTile })
     Component {
         id: wifiTile
         Toggle {
@@ -298,8 +298,19 @@ FocusScope {
             icon: "timer"; label: "Timer"; chevron: true
             subtitle: Svc.Countdown.running ? (Svc.Countdown.phaseLabel !== "" ? Svc.Countdown.phaseLabel + " " : "") + Math.floor(s / 60) + ":" + (s % 60 < 10 ? "0" : "") + (s % 60) : "5 min"
             checked: Svc.Countdown.running
-            onClicked: Svc.Countdown.running ? Svc.Countdown.stop() : Svc.Countdown.start(300, "")
+            onClicked: compact ? (Svc.Countdown.running ? Svc.Countdown.stop() : Svc.Countdown.start(300, "")) : cc.openFocus()
             onChevronClicked: cc.openFocus()
+        }
+    }
+    // Opens the focus page; its Stop button ends the session.
+    Component {
+        id: focusTile
+        Toggle {
+            readonly property int s: Math.max(0, Svc.Countdown.remaining)
+            icon: "self_improvement"; label: "Focus"
+            subtitle: Svc.Countdown.running && Svc.Countdown.phase !== "" ? Svc.Countdown.phaseLabel + " " + Math.floor(s / 60) + ":" + (s % 60 < 10 ? "0" : "") + (s % 60) : "25 min"
+            checked: Svc.Countdown.running && Svc.Countdown.phase !== ""
+            onClicked: cc.openFocus()
         }
     }
     // Screen recording through wf-recorder into ~/Videos; a recording another tool started shows
