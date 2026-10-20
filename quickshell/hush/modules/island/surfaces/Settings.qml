@@ -363,10 +363,15 @@ FocusScope {
                             font.family: Theme.fontUi; font.pixelSize: 11 }
                         MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: field.forceActiveFocus()
                             Accessible.role: Accessible.Button; Accessible.name: modelData.label + " key" }
+                        // Hyprland drops Super from the modifiers of the key pressed after it (Super is a bind mod), so track the Super key itself.
+                        property bool superDown: false
+                        onActiveFocusChanged: superDown = false
+                        Keys.onReleased: ev => { if (ev.key === Qt.Key_Meta || ev.key === Qt.Key_Super_L || ev.key === Qt.Key_Super_R) superDown = false }
                         Keys.onPressed: ev => {
                             ev.accepted = true
                             if (ev.key === Qt.Key_Escape) { focus = false; return }
-                            const c = root.comboFrom(ev.key, ev.modifiers, ev.text)
+                            if (ev.key === Qt.Key_Meta || ev.key === Qt.Key_Super_L || ev.key === Qt.Key_Super_R) { superDown = true; return }
+                            const c = root.comboFrom(ev.key, superDown ? ev.modifiers | Qt.MetaModifier : ev.modifiers, ev.text)
                             if (ev.key === Qt.Key_Return || ev.key === Qt.Key_Enter) { if (!(ev.modifiers & ~Qt.KeypadModifier)) { root.setCombo(modelData.id, ""); focus = false; return } }
                             if (c === "") return
                             root.setCombo(modelData.id, c); focus = false
