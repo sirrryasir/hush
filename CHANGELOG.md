@@ -24,6 +24,8 @@ All notable changes to Hush are documented here. The format follows
   trailing glyph lists the item's menu in place.
 - Control center: sound page behind the volume slider's end glyph: output devices (tap picks the
   default), the microphone and each playing application, each with a level and a mute.
+- Control center: power profile page behind the battery chip when powerprofilesctl is installed; the
+  chip names the profile while power-saver is active.
 
 ### Fixed
 

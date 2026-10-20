@@ -6,6 +6,7 @@ singleton Bt 1.0 Bt.qml
 singleton Battery 1.0 Battery.qml
 singleton Media 1.0 Media.qml
 singleton Audio 1.0 Audio.qml
+singleton PowerProfile 1.0 PowerProfile.qml
 singleton Brightness 1.0 Brightness.qml
 singleton Notifs 1.0 Notifs.qml
 singleton Recording 1.0 Recording.qml

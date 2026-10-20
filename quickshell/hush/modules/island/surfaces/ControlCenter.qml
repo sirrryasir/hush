@@ -16,7 +16,7 @@ import "../cc"
 // pair / connect / forget), volume and brightness, battery and the power row, theme strip plus a
 // Wallpapers button; layout.cc.{sliders, media, themeStrip, power} switch those sections off.
 // App status icons (StatusNotifierItem) sit behind a button in the top row, so the pill never grows
-// with them. `page` is "main" | "wifi" | "bluetooth" | "vpn" | "tray" | "audio" | "focus" (the timer
+// with them. `page` is "main" | "wifi" | "bluetooth" | "vpn" | "tray" | "audio" | "power" | "focus" (the timer
 // tile's chevron; a focus session on the countdown); back() steps out of a sub-page and Esc does the
 // same, or asks the host to close (closeRequested) from the main page.
 FocusScope {
@@ -41,6 +41,7 @@ FocusScope {
     property var trayMenu: null
     function openTrayMenu(item) { trayItem = item; trayMenu = item.menu }
     function openAudio() { page = "audio" }
+    function openPower() { if (!Svc.PowerProfile.available) return; Svc.PowerProfile.probe(); page = "power" }
     function back() {
         if (page === "main") return false
         if (askSsid !== "") { askSsid = ""; return true }
@@ -192,7 +193,7 @@ FocusScope {
                 onMoved: v => { cc.pendingBrightness = v; briDebounce.restart() }
             }
             Item { visible: !Composer.sliders; Layout.fillWidth: true }
-            BatteryChip { Layout.alignment: Qt.AlignVCenter }
+            BatteryChip { Layout.alignment: Qt.AlignVCenter; onClicked: cc.openPower() }
             PowerRow { visible: Composer.power; Layout.alignment: Qt.AlignVCenter | Qt.AlignRight }
         }
 
@@ -391,6 +392,19 @@ FocusScope {
             .concat(Svc.Audio.source ? [{ kind: "source", icon: "mic", name: Svc.Audio.source.description || Svc.Audio.source.name, node: Svc.Audio.source }] : [])
             .concat(Svc.Audio.streams.map(n => ({ kind: "stream", icon: "graphic_eq", name: n.properties["application.name"] || n.description || n.name, node: n })))
         delegate: Component { AudioRow {} }
+    }
+
+    // Power profile: the profiles powerprofilesctl lists, the active one marked; a tap selects it.
+    SubPage {
+        objectName: "powerPage"
+        anchors.fill: parent; anchors.margins: 12
+        visible: opacity > 0; opacity: cc.page === "power" ? 1 : 0
+        Behavior on opacity { NumberAnimation { duration: Theme.durationShort } }
+        title: "Power profile"; subtitle: Svc.PowerProfile.active
+        emptyText: "No power profiles"; refreshable: false
+        onBack: cc.back()
+        model: Svc.PowerProfile.profiles.map(p => ({ icon: p === "power-saver" ? "eco" : p === "performance" ? "bolt" : "balance", label: p, trail: p === Svc.PowerProfile.active ? "Active" : "", active: p === Svc.PowerProfile.active }))
+        onRowClicked: row => Svc.PowerProfile.set(row.label)
     }
 
     SubPage {

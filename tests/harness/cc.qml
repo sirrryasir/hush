@@ -57,6 +57,9 @@ ShellRoot {
         function sinkName(): string { return Svc.Audio.sink ? Svc.Audio.sink.name : "" }
         function nodeVolume(key: string): string { const r = rowFor("audioPage", key); return r && r.node.audio ? r.node.audio.volume.toFixed(2) : "" }
         function moveLevel(key: string, v: real): bool { const r = rowFor("audioPage", key); const s = r ? find(r, "audioLevel") : null; if (!s) return false; s.moved(v); return true }
+        function rowActive(pageName: string, key: string): bool { const r = rowFor(pageName, key); return !!r && r.modelData.active === true }
+        function openPower(): void { cc.openPower() }
+        function powerChip(): string { const c = find(cc, "ccBattery"); const t = find(cc, "ccBatteryState"); return c && t ? c.saver + "|" + t.text + "|" + (t.color.toString() === Colors.islandFgVar.toString()) : "" }
         function back(): bool { return cc.back() }
         function networkCount(): int { return Svc.Net.networks.length }
         function scanning(): bool { return Svc.Net.scanning }
@@ -88,6 +91,7 @@ ShellRoot {
             const r = rowFor(pageName, key); if (!r) return false
             if (objName === "") {
                 if (pageName === "wifiPage") cc.wifiClicked(r.modelData); else if (pageName === "btPage") Svc.Bt.toggleDevice(r.modelData.dev)
+                else if (pageName === "powerPage") Svc.PowerProfile.set(r.modelData.label)
                 else if (pageName === "audioPage") Svc.Audio.setSink(r.modelData.node)
                 else find(cc, pageName).rowClicked(r.modelData)
                 return true
