@@ -8,7 +8,8 @@ H="tests/harness/settings.qml"
 hq() { qs -p "$H" ipc call harness-settings "$@" 2>/dev/null; }
 t_settings() {
   local f="$CFG/hush/settings.json" had=0; [[ -f $f ]] && { had=1; cp "$f" "$f.bak-test"; }
-  qs -p "$H" >/dev/null 2>&1 & local pid=$!
+  local stub; stub=$(mktemp -d); printf '#!/bin/sh\ncat >"%s/copied"\n' "$stub" >"$stub/wl-copy"; chmod +x "$stub/wl-copy"
+  PATH="$stub:$PATH" qs -p "$H" >/dev/null 2>&1 & local pid=$!
   local up=0; for _ in $(seq 20); do sleep 0.3; [[ -n "$(hq size)" ]] && { up=1; break; }; done
   [[ $up == 1 ]] && pass "harness starts" || { fail "harness did not start"; kill "$pid" 2>/dev/null; return; }
   hyprctl layers -j | grep -q '"namespace": "hush-harness-settings"' && pass "layer hush-harness-settings present" || fail "layer missing"
@@ -117,7 +118,17 @@ t_settings() {
   assert_eq "False" "$($J "import json;print(json.load(open('$f'))['lock']['date'])")" "lock.date false in settings.json"
   hq flip Date >/dev/null; sleep 0.6
   assert_eq "true" "$(hq dataOf lock.date)" "lock.date back to true"
-  kill "$pid" 2>/dev/null; wait "$pid" 2>/dev/null
+  # Shortcuts page: every IPC action as a row; the copy buttons put a bind block on the clipboard (fake wl-copy).
+  hq setPage shortcuts >/dev/null; sleep 0.2
+  local rows; rows=",$(hq shortcutRows),"
+  for t in cc media notifs calendar launcher wallpapers settings shelf focus lock; do
+    assert_eq "true" "$([[ $rows == *",$t,"* ]] && echo true)" "Shortcuts lists $t"
+  done
+  hq pressNamed copyHypr >/dev/null; sleep 0.5
+  assert_contains "$stub/copied" "bind = SUPER, C" "Copy Hyprland binds puts the bind block on the clipboard"
+  hq pressNamed copyLua >/dev/null; sleep 0.5
+  assert_contains "$stub/copied" 'hl.bind("SUPER + C"' "Copy Lua binds puts the Lua block on the clipboard"
+  kill "$pid" 2>/dev/null; wait "$pid" 2>/dev/null; rm -rf "$stub"
   if [[ $had == 1 ]]; then mv "$f.bak-test" "$f"; else rm -f "$f"; fi
 }
 run_test "settings surface" t_settings

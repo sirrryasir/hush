@@ -124,7 +124,8 @@ window retracts it, and the top edge still reveals it.
 `none`. `island.scroll`: `volume`, `brightness`, `none`. `island.clock`: `24` or `12` (pill, lock,
 login). Buttons ignore clicks for the first `motion.armMs` (500 ms); critical notifications stay
 until clicked. Settings, Modules writes the `layout` key: which surfaces exist, the rest pill's
-sides, the hover face chips and control center tiles (1x1 or 2x1); "Reset layout" removes it. The Rest and Hover face tabs show a live preview of the real pill.
+sides, the hover face chips and control center tiles (1x1 or 2x1); "Reset layout" removes it. The Rest and Hover face tabs show a live preview of the real pill. Settings, Shortcuts lists the IPC command of each island action and copies
+a block of default binds for Hyprland or its Lua config.
 Over IPC, with a leading space: `qs -c hush ipc call hush settingsSet layout.hover ' [...]'`.
 
 | Variable | Meaning |

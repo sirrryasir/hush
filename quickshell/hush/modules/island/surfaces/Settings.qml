@@ -32,6 +32,7 @@ FocusScope {
     readonly property var pages: [
         { id: "island", label: "Island", glyph: "pill" },
         { id: "behaviour", label: "Behaviour", glyph: "touch_app" },
+        { id: "shortcuts", label: "Shortcuts", glyph: "keyboard" },
         { id: "modules", label: "Modules", glyph: "widgets" },
         { id: "lock", label: "Lock", glyph: "lock" },
         { id: "theme", label: "Theme", glyph: "palette" },
@@ -234,6 +235,28 @@ FocusScope {
         const host = row ? walkItems(row, it => it.navRole === k[2] ? it : null) : null
         return host ? walkItems(host, it => it.acceptedButtons !== undefined && it.pressAndHoldInterval !== undefined ? it : null) : null
     }
+    // Every island action the shell exposes; `key` is the default bind (Hyprland key name), "" for none.
+    readonly property string ipc: "qs -c hush ipc call hush "
+    readonly property var shortcuts: [
+        { id: "cc", label: "Control center", cmd: ipc + "toggleControlCenter", key: "C" },
+        { id: "media", label: "Media", cmd: ipc + "openSurface mediaSurface", key: "M" },
+        { id: "notifs", label: "Notifications", cmd: ipc + "toggleDrawer", key: "N" },
+        { id: "calendar", label: "Calendar", cmd: ipc + "openSurface calendar", key: "K" },
+        { id: "launcher", label: "Launcher", cmd: ipc + "toggleLauncher", key: "slash" },
+        { id: "wallpapers", label: "Wallpapers", cmd: ipc + "toggleWallpapers", key: "W" },
+        { id: "settings", label: "Settings", cmd: "hush settings", key: "comma" },
+        { id: "shelf", label: "Shelf", cmd: ipc + "openSurface shelf", key: "O" },
+        { id: "focus", label: "Focus session", cmd: "qs -c hush ipc call activity focusStart", key: "F" },
+        { id: "lock", label: "Lock", cmd: "hush lock", key: "L" },
+        { id: "overview", label: "Overview", cmd: "hush overview", key: "" },
+        { id: "mute", label: "Mute", cmd: "hush volume mute", key: "" }]
+    // A ready block of binds for the default keys, in Hyprland's syntax or the Lua API's.
+    function bindBlock(lua) {
+        return shortcuts.filter(e => e.key !== "").map(e => lua
+            ? 'hl.bind("SUPER + ' + e.key + '", hl.dsp.exec_cmd("' + e.cmd + '"))'
+            : "bind = SUPER, " + e.key + ", exec, " + e.cmd).join("\n") + "\n"
+    }
+    function copyBinds(lua) { Quickshell.execDetached(["sh", "-c", 'printf "%s" "$1" | wl-copy', "sh", bindBlock(lua)]) }
     property string modulesSection: "surfaces"
     // Ten rows plus the section tabs and the bottom row share the page height (28 px at most).
     property real composerRowH: 24
@@ -264,7 +287,7 @@ FocusScope {
         x: 148; y: 14; width: parent.width - 160; height: parent.height - 28 - (root.warning !== "" ? 24 : 0)
         clip: true; contentWidth: width; boundsBehavior: Flickable.StopAtBounds
         onContentYChanged: root.back()
-        contentHeight: Math.max(height, behaviourPage.visible ? behaviourPage.height : modulesPage.visible ? modulesPage.height : 0)
+        contentHeight: Math.max(height, behaviourPage.visible ? behaviourPage.height : shortcutsPage.visible ? shortcutsPage.height : modulesPage.visible ? modulesPage.height : 0)
 
         ColumnLayout {
             visible: root.page === "island"; width: parent.width; height: parent.height; spacing: 0
@@ -298,6 +321,29 @@ FocusScope {
             Row2 { title: "Right click"; z: 3; Drop { key: "clickRight"; options: ["cc", "notifs", "media", "calendar", "none"] } }
             Row2 { title: "Middle click"; z: 2; Drop { key: "clickMiddle"; options: ["cc", "notifs", "media", "calendar", "none"] } }
             Row2 { title: "Scroll"; z: 1; Drop { key: "scroll"; options: ["volume", "brightness", "none"] } }
+        }
+
+        // Shortcuts: a reference of the IPC actions with copy buttons for ready bind blocks (no editing).
+        Column {
+            id: shortcutsPage
+            visible: root.page === "shortcuts"; width: parent.width; spacing: 0
+            Repeater {
+                model: root.shortcuts
+                delegate: Item {
+                    required property var modelData
+                    objectName: "shortcut_" + modelData.id
+                    width: parent.width; height: 22
+                    Label { width: 88; height: parent.height; text: modelData.label; elide: Text.ElideRight }
+                    Label { x: 90; width: parent.width - 90; height: parent.height; text: modelData.cmd; elide: Text.ElideRight
+                        color: Colors.islandFgVar; font.family: Theme.fontMono; font.pixelSize: 10 }
+                }
+            }
+            Item { width: 1; height: 8 }
+            Row {
+                spacing: 6
+                Chip { objectName: "copyHypr"; text: "Copy Hyprland binds"; onClicked: root.copyBinds(false) }
+                Chip { objectName: "copyLua"; text: "Copy Lua binds"; onClicked: root.copyBinds(true) }
+            }
         }
 
         // Modules: the surfaces on/off (modules.*) and the composer for the rest pill, the hover face

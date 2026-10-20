@@ -59,6 +59,8 @@ ShellRoot {
         // Open list of a dropdown row: "top,bottom" in surface coordinates; "closed" when not open.
         function dropBox(title: string): string { const d = rowItem(title, "listH"); return d.open ? Math.round(d.at.y) + "," + Math.round(d.at.y + d.listH) : "closed" }
         function rowTop(title: string): int { let r = null; walk(s, it => { if (r === null && it.title === title && it.visible) r = it }); return Math.round(r.mapToItem(s, 0, 0).y) }
+        // Rendered Shortcuts rows ("id,id,.."), in the order of the list.
+        function shortcutRows(): string { const o = []; walk(s, it => { if (typeof it.objectName === "string" && it.objectName.indexOf("shortcut_") === 0) o.push(it.objectName.slice(9)) }); return o.join(",") }
         function pressEsc(): bool { return s.back() }
         function setSection(sec: string): void { s.modulesSection = sec }
         // Rendered composer rows of a section, top to bottom ("id,id,..").
