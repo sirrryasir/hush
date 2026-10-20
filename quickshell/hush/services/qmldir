@@ -17,3 +17,4 @@ singleton Reminders 1.0 Reminders.qml
 singleton Rfkill 1.0 Rfkill.qml
 singleton Caffeine 1.0 Caffeine.qml
 singleton Shelf 1.0 Shelf.qml
+singleton Devices 1.0 Devices.qml
