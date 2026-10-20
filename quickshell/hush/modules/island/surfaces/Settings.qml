@@ -250,11 +250,26 @@ FocusScope {
         { id: "lock", label: "Lock", cmd: "hush lock", key: "L" },
         { id: "overview", label: "Overview", cmd: "hush overview", key: "" },
         { id: "mute", label: "Mute", cmd: "hush volume mute", key: "" }]
-    // A ready block of binds for the default keys, in Hyprland's syntax or the Lua API's.
+    // Combos are "Super + Ctrl + C" (last part is the Hyprland key name); user edits live in settings.json `shortcuts`.
+    function combo(e) { const m = Cfg.Settings.data.shortcuts; return m && m[e.id] !== undefined ? m[e.id] : (e.key ? "Super + " + e.key : "") }
+    function setCombo(id, c) { const m = Object.assign({}, Cfg.Settings.data.shortcuts); m[id] = c; Cfg.Settings.set("shortcuts", m) }
+    readonly property var keyNames: ({ 47: "slash", 44: "comma", 46: "period", 59: "semicolon", 39: "apostrophe", 45: "minus", 61: "equal", 32: "space",
+        16777220: "Return", 16777221: "Return", 16777217: "Tab", 16777219: "BackSpace", 16777232: "Home", 16777233: "End", 16777238: "Prior", 16777239: "Next",
+        16777234: "Left", 16777235: "Up", 16777236: "Right", 16777237: "Down" })
+    // Combo from a key event; "" for a bare modifier press.
+    function comboFrom(key, mods, text) {
+        const k = keyNames[key] || (key >= 0x41 && key <= 0x5a || key >= 0x30 && key <= 0x39 ? String.fromCharCode(key) : key >= 0x1000030 && key <= 0x1000047 ? "F" + (key - 0x100002f) : "")
+        if (k === "") return ""
+        return [(mods & Qt.MetaModifier) ? "Super" : "", (mods & Qt.ControlModifier) ? "Ctrl" : "", (mods & Qt.AltModifier) ? "Alt" : "",
+                (mods & Qt.ShiftModifier) ? "Shift" : "", k].filter(x => x !== "").join(" + ")
+    }
+    // A ready block of binds for the current keys, in Hyprland's syntax or the Lua API's; unbound actions are left out.
     function bindBlock(lua) {
-        return shortcuts.filter(e => e.key !== "").map(e => lua
-            ? 'hl.bind("SUPER + ' + e.key + '", hl.dsp.exec_cmd("' + e.cmd + '"))'
-            : "bind = SUPER, " + e.key + ", exec, " + e.cmd).join("\n") + "\n"
+        return shortcuts.filter(e => combo(e) !== "").map(e => {
+            const p = combo(e).split(" + "), k = p.pop(), m = p.map(x => x.toUpperCase())
+            return lua ? 'hl.bind("' + m.concat(k).join(" + ") + '", hl.dsp.exec_cmd("' + e.cmd + '"))'
+                       : "bind = " + m.join(" ") + ", " + k + ", exec, " + e.cmd
+        }).join("\n") + "\n"
     }
     function copyBinds(lua) { Quickshell.execDetached(["sh", "-c", 'printf "%s" "$1" | wl-copy', "sh", bindBlock(lua)]) }
     property string modulesSection: "surfaces"
@@ -323,27 +338,57 @@ FocusScope {
             Row2 { title: "Scroll"; z: 1; Drop { key: "scroll"; options: ["volume", "brightness", "none"] } }
         }
 
-        // Shortcuts: a reference of the IPC actions with copy buttons for ready bind blocks (no editing).
+        // Shortcuts: click a key field and press a combo (Enter alone clears, Esc cancels); the bind blocks are rendered below.
         Column {
             id: shortcutsPage
             visible: root.page === "shortcuts"; width: parent.width; spacing: 0
+            Label { width: parent.width; height: 20; text: "Paste the block into your Hyprland config; Hush cannot register binds itself."
+                color: Colors.islandFgVar; font.pixelSize: 11; elide: Text.ElideRight }
             Repeater {
                 model: root.shortcuts
                 delegate: Item {
                     required property var modelData
                     objectName: "shortcut_" + modelData.id
-                    width: parent.width; height: 22
-                    Label { width: 88; height: parent.height; text: modelData.label; elide: Text.ElideRight }
-                    Label { x: 90; width: parent.width - 90; height: parent.height; text: modelData.cmd; elide: Text.ElideRight
-                        color: Colors.islandFgVar; font.family: Theme.fontMono; font.pixelSize: 10 }
+                    width: parent.width; height: 26
+                    Label { width: parent.width - 130; height: parent.height; text: modelData.label; elide: Text.ElideRight }
+                    Rectangle {
+                        id: field
+                        objectName: "key_" + modelData.id
+                        readonly property string shown: field.activeFocus ? "Press keys" : root.combo(modelData)
+                        x: parent.width - 120; y: 2; width: 120; height: 22; radius: 8
+                        color: activeFocus ? Colors.islandSurfaceHighest : Colors.islandSurfaceHigh
+                        border.width: activeFocus ? 1 : 0; border.color: Colors.islandPrimary
+                        Text { anchors.centerIn: parent; width: parent.width - 8; horizontalAlignment: Text.AlignHCenter; elide: Text.ElideRight
+                            text: field.shown; color: field.activeFocus || field.shown === "" ? Colors.islandFgVar : Colors.islandFg
+                            font.family: Theme.fontUi; font.pixelSize: 11 }
+                        MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: field.forceActiveFocus()
+                            Accessible.role: Accessible.Button; Accessible.name: modelData.label + " key" }
+                        Keys.onPressed: ev => {
+                            ev.accepted = true
+                            if (ev.key === Qt.Key_Escape) { focus = false; return }
+                            const c = root.comboFrom(ev.key, ev.modifiers, ev.text)
+                            if (ev.key === Qt.Key_Return || ev.key === Qt.Key_Enter) { if (!(ev.modifiers & ~Qt.KeypadModifier)) { root.setCombo(modelData.id, ""); focus = false; return } }
+                            if (c === "") return
+                            root.setCombo(modelData.id, c); focus = false
+                        }
+                    }
                 }
             }
             Item { width: 1; height: 8 }
-            Row {
-                spacing: 6
-                Chip { objectName: "copyHypr"; text: "Copy Hyprland binds"; onClicked: root.copyBinds(false) }
-                Chip { objectName: "copyLua"; text: "Copy Lua binds"; onClicked: root.copyBinds(true) }
+            Repeater {
+                model: [{ t: "Hyprland.conf", n: "Hypr", lua: false }, { t: "Lua", n: "Lua", lua: true }]
+                delegate: Rectangle {
+                    required property var modelData
+                    width: parent.width; height: head.height + blk.implicitHeight + 16; radius: 10; color: Colors.islandSurface
+                    Item { id: head; x: 10; y: 6; width: parent.width - 20; height: 26
+                        Label { height: parent.height; text: modelData.t; color: Colors.islandFgVar }
+                        Chip { objectName: "copy" + modelData.n; x: parent.width - width; text: "Copy"; onClicked: root.copyBinds(modelData.lua) } }
+                    Text { id: blk; objectName: "block" + modelData.n; x: 10; y: head.y + head.height + 4; width: parent.width - 20
+                        text: root.bindBlock(modelData.lua).trim(); color: Colors.islandFg; font.family: Theme.fontMono; font.pixelSize: 10
+                        wrapMode: Text.WrapAnywhere }
+                }
             }
+            Item { width: 1; height: 8 }
         }
 
         // Modules: the surfaces on/off (modules.*) and the composer for the rest pill, the hover face

@@ -124,10 +124,19 @@ t_settings() {
   for t in cc media notifs calendar launcher wallpapers settings shelf focus lock; do
     assert_eq "true" "$([[ $rows == *",$t,"* ]] && echo true)" "Shortcuts lists $t"
   done
+  # record a combo on one row (key event -> combo -> setter), clear another
+  assert_eq "Super + Ctrl + J" "$(hq record cc 74 $((0x10000000 | 0x04000000)))" "Super+Ctrl+J key event records as a combo"
+  hq clearKey media; sleep 0.6
+  assert_eq "Super + Ctrl + J" "$(hq textOf key_cc)" "the field shows the recorded combo"
+  assert_eq "" "$(hq textOf key_media)" "the cleared field is empty"
+  assert_eq "true" "$([[ $(hq textOf blockHypr) == *"bind = SUPER CTRL, J, exec, qs -c hush ipc call hush toggleControlCenter"* ]] && echo true)" "conf block has the recorded bind"
+  assert_eq "true" "$([[ $(hq textOf blockLua) == *'hl.bind("SUPER + CTRL + J", hl.dsp.exec_cmd('* ]] && echo true)" "Lua block has the recorded bind"
+  assert_eq "false" "$(hq textOf blockHypr | grep -q 'openSurface mediaSurface' && echo true || echo false)" "the cleared row is gone from the block"
+  assert_eq "Super + Ctrl + J|" "$($J "import json;m=json.load(open('$f'))['shortcuts'];print(m['cc']+'|'+m['media'])")" "settings.json holds the shortcuts map"
   hq pressNamed copyHypr >/dev/null; sleep 0.5
-  assert_contains "$stub/copied" "bind = SUPER, C" "Copy Hyprland binds puts the bind block on the clipboard"
+  assert_contains "$stub/copied" "bind = SUPER CTRL, J" "Copy Hyprland binds puts the bind block on the clipboard"
   hq pressNamed copyLua >/dev/null; sleep 0.5
-  assert_contains "$stub/copied" 'hl.bind("SUPER + C"' "Copy Lua binds puts the Lua block on the clipboard"
+  assert_contains "$stub/copied" 'hl.bind("SUPER + CTRL + J"' "Copy Lua binds puts the Lua block on the clipboard"
   kill "$pid" 2>/dev/null; wait "$pid" 2>/dev/null; rm -rf "$stub"
   if [[ $had == 1 ]]; then mv "$f.bak-test" "$f"; else rm -f "$f"; fi
 }
