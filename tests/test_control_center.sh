@@ -8,7 +8,7 @@ t_open() {
   shell_restart; sleep 3
   shell_ipc toggleControlCenter >/dev/null; sleep 1.5
   assert_eq "expanded" "$(shell_ipc islandState)" "toggle opens the control center"
-  assert_eq "560x304" "$(shell_ipc islandSize)" "expanded size"
+  local sz; sz=$(shell_ipc islandSize); [[ "$sz" =~ ^560x[0-9]{3}$ && ${sz#*x} -ge 304 ]] && pass "expanded size $sz" || fail "expanded size $sz"
   assert_eq "6" "$(shell_ipc ccThemeCount)" "six themes listed"
   [[ -n "${HUSH_SHOT:-}" ]] && shell_screenshot "$HUSH_SHOT"
   shell_screenshot cc-dark

@@ -22,7 +22,7 @@ ShellRoot {
         anchors.top: true
         margins.top: 60
         exclusionMode: ExclusionMode.Ignore
-        implicitWidth: Sizes.expanded.width; implicitHeight: Sizes.expanded.height
+        implicitWidth: Sizes.expanded.width; implicitHeight: cc.size.height
         color: "transparent"
         Rectangle {
             anchors.fill: parent; color: "#000000"; radius: Sizes.radiusExpanded
@@ -106,6 +106,14 @@ ShellRoot {
         function passwordFocused(ssid: string): bool { const r = rowFor("wifiPage", ssid); const f = r ? find(r, "wifiPassword") : null; return !!f && f.activeFocus }
         function askSsid(): string { return cc.askSsid }
         // Grid tiles by Composer id (the Loader "ccTile_<id>"; absent when the tile hides).
+        function enableAllTiles(): void { for (const id of Composer.tileIds) Composer.setEnabled("cc", id, true) }
+        // "height|sliderTop|id:y:h,..." in surface coordinates for every tile in the grid.
+        function tileGeom(): string {
+            const out = []
+            for (const id of Composer.tileIds) { const t = find(cc, "ccTile_" + id); if (t) out.push(id + ":" + Math.round(t.mapToItem(cc, 0, 0).y) + ":" + Math.round(t.height)) }
+            const sl = find(cc, "volumeSlider")
+            return Math.round(cc.size.height) + "|" + Math.round(sl.mapToItem(cc, 0, 0).y) + "|" + out.join(",")
+        }
         function tileShown(id: string): bool { return find(cc, "ccTile_" + id) !== null }
         function tileSub(id: string): string { const t = find(cc, "ccTile_" + id); return t ? t.item.subtitle : "" }
         function tileChecked(id: string): bool { const t = find(cc, "ccTile_" + id); return !!t && t.item.checked }

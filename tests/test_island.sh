@@ -25,18 +25,18 @@ t_state() {
   assert_eq "rest" "$(shell_ipc islandState)" "toggle again collapses"
 }
 t_geometry() {
-  # Surface: every island layer is its monitor's full width x 360 and never resizes (test_surface.sh
+  # Surface: every island layer is its monitor's full width x 516 and never resizes (test_surface.sh
   # covers it per state); the body springs to the active state's size inside it.
   local g; g=$(hyprctl layers -j | python3 -c "
 import json,sys
 print(' '.join(sorted({'%d' % l['h'] for mon in json.load(sys.stdin).values() for lvl in mon['levels'].values() for l in lvl if l['namespace']=='hush-island'})))")
-  assert_eq "360" "$g" "island layer windows are 360 tall"
+  assert_eq "516" "$g" "island layer windows are 516 tall"
   # The calm spring is speed-capped (settings motion.springCalm.velocity), so poll until it settles.
-  settle() { local i s; for i in $(seq 30); do s=$(shell_ipc islandSize); [[ "$s" == "$1" ]] && break; sleep 0.1; done; echo "$s"; }
+  settle() { local i s; for i in $(seq 30); do s=$(shell_ipc islandSize); [[ "$s" == $1 ]] && break; sleep 0.1; done; echo "$s"; }
   sleep 1; local rest; rest=$(shell_ipc islandSize)
   [[ "$rest" =~ ^[0-9]+x36$ ]] && pass "pill is ${rest} at rest" || fail "pill at rest is $rest"
   shell_ipc toggleControlCenter
-  assert_eq "560x304" "$(settle 560x304)" "pill springs to 560x304 expanded"
+  local ex; ex=$(settle '560x[3-9]??'); [[ "$ex" =~ ^560x[0-9]{3}$ && ${ex#*x} -ge 304 ]] && pass "pill springs to $ex expanded (304 or taller with its tiles)" || fail "expanded pill is $ex"
   shell_ipc toggleControlCenter
   assert_eq "$rest" "$(settle "$rest")" "pill springs back to $rest"
 }

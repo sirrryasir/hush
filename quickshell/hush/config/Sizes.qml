@@ -14,17 +14,22 @@ Singleton {
     readonly property size osd: Qt.size(304, 36)
     readonly property size notification: Qt.size(520, 36)
     readonly property size notificationTall: Qt.size(520, 56)
+    // The control center: 560x304 is the declared (and smallest) size; its surface reports the real
+    // height, which grows by 56 px tiles to expandedMax (header 44, five rows of 56 + 8 gaps, sliders 32,
+    // theme strip 44, three 12 px gaps, 24 margin).
     readonly property size expanded: Qt.size(560, 304)
+    readonly property size expandedMax: Qt.size(560, 492)
     readonly property size calendar: Qt.size(360, 336)
     readonly property size wallpapers: Qt.size(656, 320)
-    // Settings grows past the other panels so the Modules composer lists fit without scrolling;
-    // 336 + the largest top gap (24) is the island window's fixed 360 px height.
+    // Settings grows past the other panels so the Modules composer lists fit without scrolling.
+    // The island window's fixed height is the tallest surface plus the largest top gap (24).
     readonly property size settings: Qt.size(560, 336)
     readonly property size notifCenter: Qt.size(480, 260)
     readonly property size launcher: Qt.size(520, 300)
     readonly property size shelf: Qt.size(520, 56)
     readonly property size shelfDrop: Qt.size(320, 44)
     readonly property int radiusExpanded: 20
+    readonly property int windowHeight: Math.max(settings.height, expandedMax.height) + 24
 
     function snap(w) { return Math.ceil(w / 8) * 8 }
     function of(name) {

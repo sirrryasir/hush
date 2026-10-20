@@ -103,11 +103,11 @@ t_wifi_password() {
     && fail "Wi-Fi code raises notifications" || pass "Wi-Fi errors never raise a notification"
   cc back >/dev/null; cc back >/dev/null
 }
-# No dead band: the main page's lowest control sits on the 12 px bottom margin of the surface.
+# No dead band: above the 304 px floor the main page's lowest control sits on the 12 px bottom margin.
 t_layout() {
   local h b; h=$(cc surfaceHeight); b=$(cc mainContentBottom)
-  assert_eq "304" "$h" "control center is 304 px tall"
-  assert_eq "$((h - 12))" "$b" "content reaches the 12 px bottom margin (no empty band)"
+  (( h >= 304 )) && pass "control center is $h px tall (304 at least, its content decides above)" || fail "control center is $h px tall"
+  (( h == 304 || b == h - 12 )) && pass "content reaches the 12 px bottom margin (no empty band)" || fail "content ends at $b of $h"
   if [[ "$(cc mediaShown)" == true ]]; then pass "a player exists: media row holds the top slot"
   else assert_eq "true" "$(cc notifSummaryVisible)" "notifications summary fills the top row without a player"; fi
   cc pressOpenNotifs >/dev/null; assert_eq "1" "$(cc notifRequests)" "Open asks for the notification center"
@@ -190,6 +190,21 @@ t_screenshot() {
   assert_contains "$STUB/shotlog" "wl-copy" "the image is copied with wl-copy"
   assert_contains "$STUB/shotlog" "notify-send -a hush -i $HOME/Pictures/hush-" "a notification announces it"
 }
+# Every tile enabled: tiles stay 56 px, the surface grows past 304 and the last row ends above the sliders.
+t_alltiles() {
+  cc enableAllTiles >/dev/null; sleep 1.5
+  local out h top; out=$(cc tileGeom | tr -d '"'); h=${out%%|*}; top=${out#*|}; top=${top%%|*}
+  local n=0 short="" last=0 c y th
+  for c in $(tr ',' ' ' <<<"${out##*|}"); do
+    n=$((n + 1)); y=${c#*:}; th=${y#*:}; y=${y%:*}
+    (( th >= 56 )) || short+=" $c"; (( y + th > last )) && last=$((y + th))
+  done
+  [[ -z "$short" && $n -ge 12 ]] && pass "$n tiles, none shorter than 56 px" || fail "short or missing tiles (n=$n):$short [$out]"
+  (( h > 304 )) && pass "surface grew to $h px" || fail "surface stayed $h px"
+  (( last <= top )) && pass "last tile row ends at $last, above the sliders at $top" || fail "tiles reach $last, sliders start at $top"
+  assert_eq "true" "$([[ -n "$(cc tileSub wifi)" ]] && echo true)" "the Wi-Fi tile keeps its subtitle"
+  local shots="${HUSH_SHOTS_CC:-$PWD/.claude/cc-shots}"; mkdir -p "$shots"; SHOTS="$shots" shot cc-all-tiles
+}
 t_log() { local e; e=$(grep -E 'ERROR|TypeError|ReferenceError|Unable to assign' "$LOG" || true); [[ -z "$e" ]] && pass "no QML errors" || fail "QML errors: $e"; }
 # Bluetooth device page on a fake radio (HUSH_BT_FAKE=1): rows, actions, discovery spinner, battery.
 t_btpage() {
@@ -222,5 +237,5 @@ t_btpage() {
   cc back >/dev/null
 }
 run_test up t_up; run_test pages t_pages; run_test networks t_networks; run_test wifi_password t_wifi_password
-run_test layout t_layout; run_test focus t_focus; run_test screenshot t_screenshot; run_test keys t_keys; run_test bt t_bt; run_test btpage t_btpage; run_test log t_log
+run_test layout t_layout; run_test focus t_focus; run_test screenshot t_screenshot; run_test alltiles t_alltiles; run_test keys t_keys; run_test bt t_bt; run_test btpage t_btpage; run_test log t_log
 finish

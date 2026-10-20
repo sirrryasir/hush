@@ -21,7 +21,8 @@ import "../cc"
 // same, or asks the host to close (closeRequested) from the main page.
 FocusScope {
     id: cc
-    readonly property size size: Sizes.expanded
+    // Grows with the tile rows (up to Sizes.expandedMax); 560x304 is the floor, so sub-pages keep their room.
+    readonly property size size: Qt.size(Sizes.expanded.width, Math.max(Sizes.expanded.height, mainPage.implicitHeight + 2 * mainPage.anchors.margins))
     property string page: "main"
     signal openWallpapers()
     signal openNotifications()
@@ -105,7 +106,7 @@ FocusScope {
     ColumnLayout {
         id: mainPage
         objectName: "mainPage"
-        anchors.fill: parent; anchors.margins: 12; spacing: 12
+        anchors.top: parent.top; anchors.left: parent.left; anchors.right: parent.right; anchors.margins: 12; spacing: 12
         visible: opacity > 0; opacity: cc.page === "main" ? 1 : 0
         Behavior on opacity { NumberAnimation { duration: Theme.durationShort } }
 
@@ -136,14 +137,12 @@ FocusScope {
         }
 
         // Tiles in layout.cc.tiles order on a 4-column grid: a 2x1 tile spans two columns, a tile
-        // that does not fit the rest of a row starts the next one. Rows share the height left over by
-        // the other sections (56 px each at most, 28 at least; the surface never grows).
+        // that does not fit the rest of a row starts the next one. Tiles are always 56 px; the surface grows.
         Item {
             id: grid
             objectName: "ccGrid"
-            Layout.fillWidth: true; Layout.fillHeight: true; Layout.minimumHeight: 28
-            Layout.preferredHeight: rows * 56 + Math.max(0, rows - 1) * rowGap; Layout.maximumHeight: Layout.preferredHeight
-            clip: true
+            Layout.fillWidth: true
+            Layout.preferredHeight: rows * tileH + Math.max(0, rows - 1) * rowGap
             readonly property int gap: 12
             readonly property real colW: (width - 3 * gap) / 4
             readonly property var placed: {
@@ -163,7 +162,7 @@ FocusScope {
             readonly property int rows: placed.length ? placed[placed.length - 1].row + 1 : 0
             readonly property real rowGap: rows > 2 ? 8 : gap
             visible: rows > 0
-            readonly property real tileH: rows ? Math.max(28, Math.min(56, (height - (rows - 1) * rowGap) / rows)) : 0
+            readonly property int tileH: 56
             Repeater {
                 model: grid.placed
                 delegate: Loader {
@@ -172,7 +171,7 @@ FocusScope {
                     x: modelData.col * (grid.colW + grid.gap); y: modelData.row * (grid.tileH + grid.rowGap)
                     width: modelData.span * grid.colW + (modelData.span - 1) * grid.gap; height: grid.tileH
                     sourceComponent: cc.tileComps[modelData.id] || null
-                    onLoaded: item.compact = Qt.binding(() => modelData.span === 1 || grid.tileH < 44)
+                    onLoaded: item.compact = Qt.binding(() => modelData.span === 1)
                 }
             }
         }
@@ -212,9 +211,6 @@ FocusScope {
                 MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: cc.openWallpapers(); Accessible.role: Accessible.Button; Accessible.name: "Wallpapers" }
             }
         }
-        // Takes what a switched-off section leaves beyond the grid's tallest rows; absent with every
-        // section on (it would still cost a 12 px layout gap).
-        Item { visible: !Composer.themeStrip || !(Composer.sliders || Composer.power); Layout.fillHeight: true; Layout.preferredHeight: 0 }
     }
 
     // --- tiles (ids from Composer.tileIds) ---

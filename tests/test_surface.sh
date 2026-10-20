@@ -56,7 +56,7 @@ t_layers() {
   for m in $(mon_names); do
     read -r mx my mw mh r <<<"$(mon_geom "$m")"
     line=$(layers | grep "^$m ")
-    assert_eq "$m $mx $my $mw 360" "$line" "$m: island layer is full width x 360 at the top"
+    assert_eq "$m $mx $my $mw 516" "$line" "$m: island layer is full width x 516 at the top"
     assert_eq "40" "$r" "$m: reserve mode reserves 40 px"
   done
 }

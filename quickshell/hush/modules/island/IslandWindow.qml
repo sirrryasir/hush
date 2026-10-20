@@ -54,7 +54,7 @@ Scope {
         id: win
         screen: scope.modelData
         anchors { top: true; left: true; right: true }
-        implicitHeight: 360
+        implicitHeight: Sizes.windowHeight
         exclusionMode: ExclusionMode.Normal
         exclusiveZone: scope.mode === "reserve" ? (Settings.island.reserve !== undefined ? Settings.island.reserve : 40) : 0
         color: "transparent"
