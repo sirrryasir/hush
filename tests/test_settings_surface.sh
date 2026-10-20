@@ -64,8 +64,10 @@ t_settings() {
   for t in Media Notifications Calendar Launcher Wallpapers Settings; do
     assert_eq "true" "$(hq hasSwitch "$t")" "Modules/Surfaces keeps the \"$t\" switch"
   done
+  # the sandbox copies the live settings.json, which may carry a layout override: start from the defaults
+  hq pressNamed resetLayout >/dev/null; sleep 0.6
   hq setSection hover >/dev/null; sleep 0.2
-  assert_eq "workspaces,date,media,bluetooth,network,battery,volume,brightness,timer,recording" "$(hq rows hover)" "hover rows in the default order"
+  assert_eq "workspaces,date,media,bluetooth,network,battery,keyboard,volume,brightness,timer,shelf,recording" "$(hq rows hover)" "hover rows in the default order"
   assert_eq "false" "$(hq enabledOf "hover|workspaces|up")" "first row: up is disabled"
   assert_eq "false" "$(hq enabledOf "hover|recording|down")" "last row: down is disabled"
   hq press "hover|date|down" >/dev/null; sleep 0.6
@@ -76,18 +78,18 @@ t_settings() {
   assert_eq "workspaces,date,media" "$(hq rows hover | cut -d, -f1-3)" "the key hook moved Date back up"
   assert_eq "" "$(hq reorder "hover|workspaces|switch" -1 >/dev/null; hq rows hover | cut -d, -f1 | grep -v workspaces)" "moving the first row up keeps it first"
   hq press "hover|workspaces|switch" >/dev/null; sleep 0.6
-  assert_eq "date,media,bluetooth,network,battery" "$(hq layoutHover)" "switch off: Workspaces leaves the hover face"
+  assert_eq "date,media,bluetooth,network,battery,keyboard,shelf" "$(hq layoutHover)" "switch off: Workspaces leaves the hover face"
   hq press "hover|volume|switch" >/dev/null; sleep 0.6
-  assert_eq "date,media,bluetooth,network,battery,volume" "$(hq layoutHover)" "switch on: Volume joins it"
+  assert_eq "date,media,bluetooth,network,battery,keyboard,volume,shelf" "$(hq layoutHover)" "switch on: Volume joins it"
   assert_eq "" "$(hq unnamed)" "every control on the hover section has an accessible name"
   hq setSection cc >/dev/null; sleep 0.2
-  assert_eq "wifi,bluetooth,dnd,nightlight,timer,recording,lock,theme,wallpapers,settings" "$(hq rows cc)" "control center rows in the default order"
+  assert_eq "wifi,bluetooth,vpn,airplane,dnd,nightlight,caffeine,timer,focus,recording,screenshot,lock,theme,wallpapers,settings" "$(hq rows cc)" "control center rows in the default order"
   hq press "cc|wifi|size" >/dev/null; sleep 0.6
   assert_eq "wifi:1x1" "$(hq layoutTiles | cut -d, -f1)" "size toggle: Wi-Fi tile 1x1"
   hq press "cc|lock|switch" >/dev/null; sleep 0.6
   assert_eq "true" "$(hq layoutTiles | grep -q 'lock:1x1' && echo true)" "switch on: Lock tile shown"
   hq press "cc|lock|up" >/dev/null; sleep 0.6
-  assert_eq "lock,recording" "$(hq rows cc | cut -d, -f6-7)" "up moves Lock above Recording"
+  assert_eq "lock,screenshot" "$(hq rows cc | cut -d, -f11-12)" "up moves Lock above Screenshot"
   hq pressNamed ccSection_sliders >/dev/null; sleep 0.6
   assert_eq "false" "$(hq ccSection sliders)" "Sliders chip hides the sliders row"
   assert_eq "False" "$($J "import json;print(json.load(open('$f'))['layout']['cc']['sliders'])")" "layout.cc.sliders false in settings.json"
@@ -101,7 +103,7 @@ t_settings() {
   hq pressNamed resetLayout >/dev/null; sleep 0.6
   assert_eq "no" "$($J "import json;print('yes' if 'layout' in json.load(open('$f')) else 'no')")" "Reset layout drops the layout override"
   hq setSection hover >/dev/null; sleep 0.2
-  assert_eq "workspaces,date,media,bluetooth,network,battery" "$(hq layoutHover)" "after reset: default hover chips"
+  assert_eq "workspaces,date,media,bluetooth,network,battery,keyboard,shelf" "$(hq layoutHover)" "after reset: default hover chips"
   assert_eq "true" "$(hq ccSection sliders)" "after reset: sliders back"
   # Lock page: settings.json lock.* (the lock and login screens); a switch writes its key.
   hq setPage lock >/dev/null; sleep 0.2
