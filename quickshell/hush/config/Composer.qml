@@ -11,12 +11,12 @@ import Quickshell
 // malformed list falls back to the defaults.
 Singleton {
     id: root
-    readonly property var hoverIds: ["workspaces", "date", "media", "battery", "network", "bluetooth", "volume", "brightness", "timer", "recording", "keyboard"]
+    readonly property var hoverIds: ["workspaces", "date", "media", "battery", "network", "bluetooth", "volume", "brightness", "timer", "shelf", "recording", "keyboard"]
     readonly property var tileIds: ["wifi", "bluetooth", "vpn", "airplane", "dnd", "nightlight", "caffeine", "timer", "recording", "screenshot", "lock", "theme", "wallpapers", "settings"]
     readonly property var sectionKeys: ["sliders", "media", "themeStrip", "power"]
     readonly property var labels: ({
         workspaces: "Workspaces", date: "Date", media: "Now playing", battery: "Battery", network: "Network",
-        bluetooth: "Bluetooth", volume: "Volume", brightness: "Brightness", timer: "Timer", recording: "Recording", keyboard: "Keyboard layout",
+        bluetooth: "Bluetooth", volume: "Volume", brightness: "Brightness", timer: "Timer", shelf: "Shelf", recording: "Recording", keyboard: "Keyboard layout",
         screenshot: "Screenshot", wifi: "Wi-Fi", vpn: "VPN", airplane: "Airplane mode", dnd: "Do not disturb", nightlight: "Night light", caffeine: "Stay awake", lock: "Lock", theme: "Theme",
         wallpapers: "Wallpapers", settings: "Settings",
         sliders: "Sliders", themeStrip: "Theme strip", power: "Power row"

@@ -7,7 +7,7 @@ import "../rest"
 
 // The hover face, 44 px tall and 320 px wide (wider with many chips, up to 656): chips in layout.hover order (default: this monitor's
 // workspaces as dots with the active one drawn as a pill, the date, the media title while something
-// plays, Bluetooth, Wi-Fi, battery; optional volume, brightness, timer, recording). A dot goes to
+// plays, Bluetooth, Wi-Fi, battery; optional volume, brightness, timer, recording; the shelf chip shows while files are kept). A dot goes to
 // its workspace and the date opens the calendar; the active dot or a long press opens the GloView
 // overview; any other left click goes to the pill's click mapping.
 StateBase {
@@ -36,7 +36,7 @@ StateBase {
         return ids
     }
     readonly property var chipComps: ({ workspaces: wsChip, date: dateChip, media: mediaChip, battery: batteryChip,
-        network: netChip, bluetooth: btChip, volume: volChip, brightness: briChip, timer: timerChip,
+        network: netChip, bluetooth: btChip, volume: volChip, brightness: briChip, timer: timerChip, shelf: shelfChip,
         recording: recChip, keyboard: kbdChip, _spacer: spacerChip })
     RowLayout {
         id: row
@@ -184,6 +184,20 @@ StateBase {
             glyph: "timer"; tint: Colors.darkPrimary
             value: Math.floor(s / 60) + ":" + (s % 60 < 10 ? "0" : "") + (s % 60)
             Accessible.name: "Timer, " + value + " left"
+        }
+    }
+    // Files on the shelf: the glyph and the count; a tap opens the strip.
+    Component {
+        id: shelfChip
+        Item {
+            readonly property bool shown: Svc.Shelf.count > 0
+            implicitWidth: kept.implicitWidth; implicitHeight: kept.implicitHeight
+            Readout {
+                id: kept
+                glyph: "inventory_2"; tint: Colors.darkPrimary; value: String(Svc.Shelf.count)
+                Accessible.role: Accessible.Button; Accessible.name: "Shelf, " + value + " kept. Open"
+            }
+            MouseArea { anchors.fill: parent; anchors.margins: -6; onClicked: if (face.island) face.island.openSurface("shelf") }
         }
     }
     Component {

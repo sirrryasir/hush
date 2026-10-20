@@ -37,7 +37,7 @@ hover_on() {
 
 t_hover() {
   shell_ipc settingsReset layout >/dev/null; sleep 0.4
-  assert_eq "workspaces,date,media,bluetooth,network,battery,keyboard" "$(shell_ipc layoutHover)" "default hover chips"
+  assert_eq "workspaces,date,media,bluetooth,network,battery,keyboard,shelf" "$(shell_ipc layoutHover)" "default hover chips"
   hover_on || { fail "pointer on the pill did not show the hover face"; return; }
   # Rendered order: the chips with something to show (media only while playing, Bluetooth when on).
   local got want; got=$(chips)
@@ -72,7 +72,7 @@ t_rest_reset() {
   assert_eq "false" "$(wait_eq false shell_ipc islandControlVisible activityCircle)" "layout.rest.left none: no activity slot"
   shell_ipc settingsReset layout >/dev/null; sleep 0.5
   assert_eq "no" "$(python3 -c "import json;print('yes' if 'layout' in json.load(open('$F')) else 'no')" 2>/dev/null || echo no)" "settingsReset drops the layout override"
-  assert_eq "workspaces,date,media,bluetooth,network,battery,keyboard" "$(shell_ipc layoutHover)" "after reset: default hover chips"
+  assert_eq "workspaces,date,media,bluetooth,network,battery,keyboard,shelf" "$(shell_ipc layoutHover)" "after reset: default hover chips"
   assert_eq "wifi:2x1,bluetooth:2x1,vpn:1x1,dnd:2x1,nightlight:2x1" "$(shell_ipc layoutTiles)" "after reset: default tiles"
   shell_ipc openSurface expanded >/dev/null; shell_wait_state expanded; sleep 0.3
   assert_eq "wifi,bluetooth,dnd,nightlight" "$(tiles)" "after reset: the grid has the four default tiles"

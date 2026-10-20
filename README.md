@@ -26,7 +26,7 @@ Nix and manual install below.
 
 ## Features
 
-- **Island**: clock, activity circle and status ring at rest; files dragged onto the pill are kept for 24 h (a glyph at rest opens the shelf strip to drag them out, copy or remove); a hover face with workspaces, date
+- **Island**: clock, activity circle and status ring at rest; files dragged onto the pill are kept for 24 h (a glyph at rest and a shelf chip on the hover face open the strip to drag them out, copy or remove); a hover face with workspaces, date
   and track; control center, media, calendar (with reminders: a time and a text, a notification when due, the next one on the pill), notification center, launcher (apps, windows,
   calculator, clipboard), wallpaper grid and settings open from the pill. The Wi-Fi page joins,
   forgets and details networks, joins hidden ones and runs a hotspot; a VPN tile toggles a
