@@ -19,11 +19,12 @@ Item {
         QQ.State { name: "rest" }, QQ.State { name: "hover" }, QQ.State { name: "media" },
         QQ.State { name: "notification" }, QQ.State { name: "osd" }, QQ.State { name: "expanded" },
         QQ.State { name: "mediaSurface" }, QQ.State { name: "calendar" }, QQ.State { name: "notifCenter" },
-        QQ.State { name: "launcher" }, QQ.State { name: "wallpapers" }, QQ.State { name: "settings" }
+        QQ.State { name: "launcher" }, QQ.State { name: "wallpapers" }, QQ.State { name: "settings" },
+        QQ.State { name: "shelf" }, QQ.State { name: "shelfDrop" }
     ]
     // Surfaces that grow out of the pill; "expanded" is the control center. The last
     // three are modal: they take the keyboard and the whole island surface catches clicks.
-    readonly property var panels: ["expanded", "mediaSurface", "calendar", "notifCenter"]
+    readonly property var panels: ["expanded", "mediaSurface", "calendar", "notifCenter", "shelf"]
     readonly property var modals: ["launcher", "wallpapers", "settings"]
     readonly property var surfaces: panels.concat(modals)
     readonly property bool surfaceOpen: surfaces.indexOf(state) >= 0
@@ -65,6 +66,8 @@ Item {
             declare("notification", Priorities.notification, { holdMs: Theme.notificationHoldMs })
             declare("osd", Priorities.osd, { holdMs: Theme.osdHoldMs, coalesce: true })
             declare("hover", Priorities.hover, {})
+            // A file dragged over the pill: the drop capsule, above toasts, until the drag leaves or drops.
+            declare("shelfDrop", 65, {})
             // "media" is the 1.1 s now-playing card on a track change (media at rest is the
             // activity circle inside the rest state, not a state of its own).
             declare("media", Priorities.osd, { holdMs: Theme.osdHoldMs, coalesce: true })
@@ -193,6 +196,8 @@ Item {
             armHover()
         inStateChange = false
     }
+    // The strip closes when the last file goes.
+    Connections { target: Svc.Shelf; function onCountChanged() { if (Svc.Shelf.count === 0 && islandRoot.state === "shelf") islandRoot.closeSurface() } }
     function rearm() { if (hover.hovered && hoverAllowed && state === "rest") arbiter.raise("hover") }
 
     // --- keyboard navigation inside surfaces ---
@@ -321,6 +326,14 @@ Item {
                 lastShape = shape
             }
         }
+        // Files dragged over the pill (any state): the drop capsule while they hover, kept on drop.
+        DropArea {
+            anchors.fill: parent
+            keys: ["text/uri-list"]
+            onEntered: islandRoot.arbiter.raise("shelfDrop")
+            onExited: islandRoot.arbiter.lower("shelfDrop")
+            onDropped: drop => { Svc.Shelf.add(drop.urls); islandRoot.arbiter.lower("shelfDrop") }
+        }
         // Keyboard focus ring: drawn over the focused control, inside the pill's clip.
         Rectangle {
             objectName: "focusRing"
@@ -342,6 +355,7 @@ Item {
         register("rest", restComp); register("hover", hoverComp); register("expanded", ccComp)
         register("mediaSurface", mediaSurfaceComp); register("calendar", calendarComp); register("notifCenter", notifCenterComp)
         register("launcher", launcherComp); register("wallpapers", wallpapersComp); register("settings", settingsComp)
+        register("shelf", shelfComp); register("shelfDrop", shelfDropComp)
     }
     Component { id: restComp; Rest { island: islandRoot } }
     Component { id: hoverComp; HoverFace { island: islandRoot } }
@@ -357,6 +371,8 @@ Item {
             onOpenSettings: islandRoot.openSurface("settings")
         }
     }
+    Component { id: shelfComp; Surf.ShelfStrip {} }
+    Component { id: shelfDropComp; ShelfDrop { island: islandRoot } }
     Component { id: mediaSurfaceComp; Surf.Media {} }
     Component { id: calendarComp; Surf.Calendar {} }
     Component { id: notifCenterComp; Surf.NotificationCenter { host: Svc.Notifs } }

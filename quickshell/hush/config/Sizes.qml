@@ -22,6 +22,8 @@ Singleton {
     readonly property size settings: Qt.size(560, 336)
     readonly property size notifCenter: Qt.size(480, 260)
     readonly property size launcher: Qt.size(520, 300)
+    readonly property size shelf: Qt.size(520, 56)
+    readonly property size shelfDrop: Qt.size(320, 44)
     readonly property int radiusExpanded: 20
 
     function snap(w) { return Math.ceil(w / 8) * 8 }
@@ -38,6 +40,8 @@ Singleton {
         case "settings": return settings
         case "launcher": return launcher
         case "notifCenter": return notifCenter
+        case "shelf": return shelf
+        case "shelfDrop": return shelfDrop
         default: return rest
         }
     }

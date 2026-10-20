@@ -166,6 +166,21 @@ Singleton {
         function caffeine(on: bool): void { Caffeine.on = on }
         function caffeineOn(): bool { return Caffeine.on }
     }
+    IpcHandler {
+        target: "shelf"
+        function add(path: string): void { Shelf.add([path]) }
+        function addAged(path: string, hoursAgo: int): void { Shelf.add([path], Shelf.now - hoursAgo * 3600000) }
+        function remove(path: string): void { Shelf.remove(path) }
+        function count(): int { return Shelf.count }
+        // Stands in for a file drag entering (true) or leaving the pill.
+        function drag(on: bool): void { if (root.island) on ? root.island.arbiter.raise("shelfDrop") : root.island.arbiter.lower("shelfDrop") }
+        // "name | folder · N h left" per chip of the open strip, one per line.
+        function rows(): string {
+            const l = root.surface("shelf") ? root.findNamed(root.surface("shelf"), "shelfList") : null, out = []
+            for (let i = 0; l && i < l.count; i++) { const c = l.itemAtIndex(i); if (c) out.push(c.summary) }
+            return out.join("\n")
+        }
+    }
     // --- end activity IPC ---
     // The shown surface item of that name on the driven island, once loaded.
     function surface(name) { return root.island ? root.island.surfaceItem(name) : null }

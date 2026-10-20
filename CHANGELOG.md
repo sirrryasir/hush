@@ -11,6 +11,7 @@ All notable changes to Hush are documented here. The format follows
 - Job done: a terminal command that ran 20 s or more raises a card on the island when it ends
   (tick or cross, command, duration, exit code, terminal and workspace; Open focuses it), through
   `integrations/shell/hush.sh` for zsh and bash.
+- Island: a file shelf. Drag files onto the pill to keep them for 24 h, then drag them out of the strip into any app, copy or remove them.
 - Control center: log out (ends the Hyprland session) next to lock.
 - Login: the name over the pill opens the user list when the machine has more than one account.
 - Control center, Wi-Fi page: the joined network's signal, band, security and IPv4; Forget on a
