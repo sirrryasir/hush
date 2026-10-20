@@ -114,6 +114,12 @@ ShellRoot {
             const sl = find(cc, "volumeSlider")
             return Math.round(cc.size.height) + "|" + Math.round(sl.mapToItem(cc, 0, 0).y) + "|" + out.join(",")
         }
+        // Only the given ids (in tileIds order) on, each with its size; "row:col:span,..." of the placed grid.
+        function mixTiles(spec: string): string {
+            const want = JSON.parse(spec)
+            for (const id of Composer.tileIds) { Composer.setEnabled("cc", id, id in want); if (id in want) Composer.setSize(id, want[id]) }
+            return find(cc, "ccGrid").placed.map(p => p.row + ":" + p.col + ":" + p.span).join(",")
+        }
         function tileShown(id: string): bool { return find(cc, "ccTile_" + id) !== null }
         function tileSub(id: string): string { const t = find(cc, "ccTile_" + id); return t ? t.item.subtitle : "" }
         function tileChecked(id: string): bool { const t = find(cc, "ccTile_" + id); return !!t && t.item.checked }

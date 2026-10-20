@@ -177,6 +177,20 @@ t_focus() {
   assert_eq "/0" "$(cc focusPhase | tr -d '"')" "Stop ends the session"
   cc back >/dev/null; assert_eq "main" "$(cc page)" "back from the focus page"
 }
+# First-fit grid: a 2x1 that does not fit the rest of a row leaves it for later 1x1 tiles, so mixed
+# sizes leave no hole: rows == ceil(cells/4) and every row is gap-free up to its last tile.
+t_holes() {
+  local out; out=$(cc mixTiles '{"bluetooth":"1x1","dnd":"1x1","caffeine":"1x1","timer":"2x1","focus":"1x1","recording":"1x1","lock":"1x1"}' | tr -d '"'); sleep 0.5
+  python3 - "$out" <<'P' && pass "mixed grid has no holes ($out)" || fail "grid has holes or extra rows ($out)"
+import sys, math
+t = [tuple(map(int, x.split(":"))) for x in sys.argv[1].split(",")]
+rows = max(r for r, _, _ in t) + 1
+assert rows == math.ceil(sum(s for _, _, s in t) / 4), "rows"
+for r in range(rows):
+    used = {c + k for rr, c, s in t if rr == r for k in range(s)}
+    assert used == set(range(max(used) + 1)), "gap"
+P
+}
 # Screenshot tile (off in the default layout; switched on the way the Modules page does): a tap runs
 # grim on the slurp region into ~/Pictures, copies it with wl-copy and raises a notification.
 t_screenshot() {
@@ -237,5 +251,5 @@ t_btpage() {
   cc back >/dev/null
 }
 run_test up t_up; run_test pages t_pages; run_test networks t_networks; run_test wifi_password t_wifi_password
-run_test layout t_layout; run_test focus t_focus; run_test screenshot t_screenshot; run_test alltiles t_alltiles; run_test keys t_keys; run_test bt t_bt; run_test btpage t_btpage; run_test log t_log
+run_test layout t_layout; run_test focus t_focus; run_test holes t_holes; run_test screenshot t_screenshot; run_test alltiles t_alltiles; run_test keys t_keys; run_test bt t_bt; run_test btpage t_btpage; run_test log t_log
 finish

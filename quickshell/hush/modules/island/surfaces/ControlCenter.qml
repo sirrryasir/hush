@@ -137,7 +137,7 @@ FocusScope {
         }
 
         // Tiles in layout.cc.tiles order on a 4-column grid: a 2x1 tile spans two columns, a tile
-        // that does not fit the rest of a row starts the next one. Tiles are always 56 px; the surface grows.
+        // takes the first free cell it fits in. Tiles are always 56 px; the surface grows.
         Item {
             id: grid
             objectName: "ccGrid"
@@ -146,20 +146,25 @@ FocusScope {
             readonly property int gap: 12
             readonly property real colW: (width - 3 * gap) / 4
             readonly property var placed: {
-                const out = []; let r = 0, c = 0
+                const out = [], used = new Set()  // first-fit: a tile takes the first free cell, so 1x1s fill earlier holes
                 for (const t of Composer.tilesShown) {
                     if (t.id === "nightlight" && cc.extra === "") continue
                     if (t.id === "vpn" && Svc.Net.vpns.length === 0) continue
                     if (t.id === "airplane" && Svc.Rfkill.count === 0) continue
                     if (t.id === "screenshot" && !cc.grim) continue
                     const span = t.size === "2x1" ? 2 : 1
-                    if (c + span > 4) { r++; c = 0 }
+                    let r = 0, c = 0
+                    while (true) {
+                        if (c + span > 4) { r++; c = 0; continue }
+                        if (!used.has(r * 4 + c) && (span === 1 || !used.has(r * 4 + c + 1))) break
+                        c++
+                    }
+                    for (let k = 0; k < span; k++) used.add(r * 4 + c + k)
                     out.push({ id: t.id, span: span, row: r, col: c })
-                    c += span
                 }
                 return out
             }
-            readonly property int rows: placed.length ? placed[placed.length - 1].row + 1 : 0
+            readonly property int rows: placed.length ? Math.max(...placed.map(p => p.row)) + 1 : 0
             readonly property real rowGap: rows > 2 ? 8 : gap
             visible: rows > 0
             readonly property int tileH: 56
