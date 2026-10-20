@@ -21,7 +21,12 @@ FocusScope {
     signal openWallpapers()
     signal closeRequested()
     focus: true
-    Keys.onEscapePressed: closeRequested()
+    // The dropdown whose list is open (lists live on the surface, so the page's clip never cuts them).
+    property var openDrop: null
+    // Island hook: Esc closes an open list first, then the island closes the surface.
+    function back() { if (!openDrop) return false; openDrop.open = false; return true }
+    Keys.onEscapePressed: { if (!back()) closeRequested() }
+    onPageChanged: { openDrop = null; flick.contentY = 0 }
 
     readonly property var pages: [
         { id: "island", label: "Island", glyph: "pill" },
@@ -124,6 +129,16 @@ FocusScope {
         readonly property string cur: String(root.cfgValue(key))
         readonly property string rowTitle: parent && parent.parent && parent.parent.title !== undefined ? parent.parent.title : ""
         property bool open: false
+        Connections { target: root; function onOpenDropChanged() { if (root.openDrop !== dd) dd.open = false } }
+        readonly property real listH: options.length * 26
+        // Where the list goes, set when it opens: below the control, above it when the surface ends first.
+        property point at: Qt.point(0, 0)
+        onOpenChanged: {
+            if (!open) { if (root.openDrop === dd) root.openDrop = null; return }
+            const p = dd.mapToItem(root, 0, 0)
+            at = Qt.point(p.x, p.y + 26 + listH > root.height - 6 ? p.y - listH - 2 : p.y + 26)
+            root.openDrop = dd
+        }
         height: 24; width: 140; anchors.verticalCenter: parent ? parent.verticalCenter : undefined
         Rectangle {
             anchors.fill: parent; radius: 8; color: Colors.islandSurface
@@ -134,7 +149,7 @@ FocusScope {
                 Accessible.role: Accessible.ComboBox; Accessible.name: dd.rowTitle; Accessible.description: dd.cur }
         }
         Column {
-            visible: dd.open; y: 26; z: 10; width: parent.width
+            parent: root; visible: dd.open; x: dd.at.x; y: dd.at.y; z: 100; width: dd.width
             Repeater {
                 model: dd.options
                 delegate: Rectangle {
@@ -244,8 +259,10 @@ FocusScope {
     }
 
     Flickable {
+        id: flick
         x: 148; y: 14; width: parent.width - 160; height: parent.height - 28 - (root.warning !== "" ? 24 : 0)
         clip: true; contentWidth: width; boundsBehavior: Flickable.StopAtBounds
+        onContentYChanged: root.back()
         contentHeight: Math.max(height, behaviourPage.visible ? behaviourPage.height : modulesPage.visible ? modulesPage.height : 0)
 
         ColumnLayout {

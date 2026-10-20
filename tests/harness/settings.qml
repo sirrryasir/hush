@@ -48,6 +48,16 @@ ShellRoot {
         function stepSlider(title: string, n: int): void { const w = rowItem(title, "cur"); walk(w, c => { if (typeof c.stepAdjust === "function") c.stepAdjust(n) }) }
         function dataOf(path: string): string { return String(path.split(".").reduce((o, k) => o[k], Settings.data)) }
         function unitOf(title: string): string { return rowItem(title, "unit").unit }
+        // Scrolls the row into view first, as the wheel would.
+        function dropOpen(title: string, o: bool): void {
+            const d = rowItem(title, "listH"); let f = null; walk(s, it => { if (f === null && it.contentHeight !== undefined && it.flickableDirection !== undefined) f = it })
+            if (o && f) f.contentY = Math.max(0, Math.min(f.contentHeight - f.height, d.mapToItem(f.contentItem, 0, 0).y - 100))
+            d.open = o
+        }
+        // Open list of a dropdown row: "top,bottom" in surface coordinates; "closed" when not open.
+        function dropBox(title: string): string { const d = rowItem(title, "listH"); return d.open ? Math.round(d.at.y) + "," + Math.round(d.at.y + d.listH) : "closed" }
+        function rowTop(title: string): int { let r = null; walk(s, it => { if (r === null && it.title === title && it.visible) r = it }); return Math.round(r.mapToItem(s, 0, 0).y) }
+        function pressEsc(): bool { return s.back() }
         function setSection(sec: string): void { s.modulesSection = sec }
         // Rendered composer rows of a section, top to bottom ("id,id,..").
         function rows(sec: string): string {

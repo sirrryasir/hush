@@ -33,6 +33,17 @@ t_settings() {
     hq flip "$t" >/dev/null; sleep 0.6
     assert_eq "true" "$(hq dataOf island.$k)" "$k back to true"
   done
+  # Dropdown lists stay inside the 336 px surface (open upward near the bottom); the page starts below the header.
+  assert_eq "true" "$([[ $(hq rowTop "Hover face") -ge 14 ]] && echo true)" "first row starts below the header padding"
+  local b
+  for t in Clock "Right click" Scroll; do
+    hq dropOpen "$t" true >/dev/null; sleep 0.2; b=$(hq dropBox "$t")
+    assert_eq "true" "$([[ ${b%,*} -ge 0 && ${b#*,} -le 336 ]] && echo true)" "$t list ($b) is inside the surface"
+  done
+  assert_eq "closed" "$(hq dropBox "Right click")" "opening one list closes the other"
+  assert_eq "true" "$(hq pressEsc)" "Escape closes the open list first"
+  assert_eq "closed" "$(hq dropBox Scroll)" "the list is closed"
+  assert_eq "false" "$(hq pressEsc)" "Escape with no list open falls through to the page"
   assert_eq "true" "$(hq hasSlider "Reveal time")" "Behaviour has the reveal-time slider"
   assert_eq "ms" "$(hq unitOf "Reveal time")" "reveal slider is labelled in ms"
   assert_eq "1500" "$(hq shown motion.revealMs)" "reveal slider starts at the default 1500"
