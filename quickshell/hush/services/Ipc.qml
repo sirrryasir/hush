@@ -188,6 +188,8 @@ Singleton {
         function clear(): void { Reminders.items = []; Reminders.save() }
         function count(): int { return Reminders.items.length }
         function pill(): string { return Reminders.pill }
+        // What the rest pill shows for it: the activity circle's label text, "" when it is not showing a reminder.
+        function pillLabel(): string { const it = root.island && root.island.item ? root.findNamed(root.island.item, "timeLabel") : null; return it && it.visible ? it.text : "" }
     }
     // The shown surface item of that name on the driven island, once loaded.
     function surface(name) { return root.island ? root.island.surfaceItem(name) : null }

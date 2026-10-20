@@ -17,10 +17,12 @@ Item {
     property int focusCycle: Countdown.cycle
     property string phase: Countdown.phase
     onPhaseChanged: timerTotal = 0
+    // The next reminder within the hour ("Standup in 12 min"): an alarm glyph and the text, after the timer.
+    property string reminderText: Reminders.pill
     property bool mediaOn: Media.player !== null && Media.playing
     property real mediaProgress: Media.length > 0 ? Math.max(0, Math.min(1, Media.position / Media.length)) : 0
     property string artUrl: Media.artUrl
-    readonly property string mode: !Settings.island.liveActivities ? "" : recording ? "recording" : timerOn ? "timer" : mediaOn ? "media" : ""
+    readonly property string mode: !Settings.island.liveActivities ? "" : recording ? "recording" : timerOn ? "timer" : reminderText !== "" ? "reminder" : mediaOn ? "media" : ""
     readonly property bool shown: mode !== ""
     readonly property real progress: mode === "timer" ? timerProgress : mediaProgress
     readonly property bool hasArt: artUrl !== "" && art.status === Image.Ready
@@ -31,7 +33,7 @@ Item {
     property real timerProgress: timerTotal > 0 ? Math.max(0, Math.min(1, timerSecs / timerTotal)) : 0
     onTimerSecsChanged: if (timerOn && timerSecs > timerTotal) timerTotal = timerSecs
     onTimerOnChanged: if (!timerOn) timerTotal = 0; else if (timerSecs > timerTotal) timerTotal = timerSecs
-    implicitWidth: mode === "timer" ? 24 + 6 + timeLabel.implicitWidth + (cycleLabel.visible ? 6 + cycleLabel.implicitWidth : 0) : 24; implicitHeight: 24
+    implicitWidth: mode === "timer" || mode === "reminder" ? 24 + 6 + timeLabel.implicitWidth + (cycleLabel.visible ? 6 + cycleLabel.implicitWidth : 0) : 24; implicitHeight: 24
     width: implicitWidth; height: implicitHeight
 
     Rectangle {
@@ -48,10 +50,15 @@ Item {
     Text {
         id: timeLabel
         objectName: "timeLabel"
-        visible: root.mode === "timer"
+        visible: root.mode === "timer" || root.mode === "reminder"
         anchors.left: ringBox.right; anchors.leftMargin: 6; anchors.verticalCenter: parent.verticalCenter
-        text: root.timeText; color: Colors.darkOnSurface
-        font.family: Theme.fontMono; font.pixelSize: 11
+        text: root.mode === "reminder" ? root.reminderText : root.timeText; color: Colors.darkOnSurface
+        font.family: root.mode === "reminder" ? Theme.fontUi : Theme.fontMono; font.pixelSize: 11
+    }
+    Text {
+        visible: root.mode === "reminder"
+        anchors.centerIn: ringBox; text: "alarm"; color: Colors.darkPrimary
+        font.family: Theme.fontIcon; font.pixelSize: 16
     }
     Text {
         id: cycleLabel

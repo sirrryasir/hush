@@ -46,6 +46,18 @@ t_calendar() {
   else pass "$(input_why): remove click skipped"; fi
   shell_ipc closeSurface >/dev/null; shell_wait_state rest
 }
+t_pill() {
+  r clear >/dev/null; sleep 0.5
+  assert_eq '' "$(r pillLabel)" "no reminder: the pill shows no reminder text"
+  r add 720 Standup >/dev/null; sleep 1.5
+  assert_eq 'Standup in 12 min' "$(r pill)" "the next reminder within the hour reads Standup in 12 min"
+  assert_eq 'Standup in 12 min' "$(r pillLabel)" "the rest pill shows it"
+  shot 80 reminders-pill
+  r clear >/dev/null; r add 7200 Later >/dev/null; sleep 1.5
+  assert_eq '' "$(r pillLabel)" "a reminder two hours out stays off the pill"
+  r clear >/dev/null
+}
 run_test "due" t_due
 run_test "calendar" t_calendar
+run_test "pill" t_pill
 finish
