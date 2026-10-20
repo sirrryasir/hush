@@ -81,6 +81,10 @@ t_settings() {
   assert_eq "date,media,bluetooth,network,battery,keyboard,shelf" "$(hq layoutHover)" "switch off: Workspaces leaves the hover face"
   hq press "hover|volume|switch" >/dev/null; sleep 0.6
   assert_eq "date,media,bluetooth,network,battery,keyboard,volume,shelf" "$(hq layoutHover)" "switch on: Volume joins it"
+  assert_eq "date,media,bluetooth,network,battery,keyboard,volume,shelf" "$(hq previewChips)" "Hover face preview shows the enabled chips in order"
+  hq press "hover|volume|switch" >/dev/null; sleep 0.6
+  assert_eq "date,media,bluetooth,network,battery,keyboard,shelf" "$(hq previewChips)" "switching Volume off removes it from the preview"
+  hq press "hover|volume|switch" >/dev/null; sleep 0.6
   assert_eq "" "$(hq unnamed)" "every control on the hover section has an accessible name"
   hq setSection cc >/dev/null; sleep 0.2
   assert_eq "wifi,bluetooth,vpn,airplane,dnd,nightlight,caffeine,timer,focus,recording,screenshot,lock,theme,wallpapers,settings" "$(hq rows cc)" "control center rows in the default order"

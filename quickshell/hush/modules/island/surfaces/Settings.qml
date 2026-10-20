@@ -5,6 +5,7 @@ import Quickshell.Io
 import qs.config
 import qs.config as Cfg
 import qs.modules.island.cc
+import "../states"
 
 // Settings surface: 560x336 GUI over the Settings singleton. A page rail on the left
 // (Island, Behaviour, Modules, Lock, Theme, About). Sliders preview while dragging (`preview` overrides,
@@ -313,6 +314,20 @@ FocusScope {
                     model: root.modulesSections
                     delegate: Chip { required property var modelData; text: modelData.label; on: root.modulesSection === modelData.id
                         onClicked: root.modulesSection = modelData.id }
+                }
+            }
+            // Live preview: the real rest pill / hover face at real size on black, reading the layout being edited.
+            Item {
+                visible: root.modulesSection === "rest" || root.modulesSection === "hover"
+                width: parent.width; height: 48
+                Rectangle {
+                    objectName: "modulesPreview"
+                    readonly property var face: root.modulesSection === "rest" ? restPreview : hoverPreview
+                    anchors.centerIn: parent; width: Math.min(parent.width, face.size.width); height: face.size.height
+                    radius: Math.min(height / 2, Cfg.Settings.island.radius || 18); color: "#000000"; clip: true
+                    // enabled false: a preview must not act on clicks; visible true: the states hide themselves without an island.
+                    Rest { id: restPreview; enabled: false; visible: root.modulesSection === "rest" }
+                    HoverFace { id: hoverPreview; enabled: false; visible: root.modulesSection === "hover" }
                 }
             }
             Column {
