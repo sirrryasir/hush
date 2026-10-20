@@ -35,23 +35,11 @@ Nix and manual install below.
   center's top row, never on the pill: the page lists them, a tap activates one, a right click lists
   its menu. The volume slider's end glyph opens the sound page: output devices (tap picks the
   default), the microphone and each playing application, with level and mute. OSDs and
-<<<<<<< HEAD
   a Stay awake tile (off by default) holds an idle inhibitor. A command that ran 20 s or more in a
   terminal raises a result card when it ends (add `source ~/.config/hush/shell.sh` to your
   `~/.zshrc` or `~/.bashrc`; `HUSH_JOB_SECS` changes the threshold, a focused terminal stays quiet).
-  notifications queue by priority. The battery chip opens the power-profile page when
-||||||| parent of 84a2769 (feat(devices): card with Mount, Open and Eject)
-  notifications queue by priority. The battery chip opens the power-profile page when
-=======
   notifications queue by priority; a removable drive raises a card with Mount, Open (xdg-open) and
-<<<<<<< HEAD
-  Eject (unmount, power off, then "Safe to remove"), needs udisks2. The battery chip opens the power-profile page when
->>>>>>> 84a2769 (feat(devices): card with Mount, Open and Eject)
-||||||| parent of c9f1f4b (feat(devices): USB glyph on the rest pill)
-  Eject (unmount, power off, then "Safe to remove"), needs udisks2. The battery chip opens the power-profile page when
-=======
   Eject (unmount, power off, then "Safe to remove") and a USB glyph sits on the rest pill while one is plugged in; needs udisks2. The battery chip opens the power-profile page when
->>>>>>> c9f1f4b (feat(devices): USB glyph on the rest pill)
   powerprofilesctl is installed. Modes `reserve`, `overlay`, `autohide`; fullscreen retract; keyboard navigation.
 - **Live activities**: recording, countdown and now playing at rest; mic and camera in use. The
   timer tile's page runs a focus session (25 min focus, 5 min break, 15 min long break after the

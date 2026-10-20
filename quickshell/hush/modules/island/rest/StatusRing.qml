@@ -12,13 +12,8 @@ import qs.services
 // layout.rest.right "none" (Composer) turns the slot off: no statusCenter content and no plug-in
 // bolt; a critical battery and the privacy glyphs still show (warnings, not decoration).
 // A machine without a battery shows the "wifi" ring in battery mode. Mic and camera in use show as
-<<<<<<< HEAD
-// small glyphs in every mode (privacy), and a cup while Caffeine (stay awake) is on.
-||||||| parent of c9f1f4b (feat(devices): USB glyph on the rest pill)
-// small glyphs in every mode (privacy).
-=======
-// small glyphs in every mode (privacy). A USB glyph shows while a removable drive is plugged in.
->>>>>>> c9f1f4b (feat(devices): USB glyph on the rest pill)
+// small glyphs in every mode (privacy), a cup while Caffeine (stay awake) is on, and a USB glyph
+// while a removable drive is plugged in.
 Item {
     id: root
     objectName: "statusRing"
@@ -67,17 +62,15 @@ Item {
             text: "mic"; color: root.privacyColor; font.family: Theme.fontIcon; font.pixelSize: 14
         }
         Text {
-<<<<<<< HEAD
             objectName: "caffeineGlyph"
             visible: root.caffeine; anchors.verticalCenter: parent.verticalCenter
             text: "coffee"; color: Colors.darkPrimary; font.family: Theme.fontIcon; font.pixelSize: 14
-||||||| parent of c9f1f4b (feat(devices): USB glyph on the rest pill)
-=======
+        }
+        Text {
             id: usbGlyph
             objectName: "deviceGlyph"
             visible: root.usb; anchors.verticalCenter: parent.verticalCenter
             text: "usb"; color: Colors.alpha(root.fg, 0.78); font.family: Theme.fontIcon; font.pixelSize: 14
->>>>>>> c9f1f4b (feat(devices): USB glyph on the rest pill)
         }
         BatteryGlyph {
             id: battery

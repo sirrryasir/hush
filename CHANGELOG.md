@@ -8,24 +8,14 @@ All notable changes to Hush are documented here. The format follows
 
 ### Added
 
-<<<<<<< HEAD
 - Job done: a terminal command that ran 20 s or more raises a card on the island when it ends
   (tick or cross, command, duration, exit code, terminal and workspace; Open focuses it), through
   `integrations/shell/hush.sh` for zsh and bash.
 - Island: a file shelf. Drag files onto the pill to keep them for 24 h, then drag them out of the strip into any app, copy or remove them.
 - Reminders: a time and a text kept in `~/.config/hush/reminders.json`; due ones raise a notification, the calendar shows a dot on days that have one, lists the selected day and adds or removes them (it replaces the khal list), and the next one within the hour shows on the rest pill.
-||||||| parent of 84a2769 (feat(devices): card with Mount, Open and Eject)
-=======
 - Island: a removable drive raises a card (name, size, filesystem, Mount, Open, Eject; "Safe to
-<<<<<<< HEAD
-  remove" after an eject) from `udisksctl monitor` and `dump`.
->>>>>>> 84a2769 (feat(devices): card with Mount, Open and Eject)
-||||||| parent of c9f1f4b (feat(devices): USB glyph on the rest pill)
-  remove" after an eject) from `udisksctl monitor` and `dump`.
-=======
   remove" after an eject) from `udisksctl monitor` and `dump`; a USB glyph on the rest pill while
   one is plugged in.
->>>>>>> c9f1f4b (feat(devices): USB glyph on the rest pill)
 - Control center: log out (ends the Hyprland session) next to lock.
 - Login: the name over the pill opens the user list when the machine has more than one account.
 - Control center, Wi-Fi page: the joined network's signal, band, security and IPv4; Forget on a
