@@ -25,7 +25,7 @@
         { "id": "dnd", "enabled": true, "size": "2x1" }, { "id": "nightlight", "enabled": true, "size": "2x1" },
         { "id": "caffeine", "enabled": false, "size": "1x1" },
         { "id": "timer", "enabled": false, "size": "1x1" }, { "id": "recording", "enabled": false, "size": "1x1" },
-        { "id": "lock", "enabled": false, "size": "1x1" }, { "id": "theme", "enabled": false, "size": "1x1" },
+        { "id": "screenshot", "enabled": false, "size": "1x1" }, { "id": "lock", "enabled": false, "size": "1x1" }, { "id": "theme", "enabled": false, "size": "1x1" },
         { "id": "wallpapers", "enabled": false, "size": "1x1" }, { "id": "settings", "enabled": false, "size": "1x1" }
       ],
       "sliders": true, "media": true, "themeStrip": true, "power": true

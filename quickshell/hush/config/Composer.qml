@@ -12,12 +12,12 @@ import Quickshell
 Singleton {
     id: root
     readonly property var hoverIds: ["workspaces", "date", "media", "battery", "network", "bluetooth", "volume", "brightness", "timer", "recording"]
-    readonly property var tileIds: ["wifi", "bluetooth", "vpn", "airplane", "dnd", "nightlight", "caffeine", "timer", "recording", "lock", "theme", "wallpapers", "settings"]
+    readonly property var tileIds: ["wifi", "bluetooth", "vpn", "airplane", "dnd", "nightlight", "caffeine", "timer", "recording", "screenshot", "lock", "theme", "wallpapers", "settings"]
     readonly property var sectionKeys: ["sliders", "media", "themeStrip", "power"]
     readonly property var labels: ({
         workspaces: "Workspaces", date: "Date", media: "Now playing", battery: "Battery", network: "Network",
         bluetooth: "Bluetooth", volume: "Volume", brightness: "Brightness", timer: "Timer", recording: "Recording",
-        wifi: "Wi-Fi", vpn: "VPN", airplane: "Airplane mode", dnd: "Do not disturb", nightlight: "Night light", caffeine: "Stay awake", lock: "Lock", theme: "Theme",
+        screenshot: "Screenshot", wifi: "Wi-Fi", vpn: "VPN", airplane: "Airplane mode", dnd: "Do not disturb", nightlight: "Night light", caffeine: "Stay awake", lock: "Lock", theme: "Theme",
         wallpapers: "Wallpapers", settings: "Settings",
         sliders: "Sliders", themeStrip: "Theme strip", power: "Power row"
     })

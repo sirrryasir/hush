@@ -152,6 +152,7 @@ FocusScope {
                     if (t.id === "nightlight" && cc.extra === "") continue
                     if (t.id === "vpn" && Svc.Net.vpns.length === 0) continue
                     if (t.id === "airplane" && Svc.Rfkill.count === 0) continue
+                    if (t.id === "screenshot" && !cc.grim) continue
                     const span = t.size === "2x1" ? 2 : 1
                     if (c + span > 4) { r++; c = 0 }
                     out.push({ id: t.id, span: span, row: r, col: c })
@@ -218,7 +219,7 @@ FocusScope {
 
     // --- tiles (ids from Composer.tileIds) ---
     readonly property var tileComps: ({ wifi: wifiTile, bluetooth: btTile, vpn: vpnTile, airplane: airTile, dnd: dndTile, nightlight: nightTile, caffeine: caffeineTile,
-        timer: timerTile, recording: recTile, lock: lockTile, theme: themeTile, wallpapers: wallTile, settings: settingsTile })
+        timer: timerTile, recording: recTile, screenshot: shotTile, lock: lockTile, theme: themeTile, wallpapers: wallTile, settings: settingsTile })
     Component {
         id: wifiTile
         Toggle {
@@ -310,6 +311,23 @@ FocusScope {
             checked: Svc.Recording.active
             onClicked: cc.toggleRecording()
         }
+    }
+    // A region picked with slurp, shot with grim into ~/Pictures (beside the recordings' ~/Videos),
+    // copied with wl-copy and announced as a notification; the panel closes first so it is not in it.
+    Component {
+        id: shotTile
+        Toggle { toggle: false; icon: "screenshot_region"; label: "Screenshot"; subtitle: "Select a region"
+            onClicked: cc.screenshot() }
+    }
+    property bool grim: false
+    Process {
+        command: ["sh", "-c", "command -v grim >/dev/null && echo yes || echo no"]
+        running: true
+        stdout: StdioCollector { onStreamFinished: cc.grim = text.trim() === "yes" }
+    }
+    function screenshot() {
+        closeRequested()
+        Quickshell.execDetached(["sh", "-c", 'd="${XDG_PICTURES_DIR:-$HOME/Pictures}"; mkdir -p "$d"; f="$d/hush-$(date +%Y%m%d-%H%M%S).png"; g=$(slurp) || exit 0; grim -g "$g" "$f" && wl-copy <"$f" && notify-send -a hush -i "$f" "Screenshot" "Saved to ${f#"$HOME"/} and copied"'])
     }
     Component {
         id: lockTile

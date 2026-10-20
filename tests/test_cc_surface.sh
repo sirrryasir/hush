@@ -34,6 +34,10 @@ esac
 exit 0
 EOF
 chmod +x "$STUB/nmcli"
+# Screenshot: slurp answers a region; grim (makes the file), wl-copy and notify-send log to shotlog.
+printf '#!/bin/sh\necho "0,0 10x10"\n' >"$STUB/slurp"
+for t in grim wl-copy notify-send; do printf '#!/bin/sh\necho "%s $*" >>"%s"\n[ "%s" = grim ] && : >"$3"\nexit 0\n' "$t" "$STUB/shotlog" "$t" >"$STUB/$t"; done
+chmod +x "$STUB/slurp" "$STUB/grim" "$STUB/wl-copy" "$STUB/notify-send"
 LOG=$(mktemp); PATH="$STUB:$PATH" HUSH_BT_NO_ADAPTER=1 "${H[@]}" -n >"$LOG" 2>&1 & HPID=$!
 trap 'kill $HPID 2>/dev/null; rm -rf "$LOG" "$STUB"' EXIT
 SHOTS="${HUSH_SHOTS:-$HOME/.cache/hush/evidence}"; mkdir -p "$SHOTS"
@@ -173,6 +177,19 @@ t_focus() {
   assert_eq "/0" "$(cc focusPhase | tr -d '"')" "Stop ends the session"
   cc back >/dev/null; assert_eq "main" "$(cc page)" "back from the focus page"
 }
+# Screenshot tile (off in the default layout; switched on the way the Modules page does): a tap runs
+# grim on the slurp region into ~/Pictures, copies it with wl-copy and raises a notification.
+t_screenshot() {
+  cc enableTile screenshot >/dev/null
+  local i; for i in $(seq 20); do [[ "$(cc tileShown screenshot)" == true ]] && break; sleep 0.3; done
+  assert_eq "true" "$(cc tileShown screenshot)" "screenshot tile in the grid once enabled (grim on PATH)"
+  shot screenshot-tile
+  cc pressTile screenshot >/dev/null
+  for i in $(seq 20); do grep -q notify-send "$STUB/shotlog" 2>/dev/null && break; sleep 0.3; done
+  assert_contains "$STUB/shotlog" "grim -g 0,0 10x10 $HOME/Pictures/hush-" "tap shoots the slurp region with grim into ~/Pictures"
+  assert_contains "$STUB/shotlog" "wl-copy" "the image is copied with wl-copy"
+  assert_contains "$STUB/shotlog" "notify-send -a hush -i $HOME/Pictures/hush-" "a notification announces it"
+}
 t_log() { local e; e=$(grep -E 'ERROR|TypeError|ReferenceError|Unable to assign' "$LOG" || true); [[ -z "$e" ]] && pass "no QML errors" || fail "QML errors: $e"; }
 # Bluetooth device page on a fake radio (HUSH_BT_FAKE=1): rows, actions, discovery spinner, battery.
 t_btpage() {
@@ -205,5 +222,5 @@ t_btpage() {
   cc back >/dev/null
 }
 run_test up t_up; run_test pages t_pages; run_test networks t_networks; run_test wifi_password t_wifi_password
-run_test layout t_layout; run_test focus t_focus; run_test keys t_keys; run_test bt t_bt; run_test btpage t_btpage; run_test log t_log
+run_test layout t_layout; run_test focus t_focus; run_test screenshot t_screenshot; run_test keys t_keys; run_test bt t_bt; run_test btpage t_btpage; run_test log t_log
 finish
