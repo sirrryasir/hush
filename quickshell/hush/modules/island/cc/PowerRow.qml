@@ -21,12 +21,6 @@ Row {
     }
     Timer { id: disarm; interval: 2000; onTriggered: row.armed = "" }
 
-    Text {
-        visible: row.armed !== ""
-        anchors.verticalCenter: parent.verticalCenter
-        text: "again to confirm"; color: Colors.islandError
-        font.family: Theme.fontUi; font.pixelSize: 12
-    }
     Repeater {
         model: row.actions
         delegate: Rectangle {
@@ -35,6 +29,13 @@ Row {
             readonly property bool isArmed: row.armed === modelData.id
             width: 32; height: 32; radius: 16
             color: isArmed ? Colors.islandErrorContainer : Colors.islandSurfaceHigh
+            // hint floats above the armed button so the row keeps its width
+            Text {
+                visible: btn.isArmed
+                anchors.right: parent.right; anchors.bottom: parent.top; anchors.bottomMargin: 2
+                text: "again to confirm"; color: Colors.islandError
+                font.family: Theme.fontUi; font.pixelSize: 11
+            }
             Text {
                 anchors.centerIn: parent; text: btn.modelData.glyph
                 color: btn.isArmed ? Colors.islandError : Colors.islandFg
