@@ -42,8 +42,8 @@ Nix and manual install below.
   Eject (unmount, power off, then "Safe to remove") and a USB glyph sits on the rest pill while one is plugged in; needs udisks2. The battery chip opens the power-profile page when
   powerprofilesctl is installed. Modes `reserve`, `overlay`, `autohide`; fullscreen retract; keyboard navigation.
 - **Live activities**: recording, countdown and now playing at rest; mic and camera in use. The
-  timer tile's page (also a Focus tile, on by default) runs a focus session (25 min focus, 5 min break, 15 min long break after the
-  fourth block) with do not disturb on while it runs; the pill shows the ring and the block count.
+  timer tile's page (also a Focus tile, on by default) runs a focus session (by default 25 min focus, 5 min break, 15 min long break after the
+  fourth block; the lengths and cycles are editable on the page) with do not disturb on while it runs; the pill shows the ring and the block count.
 - **Also**: one lock and login screen (Quickshell, SDDM, hyprlock fallback); optional GloView and
   dynamic-cursors plugins; a rEFInd boot menu; colours follow the wallpaper (matugen) across
   Hyprland, GTK, Qt, kitty and SDDM.

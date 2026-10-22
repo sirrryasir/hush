@@ -175,6 +175,12 @@ t_focus() {
   cc pressFocus focusChip_focus >/dev/null; shot focus-page
   cc pressFocus focusButton >/dev/null; sleep 0.3
   assert_eq "/0" "$(cc focusPhase | tr -d '"')" "Stop ends the session"
+  cc pressFocus focusCyclesMore >/dev/null; sleep 0.4
+  assert_contains <(cc focusText focusSubtitle) "Five focus blocks" "the cycles + button adds a block"
+  cc pressFocus focusCyclesLess >/dev/null; cc setFocus focus 50 >/dev/null; sleep 0.4
+  assert_eq "50:00" "$(cc focusText focusTime | tr -d '"')" "the ring shows the stored focus length"
+  assert_contains <(cc focusText focusSubtitle) "50 min" "the subtitle follows the stored length"
+  cc setFocus focus 0 >/dev/null; sleep 0.3
   cc back >/dev/null; assert_eq "main" "$(cc page)" "back from the focus page"
   cc pressTile focus >/dev/null; assert_eq "focus" "$(cc page)" "tapping the Focus tile opens the focus page"
   cc back >/dev/null

@@ -50,6 +50,7 @@ ShellRoot {
         function openFocus(): void { cc.openFocus() }
         function focusText(name: string): string { const t = find(cc, name); return t ? t.text : "" }
         function pressFocus(name: string): bool { const b = find(cc, name); if (!b) return false; b.clicked(); return true }
+        function setFocus(key: string, v: int): void { if (v > 0) Settings.set("focus." + key, v); else Settings.unset("focus") }
         function focusPhase(): string { return Svc.Countdown.phase + "/" + Svc.Countdown.cycle }
         function openAudio(): void { cc.openAudio() }
         // Sound page: "kind:name" per row, the default sink's node.name, a row's level (moveLevel drags its slider).

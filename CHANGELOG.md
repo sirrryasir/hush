@@ -8,6 +8,7 @@ All notable changes to Hush are documented here. The format follows
 
 ### Added
 
+- Focus page: the ring is a dial (drag or scroll) for the focus, break and long-break minutes, and the cycles row sets 1 to 8 blocks; saved in `focus` in settings.json.
 - Settings, Modules: the Rest and Hover face tabs show a live preview of the real rest pill or hover face above the rows.
 - Settings: a Shortcuts page records a key combo per island action and shows copyable Hyprland and Lua bind blocks built from them.
 - Control center: a Focus tile (on by default) opens the focus session page and reads the running phase and time; the control center grid places tiles first-fit, so a 2x1 no longer leaves empty cells.

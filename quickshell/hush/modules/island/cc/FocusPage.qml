@@ -10,16 +10,25 @@ Item {
     id: page
     readonly property bool on: Svc.Countdown.phase !== ""
     readonly property int s: Math.max(0, Svc.Countdown.remaining)
-    readonly property string timeText: on ? Math.floor(s / 60) + ":" + (s % 60 < 10 ? "0" : "") + (s % 60) : "25:00"
-    readonly property real progress: on ? s / (Svc.Countdown.phaseMins * 60) : 0
+    // Idle: the ring is a dial for the phase picked in `sel`; `drag` holds the value while the pointer is down.
+    property string sel: "focus"
+    property int drag: 0
+    readonly property int mins: drag > 0 ? drag : Settings.focus[sel]
+    readonly property int cycles: Settings.focus.cycles
+    readonly property var words: ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight"]
+    readonly property var ordinals: ["", "first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth"]
+    readonly property string timeText: on ? Math.floor(s / 60) + ":" + (s % 60 < 10 ? "0" : "") + (s % 60) : (mins < 10 ? "0" : "") + mins + ":00"
+    readonly property real progress: on ? s / (Svc.Countdown.phaseMins * 60) : Math.min(1, mins / 60)
     readonly property string subtitle: {
         const c = Svc.Countdown
-        if (c.phase === "") return "Four focus blocks of 25 min, breaks of 5, then 15"
+        const F = Settings.focus.focus, B = Settings.focus.break, L = Settings.focus.long, N = cycles
+        if (c.phase === "") return words[N] + (N === 1 ? " focus block" : " focus blocks") + " of " + F + " min, breaks of " + B + ", then " + L
         if (c.phase === "long") return "Long break, then done"
         // The blocks and breaks still ahead of the long break, at full length.
-        const ahead = c.phase === "focus" ? (4 - c.cycle) * 30 * 60 : (4 - c.cycle) * 25 * 60 + (3 - c.cycle) * 5 * 60
+        const ahead = c.phase === "focus" ? (N - c.cycle) * (F + B) * 60 : ((N - c.cycle) * F + (N - 1 - c.cycle) * B) * 60
         const at = new Date(Date.now() + (page.s + ahead) * 1000)
-        return ["First", "Second", "Third", "Fourth"][c.cycle - 1] + " of four · long break at "
+        const o = ordinals[c.cycle]
+        return o[0].toUpperCase() + o.slice(1) + " of " + words[N].toLowerCase() + " · long break at "
             + Qt.formatTime(at, String(Settings.island.clock) === "12" ? "h:mm AP" : "hh:mm")
     }
     signal back()
@@ -66,6 +75,19 @@ Item {
                     c.strokeStyle = Colors.islandSurfaceHighest; c.beginPath(); c.arc(width / 2, height / 2, r, 0, Math.PI * 2); c.stroke()
                     if (p > 0.005) { c.strokeStyle = Colors.islandPrimary; c.beginPath(); c.arc(width / 2, height / 2, r, -Math.PI / 2, -Math.PI / 2 + p * Math.PI * 2); c.stroke() }
                 }
+                MouseArea {
+                    objectName: "focusDial"
+                    anchors.fill: parent; enabled: !page.on
+                    onPressed: m => setFromPointer(m)
+                    onPositionChanged: m => { if (pressed) setFromPointer(m) }
+                    onReleased: if (page.drag > 0) { Settings.set("focus." + page.sel, page.drag); page.drag = 0 }
+                    onWheel: w => Settings.set("focus." + page.sel, Math.max(1, Math.min(120, page.mins + (w.angleDelta.y > 0 ? 1 : -1))))
+                    // 12 o'clock = 0, clockwise, a full turn = 60 min.
+                    function setFromPointer(m) {
+                        const a = Math.atan2(m.x - width / 2, height / 2 - m.y)
+                        page.drag = Math.max(1, Math.min(60, Math.round((a < 0 ? a + Math.PI * 2 : a) / (Math.PI * 2) * 60)))
+                    }
+                }
                 Text {
                     objectName: "focusTime"
                     anchors.centerIn: parent; text: page.timeText; color: Colors.islandFg
@@ -75,7 +97,7 @@ Item {
             Text {
                 objectName: "focusPhase"
                 anchors.horizontalCenter: parent.horizontalCenter
-                text: (page.on ? Svc.Countdown.phaseLabel : "Focus") + " · " + (page.on ? Svc.Countdown.phaseMins : 25) + " min"
+                text: (page.on ? Svc.Countdown.phaseLabel : ({ focus: "Focus", break: "Break", long: "Long break" })[page.sel]) + " · " + (page.on ? Svc.Countdown.phaseMins : page.mins) + " min" + (page.on ? "" : " · drag the ring")
                 color: Colors.islandFgVar; font.family: Theme.fontUi; font.pixelSize: 11
             }
         }
@@ -105,19 +127,19 @@ Item {
         Entry {
             icon: "timer"; title: "Phases"; sub: "Focus, break, long break"
             Repeater {
-                model: [["focus", "25"], ["break", "5"], ["long", "15"]]
+                model: ["focus", "break", "long"]
                 PillButton {
-                    required property var modelData
-                    objectName: "focusChip_" + modelData[0]
-                    text: modelData[1]; primary: Svc.Countdown.phase === modelData[0]
-                    onClicked: Svc.Countdown.focusStart(modelData[0])
+                    required property string modelData
+                    objectName: "focusChip_" + modelData
+                    text: String(Settings.focus[modelData]); primary: (page.on ? Svc.Countdown.phase : page.sel) === modelData
+                    onClicked: page.on ? Svc.Countdown.focusStart(modelData) : page.sel = modelData
                 }
             }
         }
         Entry {
-            icon: "repeat"; title: "Cycles"; sub: "Long break after the fourth"
+            icon: "repeat"; title: "Cycles"; sub: "Long break after the " + page.ordinals[page.cycles]
             Repeater {
-                model: 4
+                model: Math.min(8, page.cycles)
                 Rectangle {
                     required property int index
                     anchors.verticalCenter: parent.verticalCenter
@@ -125,6 +147,14 @@ Item {
                     color: index < Svc.Countdown.cycle ? Colors.islandPrimary : Colors.islandSurfaceHighest
                     Behavior on width { NumberAnimation { duration: Theme.durationShort } }
                 }
+            }
+            PillButton {
+                objectName: "focusCyclesLess"; glyph: "remove"; enabledLook: !page.on && page.cycles > 1
+                onClicked: Settings.set("focus.cycles", page.cycles - 1)
+            }
+            PillButton {
+                objectName: "focusCyclesMore"; glyph: "add"; enabledLook: !page.on && page.cycles < 8
+                onClicked: Settings.set("focus.cycles", page.cycles + 1)
             }
         }
         Entry {

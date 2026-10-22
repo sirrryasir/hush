@@ -308,7 +308,7 @@ FocusScope {
         Toggle {
             readonly property int s: Math.max(0, Svc.Countdown.remaining)
             icon: "self_improvement"; label: "Focus"
-            subtitle: Svc.Countdown.running && Svc.Countdown.phase !== "" ? Svc.Countdown.phaseLabel + " " + Math.floor(s / 60) + ":" + (s % 60 < 10 ? "0" : "") + (s % 60) : "25 min"
+            subtitle: Svc.Countdown.running && Svc.Countdown.phase !== "" ? Svc.Countdown.phaseLabel + " " + Math.floor(s / 60) + ":" + (s % 60 < 10 ? "0" : "") + (s % 60) : Settings.focus.focus + " min"
             checked: Svc.Countdown.running && Svc.Countdown.phase !== ""
             onClicked: cc.openFocus()
         }

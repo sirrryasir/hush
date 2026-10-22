@@ -14,6 +14,8 @@ Singleton {
     readonly property var island: root.data.island || ({})
     readonly property var modules: root.data.modules || ({})
     readonly property var motion: root.data.motion || ({})
+    // The fallback covers the moment before settings.default.json has loaded.
+    readonly property var focus: Object.assign({ focus: 25, break: 5, long: 15, cycles: 4 }, root.data.focus)
     readonly property var layout: root.data.layout || ({})
 
     function isObj(v) { return v !== null && typeof v === "object" && !Array.isArray(v) }

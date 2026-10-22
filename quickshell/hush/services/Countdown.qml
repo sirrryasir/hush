@@ -2,12 +2,13 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import qs.config
 
 // Timer activity (named Countdown: a singleton called Timer would shadow QtQuick's Timer in this module).
 // start(seconds, label) / stop(); `remaining` in whole seconds. State lives in ~/.cache/hush/timer.json
 // as {endsAt (epoch ms), label, phase, cycle, dndWas} so a shell restart keeps the countdown.
-// Focus session: focusStart(phase) runs focus 25 / break 5 / long break 15 (minutes), the long break
-// after the fourth focus, each phase change announced with notify-send; DND is on from the first focus
+// Focus session: focusStart(phase) runs focus / break / long break minutes and the cycle count come from Settings.focus
+// (25 / 5 / 15 and 4 by default), the long break after the last focus, each phase change announced with notify-send; DND is on from the first focus
 // to the end of the session (focusDnd), then back to what it was. stop() ends either kind.
 Singleton {
     id: root
@@ -15,13 +16,13 @@ Singleton {
     property int remaining: 0
     property string label: ""
     property real endsAt: 0
-    // "" plain timer, else "focus" | "break" | "long"; cycle counts the focus blocks (1..4).
+    // "" plain timer, else "focus" | "break" | "long"; cycle counts the focus blocks (1..cycles).
     property string phase: ""
     property int cycle: 0
     property bool dndWas: false
     // shortcut: session only, resets to on with the shell; make it a setting when someone asks.
     property bool focusDnd: true
-    readonly property int phaseMins: phase === "focus" ? 25 : phase === "break" ? 5 : 15
+    readonly property int phaseMins: Settings.focus[phase === "focus" ? "focus" : phase === "break" ? "break" : "long"]
     readonly property string phaseLabel: ({ focus: "Focus", break: "Break", long: "Long break" })[phase] || ""
     signal finished(string label)
 
@@ -53,7 +54,7 @@ Singleton {
     function next() {
         if (phase === "long") { stop(); return }
         if (phase === "break") cycle++
-        focusStart(phase === "focus" ? (cycle < 4 ? "break" : "long") : "focus")
+        focusStart(phase === "focus" ? (cycle < Settings.focus.cycles ? "break" : "long") : "focus")
         Quickshell.execDetached(["notify-send", "-a", "hush", "-i", "timer", phaseLabel, phaseMins + " min"])
     }
     function save() {
