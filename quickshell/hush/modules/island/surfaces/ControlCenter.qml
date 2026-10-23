@@ -428,7 +428,7 @@ FocusScope {
         onBack: cc.back()
         model: Svc.Audio.sinks.map(n => ({ kind: "sink", icon: "speaker", name: n.description || n.name, node: n }))
             .concat(Svc.Audio.source ? [{ kind: "source", icon: "mic", name: Svc.Audio.source.description || Svc.Audio.source.name, node: Svc.Audio.source }] : [])
-            .concat(Svc.Audio.streams.map(n => ({ kind: "stream", icon: "graphic_eq", name: n.properties["application.name"] || n.description || n.name, node: n })))
+            .concat(Svc.Audio.streams.map(n => ({ kind: "stream", icon: "graphic_eq", name: (n.properties || {})["application.name"] || n.description || n.name, node: n })))
         delegate: Component { AudioRow {} }
     }
 
