@@ -234,6 +234,8 @@ cmd_lock() { # [--hyprlock]  one lock at a time; the Quickshell lock runs as its
   lock_layout || true
   [[ "${1:-}" == --hyprlock ]] && exec hyprlock
   [[ -z "${1:-}" ]] || die "usage: hush lock [--hyprlock]"
+  # settings.json "lock": "hyprlock" makes every caller (control center, hypridle) use hyprlock
+  [[ -f "$STATE_DIR/settings.json" ]] && [[ "$(python3 -c "import json,sys;print(json.load(open(sys.argv[1])).get('lock',''))" "$STATE_DIR/settings.json" 2>/dev/null)" == hyprlock ]] && exec hyprlock
   need qs
   # quiet on the terminal; Quickshell keeps its own log under $XDG_RUNTIME_DIR/quickshell
   HUSH_ROOT=$HUSH_ROOT exec qs -n -p "$HUSH_ROOT/quickshell/hush/lock.qml" >/dev/null 2>&1

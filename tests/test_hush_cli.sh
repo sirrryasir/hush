@@ -83,6 +83,15 @@ t_lock() {
   assert_eq "0 0" "$ra $rb" "two concurrent hush theme runs both succeed"
   python3 -c "import json;json.load(open('$CFG/hush/Colors.json'))" && pass "Colors.json valid after concurrent runs" || fail "Colors.json corrupt after concurrent runs"
 }
+t_lock_setting() {
+  # settings.json lock=hyprlock: hush lock runs hyprlock (a stub on PATH records the call).
+  local nb; nb=$(mktemp -d); printf '#!/bin/sh\ntouch %s/called\n' "$nb" > "$nb/hyprlock"; chmod +x "$nb/hyprlock"
+  local sj="$CFG/hush/settings.json" bak=""; [[ -f "$sj" ]] && bak=$(cat "$sj")
+  echo '{"lock":"hyprlock"}' > "$sj"
+  PATH="$nb:$PATH" $H lock >/dev/null 2>&1
+  [[ -f "$nb/called" ]] && pass "lock=hyprlock runs hyprlock" || fail "lock=hyprlock did not run hyprlock"
+  if [[ -n "$bak" ]]; then printf '%s' "$bak" > "$sj"; else rm -f "$sj"; fi
+}
 t_next_prev() {
   $H theme harbor >/dev/null
   $H theme next >/dev/null; assert_eq "moss" "$($H status | head -1 | awk '{print $2}')" "theme next goes harbor -> moss"
@@ -132,6 +141,7 @@ run_test "atomic render" t_atomic
 run_test "wall with spaces" t_wall_spaces
 run_test "reload sets wallpaper" t_reload_wall
 run_test "lock" t_lock
+run_test "lock setting" t_lock_setting
 run_test "next/prev" t_next_prev
 run_test "wall mode from image" t_wall_mode
 run_test "media keys" t_media_keys

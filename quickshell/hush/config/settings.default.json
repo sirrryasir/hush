@@ -1,4 +1,5 @@
 {
+  "lock": "quickshell",
   "island": {
     "width": 140, "height": 36, "radius": 18, "topGap": 6, "reserve": 40,
     "mode": "reserve", "hoverFace": true, "liveActivities": true, "reducedMotion": false,

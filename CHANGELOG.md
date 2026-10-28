@@ -6,6 +6,10 @@ All notable changes to Hush are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- `lock` in settings.json: `hyprlock` makes `hush lock`, the control center and hypridle use hyprlock instead of the Quickshell lock.
+
 ## [0.3.0] - 2026-10-28
 
 ### Added

@@ -121,7 +121,7 @@ window retracts it, and the top edge still reveals it.
 
 **Interaction.** Hovering 120 ms opens the hover face; it closes 300 ms after the pointer leaves.
 `island.clickLeft`, `clickRight`, `clickMiddle`: `cc`, `notifs`, `media`, `calendar`, `launcher`,
-`none`. `island.scroll`: `volume`, `brightness`, `none`. `island.clock`: `24` or `12` (pill, lock,
+`none`. `lock`: `quickshell` (default) or `hyprlock`, what `hush lock` and the control center run. `island.scroll`: `volume`, `brightness`, `none`. `island.clock`: `24` or `12` (pill, lock,
 login). Buttons ignore clicks for the first `motion.armMs` (500 ms); critical notifications stay
 until clicked. Settings, Modules writes the `layout` key: which surfaces exist, the rest pill's
 sides, the hover face chips and control center tiles (1x1 or 2x1); "Reset layout" removes it. The Rest and Hover face tabs show a live preview of the real pill. Settings, Shortcuts records a key combo per island action (saved as `shortcuts`) and shows copyable bind blocks for Hyprland or its Lua config.
