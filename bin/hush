@@ -51,6 +51,7 @@ usage: hush <command>
   track <on|off>       off: git skip-worktree on those files in their repos; on: undo
   fallback             stop the Hush shell, start Waybar and SwayNC
   sddm sync            refresh ~/.cache/hush/sddm (wallpaper, colours, avatar) for the SDDM theme
+  install [opts]       link this checkout into ~/.config (install.sh; packaged copies skip the fonts)
   lock [--hyprlock]    lock the screen (Quickshell; --hyprlock: the hyprlock fallback), once
   face <image>         set the login avatar: round 512 px crop to ~/.face, then sddm sync
   settings             open (or close) the settings surface in the island
@@ -641,6 +642,7 @@ main() {
     volume) shift; cmd_volume "$@" ;;
     brightness) shift; cmd_brightness "$@" ;;
     lock) cmd_lock "${2:-}" ;;
+    install) shift; [[ $# -eq 0 && ( "$HUSH_ROOT" == /usr/* || "$HUSH_ROOT" == /nix/* || "$HUSH_ROOT" == */.nix-profile/* ) ]] && set -- --no-fonts; exec "$HUSH_ROOT/install.sh" "$@" ;;
     face) shift; cmd_face "$@" ;;
     settings) qs -c hush ipc call hush settings >/dev/null || die "the shell is not running" ;;
     --version|version) cat "$HUSH_ROOT/VERSION" ;;

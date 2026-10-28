@@ -13,7 +13,7 @@ Hush replaces the bar, launcher, notification daemon and control center with one
 top of each monitor. The lock and login screens use the same island.
 
 ```bash
-yay -S hush-git && /usr/share/hush/install.sh --no-fonts
+yay -S hush-git && hush install
 ```
 
 Nix and manual install below.
@@ -59,8 +59,8 @@ git clone https://github.com/sirrryasir/hush.git ~/hush
 ~/hush/install.sh          # --no-fonts / --no-theme skip those steps
 ```
 
-Packaged: Arch `yay -S hush-git`, then `/usr/share/hush/install.sh --no-fonts`.
-Nix `nix profile install github:sirrryasir/hush`, then `~/.nix-profile/share/hush/install.sh --no-fonts`.
+Packaged: Arch `yay -S hush-git`, then `hush install`.
+Nix `nix profile install github:sirrryasir/hush`, then `hush install`.
 
 `install.sh` symlinks the shell, matugen, hyprlock and `hush*` into `~/.config` and
 `~/.local/bin`, installs fonts, enables the git hooks and sets the default colours (`harbor`). It never uses sudo
