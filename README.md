@@ -13,7 +13,7 @@ Hush replaces the bar, launcher, notification daemon and control center with one
 top of each monitor. The lock and login screens use the same island.
 
 ```bash
-yay -S hush-git && hush install                                      # Arch
+yay -S hush-shell && hush install                                    # Arch (hush-git tracks main)
 curl -fsSL https://raw.githubusercontent.com/sirrryasir/hush/main/get.sh | sh   # any distro
 ```
 
@@ -62,7 +62,7 @@ git clone https://github.com/sirrryasir/hush.git ~/hush
 
 Any distro: `curl -fsSL https://raw.githubusercontent.com/sirrryasir/hush/main/get.sh | sh` clones into
 `~/.local/share/hush` (`HUSH_DIR` overrides) and runs `install.sh`; rerun it to update. It installs no packages.
-Packaged: Arch `yay -S hush-git`, then `hush install`.
+Packaged: Arch `yay -S hush-shell` (release) or `hush-git` (main), then `hush install`.
 Nix `nix profile install github:sirrryasir/hush`, then `hush install`.
 
 `install.sh` symlinks the shell, matugen, hyprlock and `hush*` into `~/.config` and
