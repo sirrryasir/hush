@@ -6,6 +6,8 @@ All notable changes to Hush are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-28
+
 ### Added
 
 - Focus page: the ring is a dial (drag or scroll) for the focus, break and long-break minutes, and the cycles row sets 1 to 8 blocks; saved in `focus` in settings.json.
@@ -42,6 +44,9 @@ All notable changes to Hush are documented here. The format follows
   chip names the profile while power-saver is active.
 
 ### Fixed
+
+- Control center: the panel grows for the tiles it holds instead of squeezing them; the hover face widens for its chips; "again to confirm" no longer pushes the power buttons off the edge.
+- Settings: option lists open inside the surface instead of being clipped; the Shortcuts page records Super from the real keyboard.
 
 - Boot menu: the Windows icon applies to Windows 8 and later (`os_win8.png`), and Linux boots
   without the rEFInd text screen.

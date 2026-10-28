@@ -7,7 +7,7 @@
   <p>Dynamic island shell for Hyprland, built on Quickshell.</p>
 </div>
 
-https://github.com/user-attachments/assets/c7b52b80-f737-4b0d-b1c2-1ea03514216e
+<p align="center"><img src="assets/demo/hush-demo.gif" alt="Hush demo: the pill, hover face and control center" width="720" /></p>
 
 Hush replaces the bar, launcher, notification daemon and control center with one pill at the
 top of each monitor. The lock and login screens use the same island.
