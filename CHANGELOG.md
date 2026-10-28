@@ -8,6 +8,7 @@ All notable changes to Hush are documented here. The format follows
 
 ### Added
 
+- `get.sh`: `curl -fsSL .../get.sh | sh` clones or updates `~/.local/share/hush` and runs the installer, for distros without a package.
 - `hush install` runs the installer from a packaged copy (`--no-fonts` implied), so the install line is `yay -S hush-git && hush install`.
 - `lock` in settings.json: `hyprlock` makes `hush lock`, the control center and hypridle use hyprlock instead of the Quickshell lock.
 

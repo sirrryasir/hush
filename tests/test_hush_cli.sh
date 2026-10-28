@@ -95,6 +95,10 @@ t_lock_setting() {
 t_install_cmd() {
   $H install --help 2>&1 | grep -q 'usage: install.sh' && pass "hush install hands off to install.sh" || fail "hush install did not run install.sh"
 }
+t_get_sh() {
+  sh -n get.sh && pass "get.sh parses" || fail "get.sh syntax"
+  PATH=/nonexistent /bin/sh get.sh 2>&1 | grep -q 'install first' && pass "get.sh names missing tools" || fail "get.sh ran without its tools"
+}
 t_next_prev() {
   $H theme harbor >/dev/null
   $H theme next >/dev/null; assert_eq "moss" "$($H status | head -1 | awk '{print $2}')" "theme next goes harbor -> moss"
@@ -146,6 +150,7 @@ run_test "reload sets wallpaper" t_reload_wall
 run_test "lock" t_lock
 run_test "lock setting" t_lock_setting
 run_test "install command" t_install_cmd
+run_test "get.sh" t_get_sh
 run_test "next/prev" t_next_prev
 run_test "wall mode from image" t_wall_mode
 run_test "media keys" t_media_keys

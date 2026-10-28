@@ -13,7 +13,8 @@ Hush replaces the bar, launcher, notification daemon and control center with one
 top of each monitor. The lock and login screens use the same island.
 
 ```bash
-yay -S hush-git && hush install
+yay -S hush-git && hush install                                      # Arch
+curl -fsSL https://raw.githubusercontent.com/sirrryasir/hush/main/get.sh | sh   # any distro
 ```
 
 Nix and manual install below.
@@ -59,6 +60,8 @@ git clone https://github.com/sirrryasir/hush.git ~/hush
 ~/hush/install.sh          # --no-fonts / --no-theme skip those steps
 ```
 
+Any distro: `curl -fsSL https://raw.githubusercontent.com/sirrryasir/hush/main/get.sh | sh` clones into
+`~/.local/share/hush` (`HUSH_DIR` overrides) and runs `install.sh`; rerun it to update. It installs no packages.
 Packaged: Arch `yay -S hush-git`, then `hush install`.
 Nix `nix profile install github:sirrryasir/hush`, then `hush install`.
 
