@@ -248,7 +248,7 @@ FocusScope {
         { id: "shelf", label: "Shelf", cmd: ipc + "openSurface shelf", key: "O" },
         { id: "focus", label: "Focus session", cmd: "qs -c hush ipc call activity focusStart", key: "F" },
         { id: "lock", label: "Lock", cmd: "hush lock", key: "L" },
-        { id: "overview", label: "Overview", cmd: "hush overview", key: "" },
+        { id: "overview", label: "Overview", cmd: "hush overview", key: "Tab" },
         { id: "mute", label: "Mute", cmd: "hush volume mute", key: "" }]
     // Combos are "Super + Ctrl + C" (last part is the Hyprland key name); user edits live in settings.json `shortcuts`.
     function combo(e) { const m = Cfg.Settings.data.shortcuts; return m && m[e.id] !== undefined ? m[e.id] : (e.key ? "Super + " + e.key : "") }
