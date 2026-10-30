@@ -114,8 +114,11 @@ Singleton {
             const r = root.island ? root.findNamed(root.island, "focusRing") : null
             return !!r && r.visible
         }
-        // Workspace overview: the GloView Hyprland plugin (Hush builds none of its own).
+        // Workspace overview surface (Super+Tab, `hush overview`).
         function overview(): void { root.overview() }
+        function toggleOverview(): void { root.overview() }
+        function overviewVisible(): bool { return root.island ? root.island.state === "overview" : false }
+        function overviewCells(): int { const o = root.surface("overview"); return o ? o.cellCount : 0 }
         // --- end modes ---
         // Morph probe for tests/test_morph.sh: open the control center after delayMs, reverse it
         // reverseMs later (0: stay open), timed in the shell so no IPC client start-up lands mid-capture.
@@ -198,16 +201,7 @@ Singleton {
         for (let i = 0; i < item.children.length; i++) { const f = findNamed(item.children[i], name); if (f) return f }
         return null
     }
-    // Runs `hyprctl gloview` when the GloView plugin is loaded; otherwise does nothing and logs once.
-    property bool overviewWarned: false
-    function overview() { if (!overviewProc.running) overviewProc.running = true }
-    Process {
-        id: overviewProc
-        command: ["sh", "-c", "hyprctl plugin list 2>/dev/null | grep -q 'Plugin GloView' || exit 3; hyprctl gloview >/dev/null"]
-        onExited: code => {
-            if (code === 3 && !root.overviewWarned) { root.overviewWarned = true; console.log("hush: overview needs the GloView plugin (hyprpm); not loaded, ignoring") }
-        }
-    }
+    function overview() { if (root.island) root.island.toggleSurface("overview") }
     property var themeNames: []
     function setTheme(name) { themeProc.command = [Paths.hush, "theme", name]; themeProc.running = true }
     Process { id: themeProc }

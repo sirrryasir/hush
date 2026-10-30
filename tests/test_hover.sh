@@ -152,8 +152,11 @@ t_clicks() {
   else pass "no dbus-python/PyGObject: activity circle click skipped"; fi
 }
 t_overview() {
-  # GloView overview over IPC (toggled twice so the screen is left as it was); no errors either way.
-  shell_ipc overview >/dev/null; sleep 0.8; shell_ipc overview >/dev/null; sleep 0.6
+  # The overview surface over IPC: it opens in the island, lists this monitor's workspaces, closes.
+  shell_ipc toggleOverview >/dev/null; shell_wait_state overview
+  assert_eq "overview" "$(shell_state)" "toggleOverview opens the overview surface"
+  local n; n=$(shell_ipc overviewCells); (( n >= 5 )) && pass "overview lists $n workspaces" || fail "overview lists $n workspaces"
+  shell_ipc closeSurface >/dev/null; shell_wait_state rest
   local e; e=$(shell_log_errors); [[ -z "$e" ]] && pass "overview IPC runs without errors" || fail "overview: $e"
 }
 # Keyboard layout chip, in its own harness with a fake hyprctl: one layout shows nothing; two show

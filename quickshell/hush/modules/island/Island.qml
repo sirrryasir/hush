@@ -20,12 +20,13 @@ Item {
         QQ.State { name: "notification" }, QQ.State { name: "device" }, QQ.State { name: "osd" }, QQ.State { name: "expanded" },
         QQ.State { name: "mediaSurface" }, QQ.State { name: "calendar" }, QQ.State { name: "notifCenter" },
         QQ.State { name: "launcher" }, QQ.State { name: "wallpapers" }, QQ.State { name: "settings" },
+        QQ.State { name: "overview" },
         QQ.State { name: "shelf" }, QQ.State { name: "shelfDrop" }
     ]
     // Surfaces that grow out of the pill; "expanded" is the control center. The last
-    // three are modal: they take the keyboard and the whole island surface catches clicks.
+    // four are modal: they take the keyboard and the whole island surface catches clicks.
     readonly property var panels: ["expanded", "mediaSurface", "calendar", "notifCenter", "shelf"]
-    readonly property var modals: ["launcher", "wallpapers", "settings"]
+    readonly property var modals: ["launcher", "wallpapers", "settings", "overview"]
     readonly property var surfaces: panels.concat(modals)
     readonly property bool surfaceOpen: surfaces.indexOf(state) >= 0
     readonly property bool modalOpen: modals.indexOf(state) >= 0
@@ -356,6 +357,7 @@ Item {
         register("rest", restComp); register("hover", hoverComp); register("expanded", ccComp)
         register("mediaSurface", mediaSurfaceComp); register("calendar", calendarComp); register("notifCenter", notifCenterComp)
         register("launcher", launcherComp); register("wallpapers", wallpapersComp); register("settings", settingsComp)
+        register("overview", overviewComp)
         register("shelf", shelfComp); register("shelfDrop", shelfDropComp)
     }
     Component { id: restComp; Rest { island: islandRoot } }
@@ -378,6 +380,7 @@ Item {
     Component { id: mediaSurfaceComp; Surf.Media {} }
     Component { id: calendarComp; Surf.Calendar {} }
     Component { id: notifCenterComp; Surf.NotificationCenter { host: Svc.Notifs } }
+    Component { id: overviewComp; Surf.Overview { screenName: islandRoot.screenName; onClose: islandRoot.closeSurface() } }
     Component { id: launcherComp; Surf.Launcher { mode: islandRoot.launcherMode; onClose: islandRoot.closeSurface() } }
     Component {
         id: wallpapersComp

@@ -26,7 +26,6 @@ t_status() {
   out=$(PATH="$d:$PATH" HOME="$d/home" USER=nobody-zz $H plugins status)
   grep -qE '^gloview +loaded yes +installed (yes|no)$' <<<"$out" && pass "status lists gloview as loaded" || fail "gloview line: $out"
   grep -qE '^dynamic-cursors +loaded no +installed no$' <<<"$out" && pass "status lists dynamic-cursors as missing" || fail "dynamic-cursors line: $out"
-  out=$(PATH="$d:$PATH" $H overview); assert_eq "gloview-called" "$out" "overview runs hyprctl gloview"
   rm -rf "$d"
 }
 t_install() {

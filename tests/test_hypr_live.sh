@@ -5,8 +5,8 @@ THEME_BAK=$(mktemp)
 cp "$CFG/hypr/modules/theme.lua" "$THEME_BAK"
 trap 'cp -f "$THEME_BAK" "$CFG/hypr/modules/theme.lua"; rm -f "$THEME_BAK"' EXIT
 t_no_hardcoded() {
-  local hits; hits=$(grep -nE 'rgba\([0-9a-fA-F]{6,8}\)|0x[0-9a-fA-F]{6,8}' $CFG/hypr/modules/decorations.lua $CFG/hypr/modules/gloview.lua $CFG/hypr/modules/misc.lua | grep -v 'theme\.' || true)
-  [[ -z "$hits" ]] && pass "no hardcoded colors in decorations/gloview/misc" || fail "hardcoded colors: $hits"
+  local hits; hits=$(grep -nE 'rgba\([0-9a-fA-F]{6,8}\)|0x[0-9a-fA-F]{6,8}' $CFG/hypr/modules/decorations.lua $CFG/hypr/modules/misc.lua | grep -v 'theme\.' || true)
+  [[ -z "$hits" ]] && pass "no hardcoded colors in decorations/misc" || fail "hardcoded colors: $hits"
 }
 t_opaque() {
   local bad; bad=$(grep -nE 'opacity *= *"' $CFG/hypr/modules/windowrules.lua | grep -vE '"1\.0( override)? 1\.0( override)?"|"0\.86 0\.78"' || true)
@@ -47,16 +47,13 @@ t_check_needs_hypr() {
 }
 t_fallback_sync() {
   if [[ "$(bin/hush status | awk '/^theme/{print $2}')" != harbor ]]; then bin/hush theme harbor >/dev/null; fi
-  python3 - <<'EOF' && pass "decorations.lua and gloview.lua fallbacks equal generated harbor" || fail "fallback palettes drift from generated harbor"
+  python3 - <<'EOF' && pass "decorations.lua fallbacks equal generated harbor" || fail "fallback palettes drift from generated harbor"
 import os, re
 gen = dict(re.findall(r'(\w+) = "(#[0-9a-f]{6}|dark|light)"', open(os.environ["CFG"] + "/hypr/modules/theme.lua").read()))
 dec = open(os.environ["CFG"] + "/hypr/modules/decorations.lua").read()
 i = dec.index("local DEFAULT = {")
 fb = dict(re.findall(r'(\w+) = "([^"]+)"', dec[i:dec.index("}", i)]))
 assert fb == gen, (fb, gen)
-ggen = dict(re.findall(r'(\w+) = 0x([0-9a-f]{8})', open(os.environ["CFG"] + "/hypr/modules/gloview-colors.lua").read()))
-gl = dict(re.findall(r'(\w+) = h\("([0-9a-f]{8})"\)', open(os.environ["CFG"] + "/hypr/modules/gloview.lua").read()))
-assert gl == ggen, (gl, ggen)
 EOF
 }
 run_test "hardcoded colors" t_no_hardcoded

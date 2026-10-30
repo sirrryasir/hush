@@ -8,7 +8,7 @@ import "../rest"
 // The hover face, 44 px tall and 320 px wide (wider with many chips, up to 656): chips in layout.hover order (default: this monitor's
 // workspaces as dots with the active one drawn as a pill, the date, the media title while something
 // plays, Bluetooth, Wi-Fi, battery; optional volume, brightness, timer, recording; the shelf chip shows while files are kept). A dot goes to
-// its workspace and the date opens the calendar; the active dot or a long press opens the GloView
+// its workspace and the date opens the calendar; the active dot or a long press opens the workspace
 // overview; any other left click goes to the pill's click mapping.
 StateBase {
     id: face
@@ -75,7 +75,7 @@ StateBase {
                         anchors.fill: parent; anchors.margins: -4
                         Accessible.role: Accessible.Button
                         Accessible.name: "Workspace " + parent.modelData.name + (parent.modelData.active ? ", current" : "")
-                        // The active dot opens the workspace overview (GloView); any other dot goes there.
+                        // The active dot opens the workspace overview; any other dot goes there.
                         onClicked: parent.modelData.active ? Svc.Ipc.overview() : Svc.Hypr.go(parent.modelData.id)
                     }
                 }

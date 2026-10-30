@@ -56,7 +56,7 @@ usage: hush <command>
   face <image>         set the login avatar: round 512 px crop to ~/.face, then sddm sync
   settings             open (or close) the settings surface in the island
   plugins [status|install]  optional Hyprland plugins gloview and dynamic-cursors (hyprpm)
-  overview             open the GloView overview (hyprctl gloview)
+  overview             toggle the workspace overview in the island
   shell <start|stop|restart|status|log>  manage the Hush Quickshell shell
   volume up|down|mute|mic-mute [step]  change output volume (step %, default 5, capped at 100) or toggle mute
   brightness up|down [step]  change screen brightness (step %, default 5, never fully off)
@@ -636,7 +636,7 @@ main() {
     fallback) cmd_fallback ;;
     sddm) cmd_sddm "${2:-}" ;;
     plugins) cmd_plugins "${2:-status}" ;;
-    overview) command -v hyprctl >/dev/null || die "hyprctl not found"; hyprctl gloview ;;
+    overview) qs -c hush ipc call hush toggleOverview >/dev/null || die "the shell is not running" ;;
     shell) cmd_shell "${2:-}" ;;
     timer) cmd_timer "${2:-}" ;;
     volume) shift; cmd_volume "$@" ;;

@@ -29,7 +29,7 @@ Nix and manual install below.
 
 - **Island**: clock, activity circle and status ring at rest; files dragged onto the pill are kept for 24 h (a glyph at rest and a shelf chip on the hover face open the strip to drag them out, copy or remove); a hover face with workspaces, date
   and track; control center, media, calendar (with reminders: a time and a text, a notification when due, the next one on the pill), notification center, launcher (apps, windows,
-  calculator, clipboard), wallpaper grid and settings open from the pill. The Wi-Fi page joins,
+  calculator, clipboard), workspace overview (live window thumbnails; Super+Tab), wallpaper grid and settings open from the pill. The Wi-Fi page joins,
   forgets and details networks, joins hidden ones and runs a hotspot; a VPN tile toggles a
   NetworkManager VPN or WireGuard profile and an airplane mode tile (off by default) blocks every
   radio through rfkill. App status icons (StatusNotifierItem) sit behind a button in the control
@@ -100,7 +100,7 @@ Hush ships no keybinds. Suggested ones, as `hl.bind(combo, hl.dsp.exec_cmd(cmd))
 | `hush face <image>` | set the login avatar (`~/.face`, round crop) and refresh the SDDM theme |
 | `hush sddm sync` | refresh the SDDM theme's wallpaper, colours and avatar |
 | `hush plugins [status\|install]` | show or install the optional plugins |
-| `hush overview` | toggle the GloView overview |
+| `hush overview` | toggle the workspace overview in the island |
 | `hush list` | list the themes |
 | `hush theme <name\|next\|prev> [--from X,Y]` | apply a theme (wallpaper, colours, reloads) |
 | `hush wall <path\|random> [--mode light\|dark] [--from X,Y]` | change the wallpaper, keep the theme's scheme |
