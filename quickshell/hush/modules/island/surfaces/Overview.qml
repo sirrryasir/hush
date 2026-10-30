@@ -29,6 +29,8 @@ FocusScope {
     readonly property var thumbs: windows.filter(t => t.workspace.id === shownWorkspace)
     readonly property int thumbCount: thumbs.length
     property int hoverIndex: -1
+    property bool dragging: false
+    readonly property int cellH: 68
     readonly property var monitor: Hyprland.monitors.values.find(m => m.name === screenName) || Hyprland.focusedMonitor
 
     // A window's rect inside a w x h box that the monitor's usable logical area is fitted into.
@@ -75,8 +77,9 @@ FocusScope {
         else if (event.key === Qt.Key_Left) root.stepShown(-1)
         else if (event.key === Qt.Key_Right) root.stepShown(1)
         else if (event.key === Qt.Key_Tab && n) root.hoverIndex = (root.hoverIndex + 1) % n
-        else if (event.key === Qt.Key_Backtab && n) root.hoverIndex = (root.hoverIndex - 1 + n) % n
-        else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) root.focusThumb(root.hoverIndex)
+        else if (event.key === Qt.Key_Backtab && n) root.hoverIndex = (Math.max(0, root.hoverIndex) - 1 + n) % n
+        // Enter with no thumbnail picked commits the shown workspace, so empty cells are reachable by keyboard.
+        else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) root.hoverIndex >= 0 ? root.focusThumb(root.hoverIndex) : (Hypr.go(root.shownWorkspace), root.close())
         else return
         event.accepted = true
     }
@@ -100,16 +103,18 @@ FocusScope {
                     required property var modelData
                     required property int index
                     readonly property var wins: root.windows.filter(t => t.workspace.id === modelData.id)
-                    width: 120; height: 68; radius: 10
+                    width: 120; height: root.cellH; radius: 10
                     color: drop.containsDrag ? Qt.rgba(1, 1, 1, 0.16) : index === root.shownIndex ? Qt.rgba(1, 1, 1, 0.10) : Qt.rgba(1, 1, 1, 0.05)
                     border.width: modelData.active ? 1 : 0; border.color: Colors.islandPrimary
                     Accessible.role: Accessible.Button
                     Accessible.name: "Workspace " + modelData.name + (modelData.active ? ", current" : "")
+                    // The number: large and centred on an empty cell, small in the top-left corner over windows.
                     Text {
-                        anchors.centerIn: parent; visible: cell.wins.length === 0
+                        readonly property bool small: cell.wins.length > 0
+                        x: small ? 8 : (cell.width - width) / 2; y: small ? 4 : (cell.height - height) / 2; z: 1
                         text: cell.modelData.name
-                        font.family: Theme.fontUi; font.pixelSize: 24; font.weight: Font.DemiBold
-                        color: Qt.rgba(1, 1, 1, 0.22)
+                        font.family: Theme.fontUi; font.pixelSize: small ? 11 : 24; font.weight: Font.DemiBold
+                        color: Qt.rgba(1, 1, 1, small ? 0.6 : 0.4)
                     }
                     Repeater {
                         model: ScriptModel { values: cell.wins }
@@ -129,7 +134,9 @@ FocusScope {
 
         Item {
             id: stage
-            width: parent.width; height: parent.height - 68 - parent.spacing
+            width: parent.width; height: parent.height - root.cellH - parent.spacing
+            // Windows over the reserved bar area would spill onto the strip; a drag ghost may still leave.
+            clip: !root.dragging
             Repeater {
                 objectName: "stageThumbs"
                 // ScriptModel keeps delegates (and their running captures) when the array is rebuilt.
@@ -142,6 +149,7 @@ FocusScope {
                     readonly property bool hot: root.hoverIndex === index
                     readonly property var entry: modelData.lastIpcObject && modelData.lastIpcObject["class"]
                         ? DesktopEntries.heuristicLookup(modelData.lastIpcObject["class"]) : null
+                    readonly property string iconSrc: Quickshell.iconPath(entry ? entry.icon : "", "application-x-executable")
                     x: r.x; y: r.y; width: r.width; height: r.height
                     z: dragger.active ? 2 : hot ? 1 : 0
                     scale: hot && !dragger.active ? 1.02 : 1
@@ -156,7 +164,7 @@ FocusScope {
                         IconImage {
                             anchors.centerIn: parent; implicitSize: 48
                             visible: !view.hasContent
-                            source: Quickshell.iconPath(thumb.entry ? thumb.entry.icon : "", "application-x-executable")
+                            source: thumb.iconSrc
                         }
                         ScreencopyView {
                             id: view
@@ -171,18 +179,18 @@ FocusScope {
                             height: 40; visible: thumb.hot
                             gradient: Gradient {
                                 GradientStop { position: 0; color: "transparent" }
-                                GradientStop { position: 1; color: Qt.rgba(0, 0, 0, 0.75) }
+                                GradientStop { position: 1; color: Qt.rgba(0, 0, 0, 0.85) }
                             }
                             Text {
-                                anchors { left: parent.left; right: parent.right; bottom: parent.bottom; leftMargin: 36; rightMargin: 8; bottomMargin: 8 }
+                                anchors { left: parent.left; right: parent.right; bottom: parent.bottom; leftMargin: 40; rightMargin: 8; bottomMargin: 8 }
                                 text: thumb.modelData.title; elide: Text.ElideRight; textFormat: Text.PlainText
-                                font.family: Theme.fontUi; font.pixelSize: 12; color: "white"
+                                font.family: Theme.fontUi; font.pixelSize: 13; color: "white"
                             }
                         }
                         IconImage {
                             anchors { left: parent.left; bottom: parent.bottom; margins: 6 }
                             implicitSize: 22
-                            source: Quickshell.iconPath(thumb.entry ? thumb.entry.icon : "", "application-x-executable")
+                            source: thumb.iconSrc
                         }
                     }
                     Rectangle {
@@ -195,7 +203,8 @@ FocusScope {
                         id: dragger
                         // Drop on a cell, then snap back to the window's place (it leaves the stage if the move took).
                         // Drag.active is set here, not bound: drop() must run while the drag is still active.
-                        onActiveChanged: if (active) thumb.Drag.active = true; else {
+                        onActiveChanged: if (active) { root.dragging = true; thumb.Drag.active = true } else {
+                            root.dragging = false
                             thumb.Drag.drop(); thumb.Drag.active = false
                             thumb.x = Qt.binding(() => thumb.r.x); thumb.y = Qt.binding(() => thumb.r.y)
                         }
