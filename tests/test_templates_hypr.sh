@@ -5,15 +5,13 @@ cd "$(dirname "$0")/.."
 R=$(mktemp -d); trap 'rm -rf "$R"' EXIT
 mkdir -p "$R/hush"
 cfg="$R/matugen.toml"
-test_matugen_cfg "$R" hypr gloview waybar hyprlock colors-json \
+test_matugen_cfg "$R" hypr waybar hyprlock colors-json \
   | sed "s|'$R/hypr/modules/|'$R/|; s|'$R/waybar/|'$R/|; s|'$R/hyprlock/|'$R/|" > "$cfg"
 matugen color hex "#7fb3a3" -c "$cfg" -m dark -t scheme-fidelity -q
 t_lua() {
   assert_file "$R/theme.lua" "theme.lua rendered"
   lua -e "local t=dofile('$R/theme.lua'); assert(t.primary:match('^#%x%x%x%x%x%x$')); assert(t.mode=='dark'); assert(t.surface_container)" \
     && pass "theme.lua is valid Lua with primary and mode" || fail "theme.lua invalid"
-  assert_file "$R/gloview-colors.lua" "gloview-colors.lua rendered"
-  lua -e "local t=dofile('$R/gloview-colors.lua'); assert(type(t.backdrop_color)=='number')" && pass "gloview colors are numbers" || fail "gloview colors invalid"
 }
 t_css() {
   assert_contains "$R/colors.css" "@define-color primary #" "waybar colors.css has primary"

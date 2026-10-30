@@ -260,14 +260,6 @@ def gate(theme, out):
                    ("ntp_link", "ntp_background"), ("omnibox_text", "omnibox_background")):
         add(f"helium {f_}/{b_}", Hm(f_), Hm(b_), 4.5)
 
-    # gloview: borders (non-text, 3.0) against the card and backdrop they outline
-    gtxt = open(f"{out}/hypr/modules/gloview-colors.lua").read()
-    gv = {n: (int(a, 16) / 255, rgb(c)) for n, a, c in re.findall(r"(\w+) = 0x([0-9a-fA-F]{2})([0-9a-fA-F]{6})", gtxt)}
-    back = blend(gv["backdrop_color"][1], col("surface"), gv["backdrop_color"][0])
-    act = blend(gv["strip_active_color"][1], back, gv["strip_active_color"][0])
-    add("gloview active border/active card", gv["strip_active_border"][1], act, 3.0)
-    add("gloview hover border/backdrop", gv["hover_border"][1], back, 3.0)
-    add("gloview select border/backdrop", gv["select_border"][1], back, 3.0)
     return rows
 
 

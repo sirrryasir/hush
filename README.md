@@ -45,8 +45,8 @@ Nix and manual install below.
 - **Live activities**: recording, countdown and now playing at rest; mic and camera in use. The
   timer tile's page (also a Focus tile, on by default) runs a focus session (by default 25 min focus, 5 min break, 15 min long break after the
   fourth block; the lengths and cycles are editable on the page) with do not disturb on while it runs; the pill shows the ring and the block count.
-- **Also**: one lock and login screen (Quickshell, SDDM, hyprlock fallback); optional GloView and
-  dynamic-cursors plugins; a rEFInd boot menu; colours follow the wallpaper (matugen) across
+- **Also**: one lock and login screen (Quickshell, SDDM, hyprlock fallback); optional
+  dynamic-cursors plugin; a rEFInd boot menu; colours follow the wallpaper (matugen) across
   Hyprland, GTK, Qt, kitty and SDDM.
 
 ## Install
@@ -143,7 +143,7 @@ Over IPC, with a leading space: `qs -c hush ipc call hush settingsSet layout.hov
 **Themes.** A new theme is a `themes/<name>/` folder with a `theme.toml` (copy one) and a
 `wallpaper.png`; then `hush theme <name>`. `hush-wallgen <theme|all>` redraws the bundled ones.
 
-**Plugins.** `hush plugins install` enables GloView and dynamic-cursors with hyprpm (needs the
+**Plugins.** `hush plugins install` enables dynamic-cursors with hyprpm (needs the
 Hyprland headers); then `pcall(dofile, os.getenv("HOME") .. "/.config/hush/plugins.lua")`.
 
 **Lock and login.** One QML screen, `lockscreen/Screen.qml`, sized by `lockscreen/layout.toml`.

@@ -73,14 +73,14 @@ touch "$H/.zshrc" # else zsh runs its new-user wizard in every kitty, and kitty 
 cat > "$H/.config/hypr/hyprland.lua" <<LUA
 -- written by tests/sandbox.sh
 local real = "$REAL_HOME"
-for _, so in ipairs({ real .. "/.config/hypr/plugins/dynamic-cursors.so", "/var/cache/hyprpm/$USER/gloview/gloview.so" }) do
+for _, so in ipairs({ real .. "/.config/hypr/plugins/dynamic-cursors.so" }) do
     local f = io.open(so, "r")
     if f and hl.plugin and hl.plugin.load then f:close(); pcall(hl.plugin.load, so) end
 end
 hl.monitor({ output = "SANDBOX-1", mode = "1920x1080@60", position = "0x0", scale = 1 })
 hl.monitor({ output = "SANDBOX-2", mode = "1920x1080@60", position = "1920x0", scale = 1 })
 hl.monitor({ output = "WAYLAND-1", disabled = true })
-for _, m in ipairs({ "env", "decorations", "layout", "misc", "gloview", "input", "windowrules", "layerrules", "binds" }) do
+for _, m in ipairs({ "env", "decorations", "layout", "misc", "input", "windowrules", "layerrules", "binds" }) do
     local ok, err = pcall(require, "modules." .. m)
     if not ok then print("sandbox: modules." .. m .. ": " .. tostring(err)) end
 end

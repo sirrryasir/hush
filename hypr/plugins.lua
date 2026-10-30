@@ -1,11 +1,10 @@
--- Hush: optional Hyprland plugins (GloView overview, dynamic-cursors). Safe when they are missing.
--- Install them with `hush plugins install`; install.sh links this file to ~/.config/hush/plugins.lua.
+-- Hush: optional Hyprland plugin (dynamic-cursors). Safe when they are missing.
+-- Install it with `hush plugins install`; install.sh links this file to ~/.config/hush/plugins.lua.
 -- Load it from hyprland.lua:
 --   pcall(dofile, (os.getenv("XDG_CONFIG_HOME") or (os.getenv("HOME") .. "/.config")) .. "/hush/plugins.lua")
 local home = os.getenv("HOME") or ""
 local user = os.getenv("USER") or ""
 local cache = os.getenv("XDG_CACHE_HOME") or (home .. "/.cache")
-local config = os.getenv("XDG_CONFIG_HOME") or (home .. "/.config")
 
 local function exists(path)
     local f = io.open(path, "r")
@@ -25,7 +24,6 @@ local function load_plugin(name)
 end
 
 local have_cursors = load_plugin("dynamic-cursors")
-local have_gloview = load_plugin("gloview")
 
 if have_cursors then
     pcall(hl.config, {
@@ -43,11 +41,4 @@ if have_cursors then
             },
         },
     })
-end
-
-if have_gloview then
-    local ok, colors = pcall(dofile, config .. "/hypr/modules/gloview-colors.lua")
-    if ok and type(colors) == "table" then
-        pcall(hl.config, { plugin = { gloview = colors } })
-    end
 end

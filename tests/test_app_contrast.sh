@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# App contrast gate: kitty, nvim, fastfetch, p10k, waybar, GTK, qt6ct, Kvantum, hyprlock, SDDM, Helium
-# and GloView, rendered offline for all six themes (never touches ~/.config or the live theme).
+# App contrast gate: kitty, nvim, fastfetch, p10k, waybar, GTK, qt6ct, Kvantum, hyprlock, SDDM and
+# Helium, rendered offline for all six themes (never touches ~/.config or the live theme).
 source "$(dirname "$0")/lib.sh"
 cd "$(dirname "$0")/.."
 t_gate() {

@@ -76,6 +76,6 @@ if [[ $SKIP_THEME == 0 ]]; then
   "$HUSH_ROOT/bin/hush" track off >/dev/null && say "ok      generated files marked skip-worktree where tracked"
 fi
 [[ -d "$BACKUP" ]] && say "backups are in $BACKUP"
-say "optional: hush plugins install  (GloView overview and dynamic-cursors; see README, Plugins)"
+say "optional: hush plugins install  (dynamic-cursors; see README, Plugins)"
 say "optional: sudo $HUSH_ROOT/sddm/install.sh  (Hush login screen; run it yourself, install.sh never uses sudo)"
 say "done. Start the shell with: hush shell start"

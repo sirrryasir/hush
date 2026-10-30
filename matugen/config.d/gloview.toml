@@ -1,3 +1,0 @@
-[templates.gloview]
-input_path = '@HUSH_ROOT@/matugen/templates/gloview-colors.lua'
-output_path = '@CONFIG@/hypr/modules/gloview-colors.lua'

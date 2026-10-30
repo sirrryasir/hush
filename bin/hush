@@ -55,7 +55,7 @@ usage: hush <command>
   lock [--hyprlock]    lock the screen (Quickshell; --hyprlock: the hyprlock fallback), once
   face <image>         set the login avatar: round 512 px crop to ~/.face, then sddm sync
   settings             open (or close) the settings surface in the island
-  plugins [status|install]  optional Hyprland plugins gloview and dynamic-cursors (hyprpm)
+  plugins [status|install]  optional Hyprland plugin dynamic-cursors (hyprpm)
   overview             toggle the workspace overview in the island
   shell <start|stop|restart|status|log>  manage the Hush Quickshell shell
   volume up|down|mute|mic-mute [step]  change output volume (step %, default 5, capped at 100) or toggle mute
@@ -428,7 +428,7 @@ print('theme', s['theme']); print('wallpaper', s['wallpaper']); print('mode', s[
 
 cmd_check() {
   local rc=0
-  for f in "$CONFIG_HOME/hypr/modules/theme.lua" "$CONFIG_HOME/hypr/modules/gloview-colors.lua"; do
+  for f in "$CONFIG_HOME/hypr/modules/theme.lua"; do
     if [[ -f "$f" ]]; then
       lua -e "dofile('$f')" >/dev/null 2>&1 || { echo "hush check: $f is not valid Lua"; rc=1; }
     fi
@@ -503,7 +503,7 @@ cmd_track() {
 }
 
 # Optional Hyprland plugins: name|hyprpm repository.
-PLUGINS=("gloview|https://github.com/fedsfarm/gloview" "dynamic-cursors|https://github.com/VirtCode/hypr-dynamic-cursors")
+PLUGINS=("dynamic-cursors|https://github.com/VirtCode/hypr-dynamic-cursors")
 
 plugin_loaded() { # name: is it in `hyprctl plugin list`?
   command -v hyprctl >/dev/null && hyprctl plugin list 2>/dev/null | grep -qiE "^Plugin ${1}( |$)"
