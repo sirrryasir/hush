@@ -33,6 +33,12 @@ t_settings() {
     hq flip "$t" >/dev/null; sleep 0.6
     assert_eq "true" "$(hq dataOf island.$k)" "$k back to true"
   done
+  # Hijri date is off by default, so its round trip runs the other way.
+  assert_eq "true" "$(hq hasSwitch "Hijri date")" "Behaviour has the \"Hijri date\" switch"
+  hq flip "Hijri date" >/dev/null; sleep 0.6
+  assert_eq "True" "$(python3 -c "import json;print(json.load(open('$f'))['island']['hijri'])")" "hijri true in settings.json after the switch"
+  hq flip "Hijri date" >/dev/null; sleep 0.6
+  assert_eq "false" "$(hq dataOf island.hijri)" "hijri back to false"
   # Dropdown lists stay inside the 336 px surface (open upward near the bottom); the page starts below the header.
   assert_eq "true" "$([[ $(hq rowTop "Hover face") -ge 14 ]] && echo true)" "first row starts below the header padding"
   local b

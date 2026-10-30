@@ -4,6 +4,7 @@ import Quickshell
 import qs.config
 import qs.services as Svc
 import "../rest"
+import "../../../config/Hijri.js" as Hijri
 
 // The hover face, 44 px tall and 320 px wide (wider with many chips, up to 656): chips in layout.hover order (default: this monitor's
 // workspaces as dots with the active one drawn as a pill, the date, the media title while something
@@ -86,7 +87,7 @@ StateBase {
         id: dateChip
         Text {
             id: date
-            text: Qt.formatDate(clock.date, "ddd d MMM")
+            text: Qt.formatDate(clock.date, "ddd d MMM") + (Settings.island.hijri ? " · " + Hijri.format(clock.date, false) : "")
             color: face.fg
             font.family: Theme.fontUi; font.pixelSize: Theme.textIsland; font.weight: Font.Medium
             MouseArea {

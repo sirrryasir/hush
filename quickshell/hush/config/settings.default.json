@@ -4,7 +4,7 @@
     "mode": "reserve", "hoverFace": true, "liveActivities": true, "reducedMotion": false,
     "clickLeft": "cc", "clickRight": "notifs", "clickMiddle": "media", "scroll": "volume",
     "nowPlayingOsd": true, "fullscreenReveal": true, "fullscreenOsd": true, "statusCenter": "none",
-    "clock": "24"
+    "clock": "24", "hijri": false
   },
   "focus": { "focus": 25, "break": 5, "long": 15, "cycles": 4 },
   "modules": {

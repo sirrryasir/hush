@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Effects
 import QtQuick.Shapes
+import "../config/Hijri.js" as Hijri
 
 // Hush lock screen: a thin clock and the date in capitals over the blurred,
 // dimmed wallpaper; a key, the pointer or a tap reveals the user name, one black pill (the island)
@@ -18,6 +19,7 @@ Rectangle {
     property var glyphs: []                    // Material Symbols names, top right
     property string message: ""                // muted status under the pill (fingerprint prompt)
     property string fontName: "Inter Variable"
+    property bool hijri: false
     property string iconFontName: "Material Symbols Rounded"
     signal submit(string password)
     property QtObject colors: null             // an object with the island roles (the shell's Colors)
@@ -196,7 +198,7 @@ Rectangle {
         Text {
             anchors.horizontalCenter: parent.horizontalCenter
             y: Math.round(root.height * lay.dateCy - height / 2)
-            text: Qt.formatDate(root.now, "dddd d MMMM").toUpperCase()
+            text: (Qt.formatDate(root.now, "dddd d MMMM") + (root.hijri ? " · " + Hijri.format(root.now) : "")).toUpperCase()
             color: Qt.rgba(1, 1, 1, 0.6)
             font.family: root.fontName
             font.pixelSize: root.fs(lay.dateSize)

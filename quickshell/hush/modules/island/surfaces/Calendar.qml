@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import qs.config
 import qs.services
+import "../../../config/Hijri.js" as Hijri
 
 // Calendar surface: a month grid (Monday first) with today in the primary colour, other-month days
 // muted, prev/next month navigation. Click a day to select it (ring); days with reminders carry a dot.
@@ -41,12 +42,20 @@ Item {
 
         Row {
             id: head
-            width: parent.width; height: 28
-            Text {
+            width: parent.width; height: Settings.island.hijri ? 40 : 28
+            Column {
                 width: parent.width - 56; height: parent.height
-                verticalAlignment: Text.AlignVCenter
-                text: cal.monthTitle; color: Colors.islandFg
-                font.family: Theme.fontUi; font.pixelSize: 15; font.weight: Font.DemiBold
+                Text {
+                    width: parent.width; height: 28
+                    verticalAlignment: Text.AlignVCenter
+                    text: cal.monthTitle; color: Colors.islandFg
+                    font.family: Theme.fontUi; font.pixelSize: 15; font.weight: Font.DemiBold
+                }
+                Text {
+                    visible: !!Settings.island.hijri
+                    text: Hijri.format(cal.selected); color: Colors.islandFgVar; opacity: 0.7
+                    font.family: Theme.fontUi; font.pixelSize: 12; font.weight: Font.Medium
+                }
             }
             Repeater {
                 model: [{ g: "chevron_left", d: -1 }, { g: "chevron_right", d: 1 }]

@@ -78,6 +78,7 @@ ShellRoot {
                 id: screen
                 anchors.fill: parent
                 userName: Quickshell.env("USER") || ""
+                hijri: !!Settings.island.hijri
                 background: "file://" + (Cfg.State.wallpaper || Paths.themes + "/" + Cfg.State.theme + "/wallpaper.png")
                 glyphs: (Battery.present ? [Battery.icon] : []).concat([Net.icon])
                 message: root.message
