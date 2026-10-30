@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Hush wallpaper generator. Soft layered gradients, blurred shapes, fine grain.
-Usage: hush-wallgen <theme|all>. Deterministic from [wallgen].seed in theme.toml."""
+Usage: hush-wallgen <theme|all> [WxH]. With a size (e.g. a phone, 1125x2436) it writes ./hush-<theme>-WxH.png instead. Deterministic from [wallgen].seed in theme.toml."""
 import sys, tomllib, pathlib
 import numpy as np
 from PIL import Image, ImageFilter
@@ -105,12 +105,14 @@ def render(name):
     if hz:
         img = horizon(img, *hz)
     img = grain(img, g, rng)
-    out = ROOT / name / "wallpaper.png"
+    out = ROOT / name / "wallpaper.png" if (W, H) == (2560, 1440) else pathlib.Path(f"hush-{name}-{W}x{H}.png")
     Image.fromarray(np.clip(img, 0, 255).astype(np.uint8)).save(out, optimize=True)
     print(f"hush-wallgen: wrote {out}")
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2 or (sys.argv[1] != "all" and sys.argv[1] not in PRESETS):
-        print("usage: hush-wallgen <" + "|".join(PRESETS) + "|all>", file=sys.stderr); sys.exit(2)
+    if len(sys.argv) not in (2, 3) or (sys.argv[1] != "all" and sys.argv[1] not in PRESETS):
+        print("usage: hush-wallgen <" + "|".join(PRESETS) + "|all> [WxH]", file=sys.stderr); sys.exit(2)
+    if len(sys.argv) == 3:
+        W, H = map(int, sys.argv[2].lower().split("x"))
     for n in (PRESETS if sys.argv[1] == "all" else [sys.argv[1]]):
         render(n)
