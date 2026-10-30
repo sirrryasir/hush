@@ -21,16 +21,16 @@ WS=$(hyprctl -j activeworkspace | jq .id)
 
 t_surface() {
   start && pass "harness starts" || { fail "harness did not start"; return; }
-  assert_eq "880x400" "$(hq size)" "declared size 880x400"
+  assert_eq "672x474" "$(hq size)" "declared size 672x474"
   local n; n=$(hq cellCount); (( n >= 5 )) && pass "strip has $n cells" || fail "strip has $n cells"
   assert_eq "$WS" "$(hq shownWorkspace)" "shows the focused workspace on open"
   assert_eq "$(live "$WS")" "$(hq thumbCount)" "one thumbnail per mapped window of workspace $WS"
-  # Stage: 848x270 (card 880x400, 16 px margins, 84 px strip, 14 px gap).
+  # Stage: 640x360 (card 672x474, 16 px margins, 68 px strip, 14 px gap).
   local r x y w h ok=1 rects; rects=$(hq thumbRects | tr -d '"')
   IFS=';' read -ra rs <<<"$rects"
   for r in "${rs[@]}"; do
     IFS=, read -r x y w h <<<"$r"
-    (( w > 0 && h > 0 && x >= 0 && y >= 0 && x + w <= 848 && y + h <= 270 )) || { ok=0; fail "rect out of the stage: $r"; }
+    (( w > 0 && h > 0 && x >= 0 && y >= 0 && x + w <= 640 && y + h <= 360 )) || { ok=0; fail "rect out of the stage: $r"; }
   done
   (( ok )) && pass "every thumbnail sits inside the stage (${rects:-none})"
   if (( $(live "$WS") > 0 )); then

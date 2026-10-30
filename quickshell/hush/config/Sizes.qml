@@ -26,7 +26,7 @@ Singleton {
     readonly property size settings: Qt.size(560, 336)
     readonly property size notifCenter: Qt.size(480, 260)
     readonly property size launcher: Qt.size(520, 300)
-    readonly property size overview: Qt.size(880, 400)
+    readonly property size overview: Qt.size(672, 474)
     readonly property size shelf: Qt.size(520, 56)
     readonly property size shelfDrop: Qt.size(320, 44)
     readonly property int radiusExpanded: 20

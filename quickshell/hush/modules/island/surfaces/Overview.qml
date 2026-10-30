@@ -6,7 +6,7 @@ import Quickshell.Widgets
 import qs.config
 import qs.services
 
-// Workspace overview, 880x400 inside the island: a strip with one cell per workspace of this monitor
+// Workspace overview, 672x474 inside the island (the 640x360 stage is a 16:9 box, so a 1080p desktop fills it): a strip with one cell per workspace of this monitor
 // (windows drawn as plain rectangles) over a stage with the shown workspace's windows as live captures
 // at their real positions. Hovering or stepping changes the shown workspace only; a click on a cell
 // switches, a click on a thumbnail focuses, a thumbnail dropped on a cell moves that window there.
@@ -100,7 +100,7 @@ FocusScope {
                     required property var modelData
                     required property int index
                     readonly property var wins: root.windows.filter(t => t.workspace.id === modelData.id)
-                    width: 132; height: 84; radius: 10
+                    width: 120; height: 68; radius: 10
                     color: drop.containsDrag ? Qt.rgba(1, 1, 1, 0.16) : index === root.shownIndex ? Qt.rgba(1, 1, 1, 0.10) : Qt.rgba(1, 1, 1, 0.05)
                     border.width: modelData.active ? 1 : 0; border.color: Colors.islandPrimary
                     Accessible.role: Accessible.Button
@@ -108,7 +108,7 @@ FocusScope {
                     Text {
                         anchors.centerIn: parent; visible: cell.wins.length === 0
                         text: cell.modelData.name
-                        font.family: Theme.fontUi; font.pixelSize: 28; font.weight: Font.DemiBold
+                        font.family: Theme.fontUi; font.pixelSize: 24; font.weight: Font.DemiBold
                         color: Qt.rgba(1, 1, 1, 0.22)
                     }
                     Repeater {
@@ -129,7 +129,7 @@ FocusScope {
 
         Item {
             id: stage
-            width: parent.width; height: parent.height - 84 - parent.spacing
+            width: parent.width; height: parent.height - 68 - parent.spacing
             Repeater {
                 objectName: "stageThumbs"
                 // ScriptModel keeps delegates (and their running captures) when the array is rebuilt.
