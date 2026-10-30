@@ -33,7 +33,6 @@ ShellRoot {
         function previewWidth(v: int): void { s.setPreview("width", v) }
         function shownWidth(): int { return s.value("width") }
         function dataWidth(): int { return Settings.data.island.width }
-        function version(): string { return s.version }
         function wallRequests(): int { return root.wallRequests }
         // Row titles / switch + slider lookup (walks the surface; pages not shown are still in the tree).
         function walk(it, f) { if (!it) return; f(it); for (let i = 0; i < it.children.length; i++) walk(it.children[i], f) }

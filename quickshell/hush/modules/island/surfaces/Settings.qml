@@ -8,14 +8,13 @@ import qs.modules.island.cc
 import "../states"
 
 // Settings surface: 560x336 GUI over the Settings singleton. A page rail on the left
-// (Island, Behaviour, Modules, Lock, Theme, About). Sliders preview while dragging (`preview` overrides,
+// (Island, Behaviour, Shortcuts, Modules, Theme, About). Sliders preview while dragging (`preview` overrides,
 // `previewed` signal for the host pill) and write Cfg.Settings.set only on release.
 FocusScope {
     id: root
     readonly property size size: Sizes.settings
     property string page: "island"
     property var preview: ({})
-    property string version: "0.0.0"
     // A one-line problem the host reports (another notification daemon owns the bus name).
     property string warning: ""
     signal previewed(string key, real value)
@@ -47,11 +46,6 @@ FocusScope {
         const p = Object.assign({}, preview); delete p[key]; preview = p
     }
 
-    FileView {
-        path: Quickshell.shellDir + "/../../VERSION"
-        blockLoading: true
-        onLoaded: root.version = text().trim()
-    }
 
     component Label: Text {
         color: Colors.islandFg; font.family: Theme.fontUi; font.pixelSize: 12
@@ -490,7 +484,6 @@ FocusScope {
         ColumnLayout {
             visible: root.page === "about"; width: parent.width; spacing: 8
             Label { text: "Hush"; font.pixelSize: 20; font.weight: Font.DemiBold }
-            Label { text: "Version " + root.version; color: Colors.islandFgVar }
             Label { text: "Dynamic island shell for Hyprland, built on Quickshell."; color: Colors.islandFgVar }
         }
     }

@@ -14,7 +14,6 @@ t_settings() {
   [[ $up == 1 ]] && pass "harness starts" || { fail "harness did not start"; kill "$pid" 2>/dev/null; return; }
   hyprctl layers -j | grep -q '"namespace": "hush-harness-settings"' && pass "layer hush-harness-settings present" || fail "layer missing"
   assert_eq "560x336" "$(hq size)" "declared size 560x336"
-  assert_eq "$(tr -d '[:space:]' < VERSION)" "$(hq version)" "About reads VERSION"
   hq previewWidth 200 >/dev/null; sleep 0.2
   assert_eq "200" "$(hq shownWidth)" "drag previews without writing"
   hq setWidth 160 >/dev/null; sleep 0.6
@@ -110,14 +109,6 @@ t_settings() {
   hq setSection hover >/dev/null; sleep 0.2
   assert_eq "workspaces,date,media,bluetooth,network,battery,keyboard,shelf" "$(hq layoutHover)" "after reset: default hover chips"
   assert_eq "true" "$(hq ccSection sliders)" "after reset: sliders back"
-  # Lock page: settings.json lock.* (the lock and login screens); a switch writes its key.
-  hq setPage lock >/dev/null; sleep 0.2
-  assert_eq "lock" "$(hq page)" "Lock page opens"
-  for t in Date Name "Reveal on key" "Status line"; do assert_eq "true" "$(hq hasSwitch "$t")" "Lock has the \"$t\" switch"; done
-  hq flip Date >/dev/null; sleep 0.6
-  assert_eq "False" "$($J "import json;print(json.load(open('$f'))['lock']['date'])")" "lock.date false in settings.json"
-  hq flip Date >/dev/null; sleep 0.6
-  assert_eq "true" "$(hq dataOf lock.date)" "lock.date back to true"
   # Shortcuts page: every IPC action as a row; the copy buttons put a bind block on the clipboard (fake wl-copy).
   hq setPage shortcuts >/dev/null; sleep 0.2
   local rows; rows=",$(hq shortcutRows),"
