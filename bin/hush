@@ -34,7 +34,6 @@ need() { command -v "$1" >/dev/null || die "missing dependency: $1"; }
 usage() {
   cat <<EOF
 usage: hush <command>
-  --version            print the Hush version
   list                 list themes
   theme <name|next|prev> [--from X,Y]
                        apply a theme (wallpaper + colors + reloads); the wallpaper grows
@@ -46,16 +45,9 @@ usage: hush <command>
                        in HUSH_WALL_DIRS (colon-separated) when set
   reload               re-render templates for the current state
   status               print active theme, wallpaper, mode, scheme
-  check                validate generated config (exit 1 on problems)
-  generated            print the matugen outputs that some git repo tracks (absolute paths)
-  track <on|off>       off: git skip-worktree on those files in their repos; on: undo
-  fallback             stop the Hush shell, start Waybar and SwayNC
-  sddm sync            refresh ~/.cache/hush/sddm (wallpaper, colours, avatar) for the SDDM theme
   install [opts]       link this checkout into ~/.config (install.sh; packaged copies skip the fonts)
-  lock [--hyprlock]    lock the screen (Quickshell; --hyprlock: the hyprlock fallback), once
-  face <image>         set the login avatar: round 512 px crop to ~/.face, then sddm sync
+  lock                 lock the screen (Quickshell session lock)
   settings             open (or close) the settings surface in the island
-  plugins [status|install]  optional Hyprland plugin dynamic-cursors (hyprpm)
   overview             toggle the workspace overview in the island
   shell <start|stop|restart|status|log>  manage the Hush Quickshell shell
   volume up|down|mute|mic-mute [step]  change output volume (step %, default 5, capped at 100) or toggle mute
@@ -101,11 +93,6 @@ assemble_config() {
   mkdir -p "$CACHE_DIR" "$STATE_DIR"
   { cat "$HUSH_ROOT/matugen/config.toml.head"; for f in "$HUSH_ROOT"/matugen/config.d/*.toml; do echo; cat "$f"; done; } \
     | sed -e "s|@HUSH_ROOT@|$HUSH_ROOT|g" -e "s|@CONFIG@|$CONFIG_HOME|g" > "$MATUGEN_CFG"
-}
-
-outputs() { # every output_path of the assembled config, one per line
-  assemble_config
-  grep -oE "^output_path = '[^']+'" "$MATUGEN_CFG" | sed -E "s|^output_path = '(.*)'|\\1|"
 }
 
 # Render every template into $RENDER (paths mirrored), then move into place. Atomic on failure.
@@ -202,58 +189,13 @@ set_wallpaper() { # path
       echo "hush: awww-daemon not answering after 5 s; wallpaper not set (continuing)" >&2
     fi
   fi
-  # hyprlock reads this file for its background image. hyprlang cannot quote values,
-  # so point it at a fixed path (no '#', no spaces) that links to the real wallpaper.
-  local cur="$CACHE_DIR/current-wallpaper.png"
-  case "${wall,,}" in
-    *.png) ln -sfn "$wall" "$cur.tmp" && mv -Tf "$cur.tmp" "$cur" ;;
-    *) if command -v magick >/dev/null; then magick "$wall" "png:$cur.tmp" && mv -f "$cur.tmp" "$cur"
-       else ln -sfn "$wall" "$cur.tmp" && mv -Tf "$cur.tmp" "$cur"; fi ;;
-  esac || echo "hush: could not update $cur (continuing)" >&2
-  printf '$wall = %s\n' "$cur" > "$STATE_DIR/hyprlock-wall.conf"
-  lock_layout || echo "hush: lock layout generation failed (continuing)" >&2
 }
 
-lock_monitors() { # NAME:HEIGHT per connected monitor (rotation-aware), none outside Hyprland
-  command -v hyprctl >/dev/null && [[ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]] || return 0
-  hyprctl monitors -j 2>/dev/null | python3 -c '
-import json, sys
-try: mons = json.load(sys.stdin)
-except Exception: mons = []
-for m in mons: print("%s:%d" % (m["name"], m["width"] if m.get("transform", 0) % 2 else m["height"]))' || true
-}
-
-lock_layout() { # hyprlock widgets from lockscreen/layout.toml, one set per monitor
-  mkdir -p "$STATE_DIR"
-  local mons; mapfile -t mons < <(lock_monitors)
-  python3 "$HUSH_ROOT/lockscreen/gen.py" hyprlock "$STATE_DIR/hyprlock-layout.conf" "${mons[@]}" &&
-    python3 "$HUSH_ROOT/lockscreen/gen.py" qml "$STATE_DIR/lock-layout.qml"
-}
-
-cmd_lock() { # [--hyprlock]  one lock at a time; the Quickshell lock runs as its own process
-  session_pgrep -x hyprlock >/dev/null && return 0
-  lock_layout || true
-  [[ "${1:-}" == --hyprlock ]] && exec hyprlock
-  [[ -z "${1:-}" ]] || die "usage: hush lock [--hyprlock]"
-  # settings.json "lock": "hyprlock" makes every caller (control center, hypridle) use hyprlock
-  [[ -f "$STATE_DIR/settings.json" ]] && [[ "$(python3 -c "import json,sys;print(json.load(open(sys.argv[1])).get('lock',''))" "$STATE_DIR/settings.json" 2>/dev/null)" == hyprlock ]] && exec hyprlock
+cmd_lock() { # the Quickshell lock runs as its own process, so a shell restart cannot unlock
+  [[ -z "${1:-}" ]] || die "usage: hush lock"
   need qs
   # quiet on the terminal; Quickshell keeps its own log under $XDG_RUNTIME_DIR/quickshell
   HUSH_ROOT=$HUSH_ROOT exec qs -n -p "$HUSH_ROOT/quickshell/hush/lock.qml" >/dev/null 2>&1
-}
-
-cmd_face() { # image -> round 512 px PNG at ~/.face and the login bundle
-  local src="${1:-}"
-  [[ -n "$src" ]] || die "usage: hush face <image>"
-  [[ -f "$src" ]] || die "no such image: $src"
-  need magick
-  local tmp="$HOME/.face.tmp.png"
-  magick "$src" -auto-orient -gravity center -resize '512x512^' -extent 512x512 \
-    \( -size 512x512 xc:none -fill white -draw 'circle 255.5,255.5 255.5,0' \) \
-    -alpha set -compose DstIn -composite "PNG32:$tmp" || { rm -f "$tmp"; die "could not read $src"; }
-  mv -f "$tmp" "$HOME/.face"
-  sddm_sync || echo "hush: sddm sync failed (~/.face is set)" >&2
-  echo "hush: avatar set from $src"
 }
 
 reload_consumers() { # theme mode
@@ -263,13 +205,6 @@ reload_consumers() { # theme mode
     hyprctl reload >/dev/null 2>&1 || echo "hush: hyprctl reload failed" >&2
   fi
   session_pkill -USR1 -x kitty 2>/dev/null || true
-  # fastfetch shows the Breath mark through kitty graphics; matugen renders the tinted SVG, kitty wants PNG.
-  local ff="$CONFIG_HOME/fastfetch"
-  if [[ -s "$ff/hush-logo.svg" ]] && command -v rsvg-convert >/dev/null; then
-    { rsvg-convert -w 512 "$ff/hush-logo.svg" -o "$ff/hush-logo.png.tmp" && mv -f "$ff/hush-logo.png.tmp" "$ff/hush-logo.png"; } \
-      || echo "hush: fastfetch logo render failed (continuing)" >&2
-  fi
-  session_pkill -USR2 -x waybar 2>/dev/null || true
   if command -v gsettings >/dev/null; then
     if [[ "$mode" == "light" ]]; then
       gsettings set org.gnome.desktop.interface color-scheme 'prefer-light' || echo "hush: gsettings failed (continuing)" >&2
@@ -287,69 +222,6 @@ reload_consumers() { # theme mode
   fi
 }
 
-sddm_sync() { # [wallpaper]  writes the world-readable bundle the SDDM greeter reads
-  local out="$CACHE_DIR/sddm" wall="${1:-}" colors="$STATE_DIR/Colors.json"
-  [[ -n "$wall" ]] || wall=$(current_wall)
-  [[ -f "$wall" ]] || wall="$THEMES/$(current_theme)/wallpaper.png"
-  [[ -f "$wall" ]] || { echo "hush: sddm sync: no wallpaper found" >&2; return 1; }
-  [[ -f "$colors" ]] || { echo "hush: sddm sync: no $colors (run hush theme first)" >&2; return 1; }
-  mkdir -p "$out"
-  case "${wall,,}" in
-    *.png) cp -f "$wall" "$out/wallpaper.png.tmp" ;;
-    *) need magick; magick "$wall" "png:$out/wallpaper.png.tmp" ;;
-  esac && mv -f "$out/wallpaper.png.tmp" "$out/wallpaper.png"
-  python3 - "$colors" "$out/colors.conf.tmp" <<'PY'
-import json, sys
-c = json.load(open(sys.argv[1]))
-keys = {"surface": "surface", "surfaceHigh": "surface_container_high", "onSurface": "on_surface",
-        "onSurfaceVar": "on_surface_variant", "primary": "primary", "onPrimary": "on_primary",
-        "outline": "outline", "error": "error"}
-with open(sys.argv[2], "w") as f:
-    f.write("# Generated by `hush sddm sync`\n")
-    f.write("mode=%s\n" % c.get("mode", "dark"))
-    for k, v in keys.items():
-        if v in c: f.write("%s=%s\n" % (k, c[v]))
-# The greeter cannot read colors.conf with XMLHttpRequest (Qt blocks file reads there), but it
-# can load a QML file, so the same palette is written as colors.qml (names may not start "on").
-qml = {"surface": "surface", "surfaceHigh": "surface_container_high", "fg": "on_surface",
-       "fgVar": "on_surface_variant", "primary": "primary", "primaryText": "on_primary",
-       "outline": "outline", "error": "error"}
-with open(sys.argv[2].replace("colors.conf.tmp", "colors.qml.tmp"), "w") as f:
-    f.write("import QtQuick\nQtObject {\n")
-    for k, v in qml.items():
-        if v in c: f.write('    property color %s: "%s"\n' % (k, c[v]))
-    # Island roles: the pill is black in every theme, so it uses the dark-scheme values.
-    d = c.get("dark", {})
-    island = {"islandFg": "on_surface", "islandFgVar": "on_surface_variant", "islandPrimary": "primary",
-              "islandPrimaryText": "on_primary", "islandSurfaceHigh": "surface_container_high",
-              "islandError": "error"}
-    for k, v in island.items():
-        if d.get(v) or c.get(v): f.write('    property color %s: "%s"\n' % (k, d.get(v) or c[v]))
-    # Clock and date sit on the dimmed wallpaper: the mode's own text colour, as on the lock screen.
-    for k, v in {"wallText": "on_surface", "wallShade": "surface"}.items():
-        if v in c: f.write('    property color %s: "%s"\n' % (k, c[v]))
-    f.write("}\n")
-PY
-  mv -f "$out/colors.qml.tmp" "$out/colors.qml"
-  mv -f "$out/colors.conf.tmp" "$out/colors.conf"
-  local face="$HOME/.face"; [[ -f "$face" ]] || face="$HUSH_ROOT/sddm/hush/assets/avatar.png"
-  [[ -f "$face" ]] && { cp -f "$face" "$out/face.png.tmp" && mv -f "$out/face.png.tmp" "$out/face.png"; }
-  python3 "$HUSH_ROOT/lockscreen/gen.py" qml "$out/layout.qml"
-  # The greeter runs as another user: it needs x on every directory down to the files.
-  # plain 644 files: a copy out of an NTFS/exFAT checkout would otherwise carry x bits
-  chmod o+x "$CACHE_DIR"; chmod o+rx "$out"; chmod 644 "$out"/*.png "$out/colors.conf" "$out/colors.qml" "$out/layout.qml"
-  if [[ "$(stat -c %A "$HOME")" != ?????????x ]]; then
-    echo "hush: warning: $HOME is not world-executable; the SDDM greeter cannot read $out (chmod o+x $HOME, or copy the bundle elsewhere)" >&2
-  fi
-}
-
-cmd_sddm() {
-  case "${1:-}" in
-    sync) sddm_sync ;;
-    *) die "usage: hush sddm sync" ;;
-  esac
-}
-
 cmd_theme() {
   local name=""
   while [[ $# -gt 0 ]]; do
@@ -365,7 +237,6 @@ cmd_theme() {
   set_wallpaper "$wall"
   reload_consumers "$theme" "$mode"
   write_state "$theme" "$wall" "$mode"
-  [[ -d "$CACHE_DIR/sddm" ]] && { sddm_sync "$wall" || true; }
   echo "hush: applied $theme ($mode)"
 }
 
@@ -405,7 +276,6 @@ cmd_wall() {
   set_wallpaper "$wall"
   reload_consumers "$theme" "$mode"
   write_state "$theme" "$wall" "$mode" "$scheme" wallpaper
-  [[ -d "$CACHE_DIR/sddm" ]] && { sddm_sync "$wall" || true; }
   echo "hush: wallpaper set ($theme, $mode)"
 }
 
@@ -426,134 +296,11 @@ import json; s=json.load(open('$STATE'))
 print('theme', s['theme']); print('wallpaper', s['wallpaper']); print('mode', s['mode']); print('scheme', s['scheme']); print('source', s['source']); print('applied', s['applied_at'])"
 }
 
-cmd_check() {
-  local rc=0
-  for f in "$CONFIG_HOME/hypr/modules/theme.lua"; do
-    if [[ -f "$f" ]]; then
-      lua -e "dofile('$f')" >/dev/null 2>&1 || { echo "hush check: $f is not valid Lua"; rc=1; }
-    fi
-  done
-  if [[ -f "$STATE_DIR/Colors.json" ]]; then
-    python3 -c "import json; json.load(open('$STATE_DIR/Colors.json'))" 2>/dev/null || { echo "hush check: Colors.json invalid"; rc=1; }
-  fi
-  # decorations.lua indexes these keys; a missing one would abort the module.
-  local tl="$CONFIG_HOME/hypr/modules/theme.lua"
-  if [[ -f "$tl" ]]; then
-    local missing; missing=$(lua -e "
-      local ok, t = pcall(dofile, '$tl')
-      if not ok or type(t) ~= 'table' then print('(theme.lua does not return a table)') return end
-      for _, k in ipairs({'mode','primary','on_primary','surface','surface_container','surface_container_high',
-                          'on_surface','on_surface_variant','outline','outline_variant','shadow','error'}) do
-        local v = t[k]
-        if k == 'mode' then
-          if v ~= 'dark' and v ~= 'light' then print(k) end
-        elseif type(v) ~= 'string' or not v:match('^#%x%x%x%x%x%x$') then print(k) end
-      end" 2>&1 || echo "(lua failed)")
-    [[ -z "$missing" ]] || { echo "hush check: theme.lua missing or invalid keys: $(echo $missing)"; rc=1; }
-  else
-    echo "hush check: $tl missing"; rc=1
-  fi
-  if [[ -z "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]]; then
-    if [[ "${HUSH_CHECK_NO_HYPR:-}" != 1 ]]; then
-      echo "hush check: HYPRLAND_INSTANCE_SIGNATURE is unset; cannot ask Hyprland for config errors (set HUSH_CHECK_NO_HYPR=1 to skip)"
-      rc=1
-    fi
-  elif ! command -v hyprctl >/dev/null; then
-    echo "hush check: hyprctl not found"; rc=1
-  else
-    local errs; errs=$(hyprctl configerrors 2>/dev/null | grep -v '^$' || true)
-    [[ -z "$errs" ]] || { echo "hush check: hyprctl configerrors:"; echo "$errs"; rc=1; }
-  fi
-  if [[ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]] && command -v hyprctl >/dev/null; then
-    local pe
-    for pe in "${PLUGINS[@]}"; do
-      plugin_loaded "${pe%%|*}" || echo "hush check: warning: plugin ${pe%%|*} is not loaded (optional; see 'hush plugins')"
-    done
-  fi
-  while read -r out; do
-    [[ -s "$out" ]] || { echo "hush check: missing output $out"; rc=1; }
-  done < <(outputs)
-  if session_pgrep -x waybar >/dev/null && session_pgrep -f "$HUSH_PROC" >/dev/null; then
-    echo "hush check: warning: waybar and the Hush shell are both running"
-  fi
-  [[ $rc -eq 0 ]] && echo "hush check: ok"
-  return $rc
-}
-
-# Outputs land wherever ~/.config points (often a dotfiles repo). Print the resolved path of
-# each one that a git repo tracks, so `track off` can mark it skip-worktree in that repo.
-cmd_generated() {
-  local f r d
-  while read -r f; do
-    r=$(realpath -m "$f"); d=$(dirname "$r")
-    [[ -d "$d" ]] || continue
-    git -C "$d" ls-files --error-unmatch -- "$r" >/dev/null 2>&1 && echo "$r"
-  done < <(outputs) | sort -u
-}
-
-cmd_track() {
-  local flag
-  case "${1:-}" in
-    off) flag=--skip-worktree ;;
-    on) flag=--no-skip-worktree ;;
-    *) die "usage: hush track <on|off>" ;;
-  esac
-  cmd_generated | while read -r f; do git -C "$(dirname "$f")" update-index "$flag" -- "$f"; done
-  echo "hush track $1: done"
-}
-
-# Optional Hyprland plugins: name|hyprpm repository.
-PLUGINS=("dynamic-cursors|https://github.com/VirtCode/hypr-dynamic-cursors")
-
-plugin_loaded() { # name: is it in `hyprctl plugin list`?
-  command -v hyprctl >/dev/null && hyprctl plugin list 2>/dev/null | grep -qiE "^Plugin ${1}( |$)"
-}
-plugin_installed() { # name: known to hyprpm, or its .so sits in the hyprpm cache
-  local c="${XDG_CACHE_HOME:-$HOME/.cache}"
-  if command -v hyprpm >/dev/null && hyprpm list 2>/dev/null | grep -qiE "(^|[^a-z-])${1}([^a-z-]|$)"; then return 0; fi
-  compgen -G "/var/cache/hyprpm/${USER:-$(id -un)}/$1/*.so" >/dev/null || compgen -G "$c/hyprpm/$1/*.so" >/dev/null
-}
-
-cmd_plugins() {
-  local sub="${1:-status}" e name repo l i rc=0 missing=()
-  case "$sub" in status|install) ;; *) die "usage: hush plugins [status|install]" ;; esac
-  for e in "${PLUGINS[@]}"; do
-    name="${e%%|*}"
-    l=no; i=no
-    plugin_loaded "$name" && l=yes
-    plugin_installed "$name" && i=yes
-    [[ $sub == status ]] && printf '%-16s loaded %-3s installed %s\n' "$name" "$l" "$i"
-    [[ $i == yes ]] || missing+=("$e")
-  done
-  [[ $sub == install ]] || return 0
-  if [[ ${#missing[@]} -eq 0 ]]; then echo "hush plugins: nothing to install"; return 0; fi
-  command -v hyprpm >/dev/null || die "hyprpm not found (it ships with Hyprland; it needs the Hyprland headers to build plugins)"
-  for e in "${missing[@]}"; do
-    name="${e%%|*}"; repo="${e#*|}"
-    echo "+ hyprpm add $repo"
-    if ! hyprpm add "$repo"; then
-      echo "hush plugins: could not add $name; hyprpm needs the Hyprland headers (run 'hyprpm update' and see its output)" >&2; rc=1; continue
-    fi
-    echo "+ hyprpm enable $name"
-    hyprpm enable "$name" || { echo "hush plugins: could not enable $name" >&2; rc=1; }
-  done
-  return $rc
-}
-
-cmd_fallback() {
-  cmd_shell stop >/dev/null || true
-  session_pgrep -x waybar >/dev/null || (waybar -c "$HOME/.config/waybar/minimal-config.jsonc" -s "$HOME/.config/waybar/minimal-style.css" >/dev/null 2>&1 9>&- &)
-  session_pgrep -x swaync >/dev/null || (swaync >/dev/null 2>&1 9>&- &)
-  echo "hush: fallback bar and notifications started"
-}
-
-
 cmd_shell() {
   local log="$CACHE_DIR/shell.log"; mkdir -p "$CACHE_DIR"
   case "${1:-}" in
     start)
       session_pgrep -f "$HUSH_PROC" >/dev/null && { echo "hush shell: already running"; return 0; }
-      session_pkill -x waybar 2>/dev/null || true; session_pkill -x swaync 2>/dev/null || true # fallback bar must not coexist
       if [[ -f "$log" ]]; then wc -l < "$log"; else echo 0; fi > "$CACHE_DIR/shell.restart-marker"
       (setsid nohup qs -c hush >>"$log" 2>&1 </dev/null 9>&- &)
       local i out; for i in $(seq 1 40); do
@@ -621,7 +368,7 @@ main() {
   mkdir -p "$CACHE_DIR" "$STATE_DIR"
   # Serialize every mutating command: they share $RENDER and $MATUGEN_CFG.
   case "${1:-}" in
-    list|status|plugins|overview|shell|timer|volume|brightness|settings|generated|track|lock|""|-h|--help|help|--version|version) ;; # shell does not render; it must not hold the lock
+    list|status|overview|shell|timer|volume|brightness|settings|lock|""|-h|--help|help) ;; # shell does not render; it must not hold the lock
     *) exec 9>"$CACHE_DIR/lock"; flock -w 30 9 || die "another hush is running" ;;
   esac
   case "${1:-}" in
@@ -630,12 +377,6 @@ main() {
     wall) shift; cmd_wall "$@" ;;
     reload) cmd_reload ;;
     status) cmd_status ;;
-    check) cmd_check ;;
-    generated) cmd_generated ;;
-    track) cmd_track "${2:-}" ;;
-    fallback) cmd_fallback ;;
-    sddm) cmd_sddm "${2:-}" ;;
-    plugins) cmd_plugins "${2:-status}" ;;
     overview) qs -c hush ipc call hush toggleOverview >/dev/null || die "the shell is not running" ;;
     shell) cmd_shell "${2:-}" ;;
     timer) cmd_timer "${2:-}" ;;
@@ -643,9 +384,7 @@ main() {
     brightness) shift; cmd_brightness "$@" ;;
     lock) cmd_lock "${2:-}" ;;
     install) shift; [[ $# -eq 0 && ( "$HUSH_ROOT" == /usr/* || "$HUSH_ROOT" == /nix/* || "$HUSH_ROOT" == */.nix-profile/* ) ]] && set -- --no-fonts; exec "$HUSH_ROOT/install.sh" "$@" ;;
-    face) shift; cmd_face "$@" ;;
     settings) qs -c hush ipc call hush settings >/dev/null || die "the shell is not running" ;;
-    --version|version) cat "$HUSH_ROOT/VERSION" ;;
     ""|-h|--help|help) usage ;;
     *) usage; die "unknown command: $1" ;;
   esac
