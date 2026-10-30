@@ -205,7 +205,7 @@ Singleton {
         id: overviewProc
         command: ["sh", "-c", "hyprctl plugin list 2>/dev/null | grep -q 'Plugin GloView' || exit 3; hyprctl gloview >/dev/null"]
         onExited: code => {
-            if (code === 3 && !root.overviewWarned) { root.overviewWarned = true; console.log("hush: overview needs the GloView plugin (hyprpm); not loaded, ignoring") }
+            if (code === 3 && !root.overviewWarned) { root.overviewWarned = true; console.log("hush: overview needs the GloView plugin; not loaded, ignoring") }
         }
     }
     property var themeNames: []

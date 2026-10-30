@@ -41,7 +41,6 @@ command -v matugen >/dev/null || say "warning: matugen not found; hush theme wil
 
 link "$HUSH_ROOT/quickshell/hush"            "$CFG/quickshell/hush"
 link "$HUSH_ROOT/matugen"                    "$CFG/matugen"
-link "$HUSH_ROOT/hypr/plugins.lua"           "$CFG/hush/plugins.lua"
 link "$HUSH_ROOT/integrations/shell/hush.sh"  "$CFG/hush/shell.sh"
 for b in hush hush-wallgen hush-fonts hush-gtk; do link "$HUSH_ROOT/bin/$b" "$BIN/$b"; done
 if [[ -d "$CFG/nvim/lua/plugins" ]]; then
@@ -65,9 +64,6 @@ if [[ $SKIP_THEME == 0 ]]; then
   else
     say "ok      theme state exists ($("$HUSH_ROOT/bin/hush" status | head -1)); run 'hush reload' to re-render"
   fi
-  # Outputs that land in a git repo (e.g. dotfiles behind ~/.config) stay out of commits.
-  "$HUSH_ROOT/bin/hush" track off >/dev/null && say "ok      generated files marked skip-worktree where tracked"
 fi
 [[ -d "$BACKUP" ]] && say "backups are in $BACKUP"
-say "optional: hush plugins install  (GloView overview and dynamic-cursors; see README, Plugins)"
 say "done. Start the shell with: hush shell start"

@@ -92,10 +92,6 @@ Hush ships no keybinds. Suggested ones, as `hl.bind(combo, hl.dsp.exec_cmd(cmd))
 | `hush brightness up\|down [step]` | change brightness (default 5 %) with the OSD |
 | `hush reload` | re-render templates for the current state |
 | `hush status` | print theme, wallpaper, mode and scheme |
-| `hush check` | validate generated config (exit 1 on problems) |
-| `hush generated` / `hush track <on\|off>` | list tracked generated files / mark them skip-worktree |
-| `hush fallback` | stop Hush, start Waybar and SwayNC |
-| `hush plugins [status\|install]` | show or install the optional plugins |
 | `hush overview` | toggle the GloView overview |
 | `hush list` | list the themes |
 | `hush theme <name\|next\|prev> [--from X,Y]` | apply a theme (wallpaper, colours, reloads) |
@@ -132,14 +128,8 @@ Over IPC, with a leading space: `qs -c hush ipc call hush settingsSet layout.hov
 | `HUSH_WALL_DIRS` | colon-separated extra wallpaper folders |
 | `HUSH_REDUCED_MOTION` | `1` makes theme and wallpaper changes instant |
 
-**Generated files.** `hush generated` lists them; `hush track off` marks them skip-worktree when
-`~/.config` is a git repo. The browser theme loads unpacked from `~/.config/hush/helium-theme`.
-
 **Themes.** A new theme is a `themes/<name>/` folder with a `theme.toml` (copy one) and a
 `wallpaper.png`; then `hush theme <name>`. `hush-wallgen <theme|all>` redraws the bundled ones.
-
-**Plugins.** `hush plugins install` enables GloView and dynamic-cursors with hyprpm (needs the
-Hyprland headers); then `pcall(dofile, os.getenv("HOME") .. "/.config/hush/plugins.lua")`.
 
 **Lock.** `hush lock` runs `quickshell/hush/lock.qml` as its own process, so a shell restart cannot
 unlock it; the password goes through PAM `login`, and with fprintd a finger works in parallel

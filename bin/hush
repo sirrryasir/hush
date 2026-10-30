@@ -46,14 +46,9 @@ usage: hush <command>
                        in HUSH_WALL_DIRS (colon-separated) when set
   reload               re-render templates for the current state
   status               print active theme, wallpaper, mode, scheme
-  check                validate generated config (exit 1 on problems)
-  generated            print the matugen outputs that some git repo tracks (absolute paths)
-  track <on|off>       off: git skip-worktree on those files in their repos; on: undo
-  fallback             stop the Hush shell, start Waybar and SwayNC
   install [opts]       link this checkout into ~/.config (install.sh; packaged copies skip the fonts)
   lock                 lock the screen (Quickshell session lock)
   settings             open (or close) the settings surface in the island
-  plugins [status|install]  optional Hyprland plugins gloview and dynamic-cursors (hyprpm)
   overview             open the GloView overview (hyprctl gloview)
   shell <start|stop|restart|status|log>  manage the Hush Quickshell shell
   volume up|down|mute|mic-mute [step]  change output volume (step %, default 5, capped at 100) or toggle mute
@@ -99,11 +94,6 @@ assemble_config() {
   mkdir -p "$CACHE_DIR" "$STATE_DIR"
   { cat "$HUSH_ROOT/matugen/config.toml.head"; for f in "$HUSH_ROOT"/matugen/config.d/*.toml; do echo; cat "$f"; done; } \
     | sed -e "s|@HUSH_ROOT@|$HUSH_ROOT|g" -e "s|@CONFIG@|$CONFIG_HOME|g" > "$MATUGEN_CFG"
-}
-
-outputs() { # every output_path of the assembled config, one per line
-  assemble_config
-  grep -oE "^output_path = '[^']+'" "$MATUGEN_CFG" | sed -E "s|^output_path = '(.*)'|\\1|"
 }
 
 # Render every template into $RENDER (paths mirrored), then move into place. Atomic on failure.
@@ -222,7 +212,6 @@ reload_consumers() { # theme mode
     { rsvg-convert -w 512 "$ff/hush-logo.svg" -o "$ff/hush-logo.png.tmp" && mv -f "$ff/hush-logo.png.tmp" "$ff/hush-logo.png"; } \
       || echo "hush: fastfetch logo render failed (continuing)" >&2
   fi
-  session_pkill -USR2 -x waybar 2>/dev/null || true
   if command -v gsettings >/dev/null; then
     if [[ "$mode" == "light" ]]; then
       gsettings set org.gnome.desktop.interface color-scheme 'prefer-light' || echo "hush: gsettings failed (continuing)" >&2
@@ -314,134 +303,11 @@ import json; s=json.load(open('$STATE'))
 print('theme', s['theme']); print('wallpaper', s['wallpaper']); print('mode', s['mode']); print('scheme', s['scheme']); print('source', s['source']); print('applied', s['applied_at'])"
 }
 
-cmd_check() {
-  local rc=0
-  for f in "$CONFIG_HOME/hypr/modules/theme.lua" "$CONFIG_HOME/hypr/modules/gloview-colors.lua"; do
-    if [[ -f "$f" ]]; then
-      lua -e "dofile('$f')" >/dev/null 2>&1 || { echo "hush check: $f is not valid Lua"; rc=1; }
-    fi
-  done
-  if [[ -f "$STATE_DIR/Colors.json" ]]; then
-    python3 -c "import json; json.load(open('$STATE_DIR/Colors.json'))" 2>/dev/null || { echo "hush check: Colors.json invalid"; rc=1; }
-  fi
-  # decorations.lua indexes these keys; a missing one would abort the module.
-  local tl="$CONFIG_HOME/hypr/modules/theme.lua"
-  if [[ -f "$tl" ]]; then
-    local missing; missing=$(lua -e "
-      local ok, t = pcall(dofile, '$tl')
-      if not ok or type(t) ~= 'table' then print('(theme.lua does not return a table)') return end
-      for _, k in ipairs({'mode','primary','on_primary','surface','surface_container','surface_container_high',
-                          'on_surface','on_surface_variant','outline','outline_variant','shadow','error'}) do
-        local v = t[k]
-        if k == 'mode' then
-          if v ~= 'dark' and v ~= 'light' then print(k) end
-        elseif type(v) ~= 'string' or not v:match('^#%x%x%x%x%x%x$') then print(k) end
-      end" 2>&1 || echo "(lua failed)")
-    [[ -z "$missing" ]] || { echo "hush check: theme.lua missing or invalid keys: $(echo $missing)"; rc=1; }
-  else
-    echo "hush check: $tl missing"; rc=1
-  fi
-  if [[ -z "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]]; then
-    if [[ "${HUSH_CHECK_NO_HYPR:-}" != 1 ]]; then
-      echo "hush check: HYPRLAND_INSTANCE_SIGNATURE is unset; cannot ask Hyprland for config errors (set HUSH_CHECK_NO_HYPR=1 to skip)"
-      rc=1
-    fi
-  elif ! command -v hyprctl >/dev/null; then
-    echo "hush check: hyprctl not found"; rc=1
-  else
-    local errs; errs=$(hyprctl configerrors 2>/dev/null | grep -v '^$' || true)
-    [[ -z "$errs" ]] || { echo "hush check: hyprctl configerrors:"; echo "$errs"; rc=1; }
-  fi
-  if [[ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]] && command -v hyprctl >/dev/null; then
-    local pe
-    for pe in "${PLUGINS[@]}"; do
-      plugin_loaded "${pe%%|*}" || echo "hush check: warning: plugin ${pe%%|*} is not loaded (optional; see 'hush plugins')"
-    done
-  fi
-  while read -r out; do
-    [[ -s "$out" ]] || { echo "hush check: missing output $out"; rc=1; }
-  done < <(outputs)
-  if session_pgrep -x waybar >/dev/null && session_pgrep -f "$HUSH_PROC" >/dev/null; then
-    echo "hush check: warning: waybar and the Hush shell are both running"
-  fi
-  [[ $rc -eq 0 ]] && echo "hush check: ok"
-  return $rc
-}
-
-# Outputs land wherever ~/.config points (often a dotfiles repo). Print the resolved path of
-# each one that a git repo tracks, so `track off` can mark it skip-worktree in that repo.
-cmd_generated() {
-  local f r d
-  while read -r f; do
-    r=$(realpath -m "$f"); d=$(dirname "$r")
-    [[ -d "$d" ]] || continue
-    git -C "$d" ls-files --error-unmatch -- "$r" >/dev/null 2>&1 && echo "$r"
-  done < <(outputs) | sort -u
-}
-
-cmd_track() {
-  local flag
-  case "${1:-}" in
-    off) flag=--skip-worktree ;;
-    on) flag=--no-skip-worktree ;;
-    *) die "usage: hush track <on|off>" ;;
-  esac
-  cmd_generated | while read -r f; do git -C "$(dirname "$f")" update-index "$flag" -- "$f"; done
-  echo "hush track $1: done"
-}
-
-# Optional Hyprland plugins: name|hyprpm repository.
-PLUGINS=("gloview|https://github.com/fedsfarm/gloview" "dynamic-cursors|https://github.com/VirtCode/hypr-dynamic-cursors")
-
-plugin_loaded() { # name: is it in `hyprctl plugin list`?
-  command -v hyprctl >/dev/null && hyprctl plugin list 2>/dev/null | grep -qiE "^Plugin ${1}( |$)"
-}
-plugin_installed() { # name: known to hyprpm, or its .so sits in the hyprpm cache
-  local c="${XDG_CACHE_HOME:-$HOME/.cache}"
-  if command -v hyprpm >/dev/null && hyprpm list 2>/dev/null | grep -qiE "(^|[^a-z-])${1}([^a-z-]|$)"; then return 0; fi
-  compgen -G "/var/cache/hyprpm/${USER:-$(id -un)}/$1/*.so" >/dev/null || compgen -G "$c/hyprpm/$1/*.so" >/dev/null
-}
-
-cmd_plugins() {
-  local sub="${1:-status}" e name repo l i rc=0 missing=()
-  case "$sub" in status|install) ;; *) die "usage: hush plugins [status|install]" ;; esac
-  for e in "${PLUGINS[@]}"; do
-    name="${e%%|*}"
-    l=no; i=no
-    plugin_loaded "$name" && l=yes
-    plugin_installed "$name" && i=yes
-    [[ $sub == status ]] && printf '%-16s loaded %-3s installed %s\n' "$name" "$l" "$i"
-    [[ $i == yes ]] || missing+=("$e")
-  done
-  [[ $sub == install ]] || return 0
-  if [[ ${#missing[@]} -eq 0 ]]; then echo "hush plugins: nothing to install"; return 0; fi
-  command -v hyprpm >/dev/null || die "hyprpm not found (it ships with Hyprland; it needs the Hyprland headers to build plugins)"
-  for e in "${missing[@]}"; do
-    name="${e%%|*}"; repo="${e#*|}"
-    echo "+ hyprpm add $repo"
-    if ! hyprpm add "$repo"; then
-      echo "hush plugins: could not add $name; hyprpm needs the Hyprland headers (run 'hyprpm update' and see its output)" >&2; rc=1; continue
-    fi
-    echo "+ hyprpm enable $name"
-    hyprpm enable "$name" || { echo "hush plugins: could not enable $name" >&2; rc=1; }
-  done
-  return $rc
-}
-
-cmd_fallback() {
-  cmd_shell stop >/dev/null || true
-  session_pgrep -x waybar >/dev/null || (waybar -c "$HOME/.config/waybar/minimal-config.jsonc" -s "$HOME/.config/waybar/minimal-style.css" >/dev/null 2>&1 9>&- &)
-  session_pgrep -x swaync >/dev/null || (swaync >/dev/null 2>&1 9>&- &)
-  echo "hush: fallback bar and notifications started"
-}
-
-
 cmd_shell() {
   local log="$CACHE_DIR/shell.log"; mkdir -p "$CACHE_DIR"
   case "${1:-}" in
     start)
       session_pgrep -f "$HUSH_PROC" >/dev/null && { echo "hush shell: already running"; return 0; }
-      session_pkill -x waybar 2>/dev/null || true; session_pkill -x swaync 2>/dev/null || true # fallback bar must not coexist
       if [[ -f "$log" ]]; then wc -l < "$log"; else echo 0; fi > "$CACHE_DIR/shell.restart-marker"
       (setsid nohup qs -c hush >>"$log" 2>&1 </dev/null 9>&- &)
       local i out; for i in $(seq 1 40); do
@@ -509,7 +375,7 @@ main() {
   mkdir -p "$CACHE_DIR" "$STATE_DIR"
   # Serialize every mutating command: they share $RENDER and $MATUGEN_CFG.
   case "${1:-}" in
-    list|status|plugins|overview|shell|timer|volume|brightness|settings|generated|track|lock|""|-h|--help|help|--version|version) ;; # shell does not render; it must not hold the lock
+    list|status|overview|shell|timer|volume|brightness|settings|lock|""|-h|--help|help|--version|version) ;; # shell does not render; it must not hold the lock
     *) exec 9>"$CACHE_DIR/lock"; flock -w 30 9 || die "another hush is running" ;;
   esac
   case "${1:-}" in
@@ -518,11 +384,6 @@ main() {
     wall) shift; cmd_wall "$@" ;;
     reload) cmd_reload ;;
     status) cmd_status ;;
-    check) cmd_check ;;
-    generated) cmd_generated ;;
-    track) cmd_track "${2:-}" ;;
-    fallback) cmd_fallback ;;
-    plugins) cmd_plugins "${2:-status}" ;;
     overview) command -v hyprctl >/dev/null || die "hyprctl not found"; hyprctl gloview ;;
     shell) cmd_shell "${2:-}" ;;
     timer) cmd_timer "${2:-}" ;;
