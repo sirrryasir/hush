@@ -77,7 +77,6 @@ ShellRoot {
             Hush.Screen {
                 id: screen
                 anchors.fill: parent
-                mode: "lock"
                 userName: Quickshell.env("USER") || ""
                 background: "file://" + (Cfg.State.wallpaper || Paths.themes + "/" + Cfg.State.theme + "/wallpaper.png")
                 glyphs: (Battery.present ? [Battery.icon] : []).concat([Net.icon])

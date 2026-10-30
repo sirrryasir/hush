@@ -2,54 +2,34 @@ import QtQuick
 import QtQuick.Effects
 import QtQuick.Shapes
 
-// Hush lock and login screen: a thin clock and the date in capitals over the blurred,
+// Hush lock screen: a thin clock and the date in capitals over the blurred,
 // dimmed wallpaper; a key, the pointer or a tap reveals the user name, one black pill (the island)
 // holding the password dots, and a status line under it, all hidden again 2 s after the field
 // empties. The pill collapses to a circle with an arc while checking, shakes with a red hairline and a
 // red status on a failure, and dissolves upward on success.
-// Filled by quickshell/hush/lock.qml (mode "lock"); the "login" mode items are unused leftovers.
-// colorsSource / layoutSource name optional QML files; the baked defaults below match harbor.
-// No XMLHttpRequest file reads.
+// Filled by quickshell/hush/lock.qml.
 Rectangle {
     id: root
     color: "black"
 
     // ---- what the host fills ------------------------------------------------------------------
-    property string mode: "login"               // "lock" | "login"
     property string userName: ""
-    property url avatarSource: ""
-    property url avatarFallback: ""
     property url background: ""
-    property url colorsSource: ""
-    property url layoutSource: ""
-    property var users: []                     // login: user names; the name over the pill picks one
-    property var sessions: []                  // login: [{label, value}], Hyprland first
-    property int sessionIndex: 0               // login: the chosen session's value
-    property bool canSuspend: false
     property var glyphs: []                    // Material Symbols names, top right
     property string message: ""                // muted status under the pill (fingerprint prompt)
     property string fontName: "Inter Variable"
     property string iconFontName: "Material Symbols Rounded"
-    property bool iconsReady: true
     signal submit(string password)
-    signal power(string action)                // login: "suspend" | "reboot" | "poweroff"
     property QtObject colors: null             // an object with the island roles (the shell's Colors)
 
-    // ---- palette: harbor defaults or colors, overridden by colorsSource ---------------------------
+    // ---- palette: the shell's island roles, with fallbacks ------------------------------------
     QtObject {
         id: pal
-        property color islandFg: root.colors ? root.colors.islandFg : "#e1e3e0"
-        property color islandFgVar: root.colors ? root.colors.islandFgVar : "#c0c9c4"
         property color islandPrimary: root.colors ? root.colors.islandPrimary : "#9cd1c1"
-        property color islandSurfaceHigh: root.colors ? root.colors.islandSurfaceHigh : "#282b29"
         property color islandError: root.colors ? root.colors.islandError : "#ffb4ab"
     }
-    Loader {
-        source: root.colorsSource
-        onLoaded: root.copyInto(item, pal)
-    }
 
-    // ---- layout defaults, overridden by layoutSource ----
+    // ---- layout ----
     QtObject {
         id: lay
         property real base: 1080
@@ -70,48 +50,24 @@ Rectangle {
         property real pillW: 340
         property real pillH: 56
         property real pillOutlineAlpha: 0.12
-        property real avatarSize: 32
         property real fieldDot: 8
         property real fieldDotGap: 10
-        property real submitSize: 40
-        property real submitInset: 8
         property real statusCy: 0.7546
         property real statusSize: 14
         property real iconsTop: 49
         property real iconsRight: 40
         property real iconsSize: 18
-        property real powerCy: 0.9333
-        property real powerSize: 40
-        property real powerGap: 12
-        property real powerMenuItem: 36
         property real blurRadius: 24
         property real blurBrightness: 0.6
         property real blurSaturation: 0.85
         property real motionFadeMs: 250
-        property real motionSubmitMs: 100
         property real motionCheckMs: 260
         property real motionErrorMs: 600
         property real motionShakeMs: 300
         property real motionShakePx: 8
         property real motionSuccessMs: 300
         property real motionSuccessLift: 24
-        property real lockDate: 1      // settings.json lock.*: 0 hides the date, name or status line
-        property real lockName: 1
-        property real lockReveal: 1    // 0: the pill, name and status always shown
-        property real lockStatus: 1
     }
-    Loader {
-        source: root.layoutSource
-        onLoaded: root.copyInto(item, lay)
-    }
-
-    function copyInto(from, to) {
-        for (var k in to) {
-            if (from.hasOwnProperty(k) && typeof from[k] !== "function" && k !== "objectName")
-                to[k] = from[k];
-        }
-    }
-
     // s = H / 1080; lengths round to even pixels
     readonly property real s: height / lay.base
     function px(v) { return 2 * Math.round(v * s / 2); }
@@ -123,7 +79,7 @@ Rectangle {
     property string phase: "idle"
     property string failText: ""                // the last failure, until the next key
     // the pill, name and status hide until a key or the pointer wakes them (2 s after the last one)
-    readonly property bool awake: lay.lockReveal === 0 || field.text.length > 0 || pillHover.hovered || wake.running || phase !== "idle"
+    readonly property bool awake: field.text.length > 0 || pillHover.hovered || wake.running || phase !== "idle"
     Timer { id: wake; interval: 2000 }
     HoverHandler { // only real movement: compositors resend the resting position, and the cursor is there at map time
         property var last: null
@@ -155,7 +111,7 @@ Rectangle {
     Timer { id: errorTimer; interval: lay.motionErrorMs; onTriggered: if (root.phase === "error") root.phase = "idle" }
 
     Component.onCompleted: field.forceActiveFocus()
-    Timer { interval: 300; running: true; onTriggered: if (!menu.open) field.forceActiveFocus() } // after the window maps
+    Timer { interval: 300; running: true; onTriggered: field.forceActiveFocus() } // after the window maps
 
     // ---- background: one MultiEffect pass ------------------------------------------------------
     // a margin past the edges keeps the blur from fading into the window border
@@ -188,7 +144,6 @@ Rectangle {
         anchors.rightMargin: root.px(lay.iconsRight)
         y: Math.round(lay.iconsTop * root.s - height / 2)
         spacing: root.px(8)
-        visible: root.iconsReady
         Repeater {
             model: root.glyphs
             Text {
@@ -239,7 +194,6 @@ Rectangle {
             renderType: clock.renderType
         }
         Text {
-            visible: lay.lockDate > 0
             anchors.horizontalCenter: parent.horizontalCenter
             y: Math.round(root.height * lay.dateCy - height / 2)
             text: Qt.formatDate(root.now, "dddd d MMMM").toUpperCase()
@@ -251,7 +205,6 @@ Rectangle {
             font.letterSpacing: lay.dateTracking * root.s
         }
         Text { // user name over the pill
-            visible: lay.lockName > 0
             opacity: root.awake ? 1 : 0
             Behavior on opacity { NumberAnimation { duration: lay.motionFadeMs; easing.type: Easing.OutQuint } }
             anchors.horizontalCenter: parent.horizontalCenter
@@ -261,17 +214,9 @@ Rectangle {
             font.family: root.fontName
             font.pixelSize: root.fs(lay.userSize)
             font.letterSpacing: lay.userTracking * root.s
-            MouseArea {
-                id: userBtn
-                anchors.fill: parent; anchors.margins: -root.px(8)
-                enabled: root.users.length > 1
-                cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
-                onClicked: menu.toggle("user", userBtn)
-            }
         }
         Text { // status under the pill: the host's message, or the last failure in the error colour
             objectName: "status"
-            visible: lay.lockStatus > 0
             opacity: root.awake ? 1 : 0
             Behavior on opacity { NumberAnimation { duration: lay.motionFadeMs; easing.type: Easing.OutQuint } }
             anchors.horizontalCenter: parent.horizontalCenter
@@ -319,30 +264,7 @@ Rectangle {
             NumberAnimation { target: pill; property: "shakeX"; to: 0; duration: shake.leg; easing.type: Easing.InQuad }
         }
 
-        // login: avatar disc, inset on the left; centred in the circle while checking
-        Item {
-            id: avatar
-            visible: root.mode === "login"
-            width: root.px(lay.avatarSize); height: width
-            x: (pill.height - width) / 2
-            anchors.verticalCenter: parent.verticalCenter
-            Image {
-                id: avatarImg
-                anchors.fill: parent
-                source: root.avatarSource
-                sourceSize: Qt.size(256, 256)
-                fillMode: Image.PreserveAspectCrop
-                smooth: true
-                visible: false
-                onStatusChanged: if (status === Image.Error)
-                    source = root.avatarFallback
-            }
-            Rectangle { id: avatarMask; anchors.fill: parent; radius: width / 2; visible: false; layer.enabled: true }
-            MultiEffect { anchors.fill: parent; source: avatarImg; maskEnabled: true; maskSource: avatarMask }
-            Rectangle { anchors.fill: parent; radius: width / 2; color: "transparent"; border.width: 1; border.color: root.edge }
-        }
-
-        // the field: an invisible TextInput drives our own dots, between the avatar and the arrow
+        // the field: an invisible TextInput drives our own dots
         TextInput {
             id: field
             objectName: "password"
@@ -356,8 +278,6 @@ Rectangle {
             onTextChanged: if (text.length > 0) root.failText = ""
             onAccepted: root.trySubmit()
             Keys.onEscapePressed: text = ""
-            Keys.onTabPressed: if (root.mode === "login") sessionBtn.forceActiveFocus()
-            KeyNavigation.backtab: powerBtn
         }
         Item {
             id: textArea
@@ -382,28 +302,6 @@ Rectangle {
                 }
             }
         }
-
-        // login: round submit button, only while there is text
-        Rectangle {
-            id: submitBtn
-            objectName: "submit"
-            width: root.px(lay.submitSize); height: width; radius: width / 2
-            x: pill.width - width - root.px(lay.submitInset)
-            anchors.verticalCenter: parent.verticalCenter
-            color: submitArea.containsMouse ? Qt.lighter(pal.islandSurfaceHigh, 1.3) : pal.islandSurfaceHigh
-            opacity: root.mode === "login" && field.text.length > 0 && root.phase === "idle" ? 1 : 0
-            visible: opacity > 0
-            scale: opacity > 0 ? 0.9 + 0.1 * opacity : 0.9
-            Behavior on opacity { NumberAnimation { duration: lay.motionSubmitMs; easing.type: Easing.OutQuint } }
-            Text {
-                anchors.centerIn: parent
-                text: root.iconsReady ? "arrow_forward" : "→"
-                color: pal.islandFg
-                font.family: root.iconsReady ? root.iconFontName : root.fontName
-                font.pixelSize: root.fs(18)
-            }
-            MouseArea { id: submitArea; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.trySubmit() }
-        }
     }
 
     // checking: a 2 px primary arc spinning around the collapsed circle
@@ -425,161 +323,5 @@ Rectangle {
             PathAngleArc { centerX: spinner.width / 2; centerY: spinner.height / 2; radiusX: spinner.width / 2 - 1; radiusY: radiusX; startAngle: -90; sweepAngle: 100 }
         }
         RotationAnimator on rotation { from: 0; to: 360; duration: 900; loops: Animation.Infinite; running: spinner.visible }
-    }
-
-    // ---- login: bottom row, session, sleep, power -------------------------------------------------
-    component CircleButton: Rectangle {
-        id: cb
-        property string icon
-        property string fallback
-        property bool active: false
-        signal activated
-        width: root.px(lay.powerSize); height: width; radius: width / 2
-        color: "black"
-        border.width: 1
-        border.color: activeFocus || active ? pal.islandPrimary : root.edge
-        activeFocusOnTab: true
-        opacity: enabled ? 1 : 0.4
-        Keys.onReturnPressed: activated()
-        Keys.onEnterPressed: activated()
-        Keys.onSpacePressed: activated()
-        Text {
-            anchors.centerIn: parent
-            text: root.iconsReady ? cb.icon : cb.fallback
-            color: cbArea.containsMouse || cb.activeFocus ? pal.islandFg : pal.islandFgVar
-            font.family: root.iconsReady ? root.iconFontName : root.fontName
-            font.pixelSize: root.fs(20)
-        }
-        MouseArea { id: cbArea; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: cb.activated() }
-    }
-
-    Row {
-        id: powerRow
-        visible: root.mode === "login"
-        opacity: root.phase === "success" ? 0 : 1
-        Behavior on opacity { NumberAnimation { duration: lay.motionSuccessMs; easing.type: Easing.OutQuint } }
-        spacing: root.px(lay.powerGap)
-        anchors.horizontalCenter: parent.horizontalCenter
-        y: Math.round(root.height * lay.powerCy - height / 2)
-        CircleButton {
-            id: sessionBtn
-            objectName: "sessionButton"
-            icon: "desktop_windows"; fallback: "▭"
-            active: menu.open && menu.kind === "session"
-            visible: root.sessions.length > 0
-            onActivated: menu.toggle("session", sessionBtn)
-            KeyNavigation.tab: sleepBtn
-        }
-        CircleButton {
-            id: sleepBtn
-            icon: "bedtime"; fallback: "☾"
-            enabled: root.canSuspend
-            onActivated: root.power("suspend")
-            KeyNavigation.tab: powerBtn
-        }
-        CircleButton {
-            id: powerBtn
-            objectName: "powerButton"
-            icon: "power_settings_new"; fallback: "⏻"
-            active: menu.open && menu.kind === "power"
-            onActivated: menu.toggle("power", powerBtn)
-            KeyNavigation.tab: field
-        }
-    }
-
-    // ---- popups: a black rounded list opening upward from its button ----------------------------
-    MouseArea { // click outside closes
-        anchors.fill: parent
-        visible: menu.open
-        onClicked: menu.close()
-    }
-    Rectangle {
-        id: menu
-        objectName: "menu"
-        property bool open: false
-        property string kind: "session"
-        property Item anchorItem: sessionBtn
-        property int current: 0
-        readonly property var items: kind === "session" ? root.sessions
-            : kind === "user" ? root.users.map(function (u) { return { label: u, value: u }; })
-            : [{ label: "Restart", value: "reboot" }, { label: "Shut down", value: "poweroff" }]
-        readonly property var selectedValue: kind === "session" ? root.sessionIndex : kind === "user" ? root.userName : undefined
-
-        function toggle(k, from) {
-            if (open && kind === k) { close(); return; }
-            kind = k; anchorItem = from; measure(); open = true;
-            current = 0;
-            for (var j = 0; j < items.length; j++) if (items[j].value === selectedValue) current = j;
-            forceActiveFocus();
-        }
-        function close() { open = false; field.forceActiveFocus(); }
-        function choose(j) {
-            var it = items[j];
-            if (!it) return;
-            if (kind === "session") { root.sessionIndex = it.value; close(); }
-            else if (kind === "user") { root.userName = it.value; close(); }
-            else root.power(it.value);
-        }
-
-        property real labelW: 0
-        TextMetrics { id: menuMetrics; font.family: root.fontName; font.pixelSize: root.fs(14); font.weight: 500 }
-        function measure() {
-            var m = 0;
-            for (var j = 0; j < items.length; j++) { menuMetrics.text = items[j].label; m = Math.max(m, menuMetrics.advanceWidth); }
-            labelW = m;
-        }
-        width: Math.max(root.px(150), Math.ceil(labelW) + root.px(28 + 24 + 12))
-        height: list.implicitHeight + root.px(12)
-        radius: root.px(18)
-        color: "black"
-        border.width: 1
-        border.color: root.edge
-        readonly property point at: anchorItem.mapToItem(root, anchorItem.width / 2, 0)
-        x: Math.round(Math.min(root.width - width - root.px(16), Math.max(root.px(16), at.x - width / 2)))
-        y: kind === "user" ? Math.round(at.y + anchorItem.height + root.px(12)) : powerRow.y - height - root.px(12)
-        opacity: open ? 1 : 0
-        visible: opacity > 0
-        transform: Translate { y: menu.open ? 0 : root.px(8); Behavior on y { NumberAnimation { duration: 180; easing.type: Easing.OutQuint } } }
-        Behavior on opacity { NumberAnimation { duration: 160; easing.type: Easing.OutQuint } }
-
-        Keys.onEscapePressed: close()
-        Keys.onUpPressed: current = Math.max(0, current - 1)
-        Keys.onDownPressed: current = Math.min(items.length - 1, current + 1)
-        Keys.onReturnPressed: choose(current)
-        Keys.onEnterPressed: choose(current)
-        Keys.onTabPressed: close()
-
-        Column {
-            id: list
-            anchors.centerIn: parent
-            Repeater {
-                model: menu.items
-                Rectangle {
-                    required property var modelData
-                    required property int index
-                    readonly property bool selected: modelData.value === menu.selectedValue
-                    width: menu.width - root.px(12)
-                    height: root.px(lay.powerMenuItem)
-                    radius: height / 2
-                    color: index === menu.current || rowArea.containsMouse ? pal.islandSurfaceHigh : "transparent"
-                    Rectangle { // selected session or user dot
-                        visible: parent.selected
-                        width: root.px(6); height: width; radius: width / 2
-                        color: pal.islandPrimary
-                        x: root.px(14); anchors.verticalCenter: parent.verticalCenter
-                    }
-                    Text {
-                        id: label
-                        x: root.px(28); anchors.verticalCenter: parent.verticalCenter
-                        text: modelData.label
-                        color: parent.selected || index === menu.current ? pal.islandFg : pal.islandFgVar
-                        font.family: root.fontName
-                        font.pixelSize: root.fs(14)
-                        font.weight: parent.selected ? 500 : 400
-                    }
-                    MouseArea { id: rowArea; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: menu.choose(index) }
-                }
-            }
-        }
     }
 }
