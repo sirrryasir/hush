@@ -3,8 +3,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 
-// Backlight level from /sys/class/backlight ($HUSH_BACKLIGHT_DIR in the test sandbox, which stubs
-// brightnessctl to match). changed("brightness") fires after the first 2 s.
+// Backlight level from /sys/class/backlight. changed("brightness") fires after the first 2 s.
 Singleton {
     id: root
     property real level: 0
@@ -23,7 +22,7 @@ Singleton {
     }
 
     Process {
-        command: ["sh", "-c", "ls -d \"${HUSH_BACKLIGHT_DIR:-/sys/class/backlight}\"/*/ 2>/dev/null | head -1"]
+        command: ["sh", "-c", "ls -d /sys/class/backlight/*/ 2>/dev/null | head -1"]
         running: true
         stdout: StdioCollector {
             onStreamFinished: {

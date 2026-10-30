@@ -64,7 +64,7 @@ t_settings() {
   for t in Media Notifications Calendar Launcher Wallpapers Settings; do
     assert_eq "true" "$(hq hasSwitch "$t")" "Modules/Surfaces keeps the \"$t\" switch"
   done
-  # the sandbox copies the live settings.json, which may carry a layout override: start from the defaults
+  # the live settings.json may carry a layout override: start from the defaults
   hq pressNamed resetLayout >/dev/null; sleep 0.6
   hq setSection hover >/dev/null; sleep 0.2
   assert_eq "workspaces,date,media,bluetooth,network,battery,keyboard,volume,brightness,timer,shelf,recording" "$(hq rows hover)" "hover rows in the default order"

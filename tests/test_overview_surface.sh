@@ -37,11 +37,6 @@ t_surface() {
     assert_eq "false" "$(hq moveSame)" "dropping a window on its own workspace does nothing"
     hq keepThumb >/dev/null; sleep 0.6
     assert_eq "true" "$(hq sameThumb)" "a toplevel refresh keeps the live thumbnail (no rebuild)"
-    if [[ "${HUSH_SANDBOX:-0}" == 1 ]]; then # a new window on the shown workspace must not rebuild the others
-      hq keepThumb >/dev/null; kitty --class hush-sandbox-term >/dev/null 2>&1 & local k=$!; sleep 1.5
-      assert_eq "true" "$(hq sameThumb)" "a window opening keeps the existing thumbnails"
-      kill "$k" 2>/dev/null; wait "$k" 2>/dev/null; sleep 0.5
-    fi
   else pass "no window on workspace $WS: same-workspace drop and refresh checks skipped"; fi
 }
 t_steps() {

@@ -9,8 +9,7 @@ THEMES="$HUSH_ROOT/themes"
 STATE_DIR="$HOME/.config/hush"
 CACHE_DIR="$HOME/.cache/hush"
 HUSH_PROC='^qs -c hush$' # anchored: never match a shell whose command line mentions qs
-# pgrep/pkill limited to this session (processes with our XDG_RUNTIME_DIR): tests/sandbox.sh runs a
-# second session on the same process table, and neither may signal the other's shell, kitty or bar.
+# pgrep/pkill limited to this session (processes with our XDG_RUNTIME_DIR), so another session's kitty is never signalled.
 session_pgrep() { # pgrep-args...; prints the pids, fails when there are none
   local p out=""
   for p in $(pgrep "$@"); do
@@ -217,9 +216,6 @@ reload_consumers() { # theme mode
   fi
   mkdir -p "$HOME/.config/Kvantum"
   printf '[General]\ntheme=hush\n' > "$HOME/.config/Kvantum/kvantum.kvconfig"
-  if [[ -d "$HOME/.config/quickshell/hush" ]] && command -v qs >/dev/null; then
-    : # the shell watches Colors.json; nothing to do
-  fi
 }
 
 cmd_theme() {
@@ -383,7 +379,7 @@ main() {
     volume) shift; cmd_volume "$@" ;;
     brightness) shift; cmd_brightness "$@" ;;
     lock) cmd_lock "${2:-}" ;;
-    install) shift; [[ $# -eq 0 && ( "$HUSH_ROOT" == /usr/* || "$HUSH_ROOT" == /nix/* || "$HUSH_ROOT" == */.nix-profile/* ) ]] && set -- --no-fonts; exec "$HUSH_ROOT/install.sh" "$@" ;;
+    install) shift; [[ $# -eq 0 && "$HUSH_ROOT" == /usr/* ]] && set -- --no-fonts; exec "$HUSH_ROOT/install.sh" "$@" ;;
     settings) qs -c hush ipc call hush settings >/dev/null || die "the shell is not running" ;;
     ""|-h|--help|help) usage ;;
     *) usage; die "unknown command: $1" ;;

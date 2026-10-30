@@ -51,11 +51,6 @@ fi
 # Kvantum/hush holds only generated files; hush renders them there.
 mkdir -p "$CFG/Kvantum/hush" "$CFG/hush"
 
-if [[ -d "$HUSH_ROOT/.git" ]]; then
-  git -C "$HUSH_ROOT" config core.hooksPath .githooks
-  say "ok      git hooks (.githooks)"
-fi
-
 if [[ $SKIP_FONTS == 0 ]]; then "$HUSH_ROOT/bin/hush-fonts" || say "warning: hush-fonts failed (continuing)"; fi
 
 if [[ $SKIP_THEME == 0 ]]; then

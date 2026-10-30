@@ -36,7 +36,7 @@ ShellRoot {
     }
     Process {
         running: true
-        // Only instances on this compositor count: a nested Hyprland (tests) may run its own shell.
+        // Only instances on this compositor count: another compositor (a test session) may run its own shell.
         command: ["sh", "-c", "echo $PPID; mine=$(tr '\\0' '\\n' </proc/$PPID/environ | grep -E '^(WAYLAND_DISPLAY|HYPRLAND_INSTANCE_SIGNATURE)='); "
             + "qs list -c hush -j 2>/dev/null | grep -o '\"pid\": *[0-9]*' | grep -o '[0-9]*$' | while read -r p; do "
             + "[ \"$(tr '\\0' '\\n' </proc/$p/environ 2>/dev/null | grep -E '^(WAYLAND_DISPLAY|HYPRLAND_INSTANCE_SIGNATURE)=')\" = \"$mine\" ] || echo \"skip $p\"; done; "

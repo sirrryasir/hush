@@ -3,16 +3,8 @@
 HUSH_ROOT="${HUSH_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 CFG="${XDG_CONFIG_HOME:-$HOME/.config}" # where the live config (and the matugen outputs) live
 export HUSH_ROOT CFG
-# Assemble matugen.toml.head + the named config.d fragments the way `hush` does, writing every
-# output under $1 instead of $CFG. Usage: test_matugen_cfg <outdir> <fragment>... > cfg
-test_matugen_cfg() {
-  local out="$1"; shift
-  { cat "$HUSH_ROOT/matugen/config.toml.head"; local f; for f in "$@"; do echo; cat "$HUSH_ROOT/matugen/config.d/$f.toml"; done; } \
-    | sed -e "s|@HUSH_ROOT@|$HUSH_ROOT|g" -e "s|@CONFIG@|$out|g"
-}
-# pgrep/pkill limited to this session (processes with our XDG_RUNTIME_DIR), as in bin/hush: the sandbox
-# (tests/sandbox.sh) shares the process table with the desktop it runs on, and a bare pkill -x mpv or
-# pgrep -f '^qs -c hush$' would reach the live session's processes.
+# pgrep/pkill limited to this session (processes with our XDG_RUNTIME_DIR), as in bin/hush: a bare pkill -x mpv or
+# pgrep -f '^qs -c hush$' would reach another session's processes.
 session_pgrep() { # pgrep-args...; prints the pids, fails when there are none
   local p out=""
   for p in $(pgrep "$@"); do
