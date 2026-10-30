@@ -1,13 +1,6 @@
-<div align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/brand/social/readme-header-dark.svg" />
-    <source media="(prefers-color-scheme: light)" srcset="assets/brand/social/readme-header-light.svg" />
-    <img src="assets/brand/social/readme-header-light.svg" alt="Hush" width="600" />
-  </picture>
-  <p>Dynamic island shell for Hyprland, built on Quickshell.</p>
-</div>
+# Hush
 
-<p align="center"><img src="assets/demo/hush-demo.gif" alt="Hush demo: the pill, hover face and control center" width="720" /></p>
+Dynamic island shell for Hyprland, built on Quickshell.
 
 Hush replaces the bar, launcher, notification daemon and control center with one pill at the
 top of each monitor.
@@ -135,10 +128,6 @@ Over IPC, with a leading space: `qs -c hush ipc call hush settingsSet layout.hov
 unlock it; the password goes through PAM `login`, and with fprintd a finger works in parallel
 (`quickshell/hush/lock/pam/fprint`). If the lock dies the session stays locked: from a TTY run
 `hyprctl --instance 0 eval 'hl.clear_crashed_lockscreen()'`, then `hush lock`.
-
-**Boot menu.** `sudo ~/hush/integrations/refind/install.sh [theme]` copies a rEFInd theme to the
-ESP and includes it from `refind.conf`; its banner is the theme's wallpaper (default: the current
-one), so rerun it after `hush theme`. Remove the `include themes/hush/theme.conf` line to uninstall.
 
 ## Contributing
 

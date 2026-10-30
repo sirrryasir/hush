@@ -41,7 +41,7 @@ command -v matugen >/dev/null || say "warning: matugen not found; hush theme wil
 
 link "$HUSH_ROOT/quickshell/hush"            "$CFG/quickshell/hush"
 link "$HUSH_ROOT/matugen"                    "$CFG/matugen"
-link "$HUSH_ROOT/integrations/shell/hush.sh"  "$CFG/hush/shell.sh"
+link "$HUSH_ROOT/bin/hush-job.sh"             "$CFG/hush/shell.sh"
 for b in hush hush-wallgen hush-fonts hush-gtk; do link "$HUSH_ROOT/bin/$b" "$BIN/$b"; done
 if [[ -d "$CFG/nvim/lua/plugins" ]]; then
   link "$HUSH_ROOT/integrations/nvim/hush-theme.lua" "$CFG/nvim/lua/plugins/hush-theme.lua"
