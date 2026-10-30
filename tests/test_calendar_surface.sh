@@ -16,6 +16,17 @@ t_calendar() {
   assert_eq "$(LC_ALL=C date -d "$(date +%Y-%m-01) +1 month" '+%B %Y')" "$(hq monthTitle)" "next month navigates"
   hq prev >/dev/null; sleep 0.2
   assert_eq "$(LC_ALL=C date '+%B %Y')" "$(hq monthTitle)" "prev month returns"
+  # Hijri caption flips the grid to Hijri months and back.
+  hq hijri true >/dev/null; sleep 0.6
+  [[ "$(hq caption)" =~ (Muharram|Safar|Rabi|Jumada|Rajab|Sha\'ban|Ramadan|Shawwal|Dhu).*\ 14[0-9][0-9]$ ]] && pass "caption names the Hijri months" || fail "caption: '$(hq caption)'"
+  hq toggleHijri >/dev/null; sleep 0.3
+  [[ "$(hq monthTitle)" =~ ^(Muharram|Safar|Rabi|Jumada|Rajab|Sha\'ban|Ramadan|Shawwal|Dhu).*\ 14[0-9][0-9]$ ]] && pass "toggle shows a Hijri month title ($(hq monthTitle))" || fail "Hijri title: '$(hq monthTitle)'"
+  [[ "$(hq caption)" == *"$(date +%Y)"* ]] && pass "Hijri view caption names the Gregorian months" || fail "caption: '$(hq caption)'"
+  local h1; h1=$(hq monthTitle); hq next >/dev/null; sleep 0.2
+  [[ "$(hq monthTitle)" != "$h1" ]] && pass "next moves one Hijri month" || fail "next stayed on '$h1'"
+  hq prev >/dev/null; hq toggleHijri >/dev/null; sleep 0.3
+  assert_eq "$(LC_ALL=C date '+%B %Y')" "$(hq monthTitle)" "toggle back returns to this Gregorian month"
+  hq hijri false >/dev/null; sleep 0.3
   kill "$pid" 2>/dev/null; wait "$pid" 2>/dev/null
 }
 run_test "calendar surface" t_calendar

@@ -7,7 +7,8 @@ import "../../../config/Hijri.js" as Hijri
 // Calendar surface: a month grid (Monday first) with today in the primary colour, other-month days
 // muted, prev/next month navigation. Click a day to select it (ring); days with reminders carry a dot.
 // Under the grid: the selected day's reminders (time, text, remove; the first two) and one line to add
-// one: a time (HH:MM) and a text, Enter or the + button.
+// one: a time (HH:MM) and a text, Enter or the + button. With the Hijri setting on, the caption under the
+// title names the other calendar's months for the view; clicking it flips the grid to Hijri months and back.
 Item {
     id: cal
     property size size: Sizes.calendar
@@ -18,11 +19,32 @@ Item {
     readonly property var dayItems: Reminders.onDay(selected)
     // For tests: the day numbers of the visible grid that belong to the viewed month, and today's cell text.
     readonly property string todayText: grid.todayText
-    readonly property string monthTitle: Qt.locale().monthName(viewMonth, Locale.LongFormat) + " " + viewYear
+    property bool hijriView: false
+    readonly property bool hijriGrid: hijriView && !!Settings.island.hijri
+    property int viewHY: 1
+    property int viewHM: 1
+    readonly property date viewFirst: hijriGrid ? Hijri.toDate(viewHY, viewHM, 1) : new Date(viewYear, viewMonth, 1)
+    readonly property date viewLast: hijriGrid ? Hijri.toDate(viewHY, viewHM + 1, 0) : new Date(viewYear, viewMonth + 1, 0)
+    readonly property string monthTitle: hijriGrid ? Hijri.monthName(viewHM) + " " + viewHY
+        : Qt.locale().monthName(viewMonth, Locale.LongFormat) + " " + viewYear
+    readonly property string caption: hijriGrid ? gregorianSpan(viewFirst, viewLast) : Hijri.span(viewFirst, viewLast)
 
     function shift(d) {
+        if (hijriGrid) { const h = viewHM - 1 + d; viewHY += Math.floor(h / 12); viewHM = ((h % 12) + 12) % 12 + 1; return }
         const m = viewMonth + d
         viewYear += Math.floor(m / 12); viewMonth = ((m % 12) + 12) % 12
+    }
+    // Keeps the same stretch of days in view across the flip: the middle of the current view.
+    function toggleHijri() {
+        const mid = new Date(viewFirst.getFullYear(), viewFirst.getMonth(), viewFirst.getDate() + 14)
+        if (!hijriGrid) { const h = Hijri.convert(mid); viewHY = h.year; viewHM = h.month }
+        else { viewYear = mid.getFullYear(); viewMonth = mid.getMonth() }
+        hijriView = !hijriGrid
+    }
+    function gregorianSpan(a, b) {
+        const n = d => Qt.locale().monthName(d.getMonth(), Locale.LongFormat)
+        return a.getFullYear() === b.getFullYear() ? n(a) + " – " + n(b) + " " + b.getFullYear()
+            : n(a) + " " + a.getFullYear() + " – " + n(b) + " " + b.getFullYear()
     }
     function hhmm(ms) { const d = new Date(ms); return (d.getHours() < 10 ? "0" : "") + d.getHours() + ":" + (d.getMinutes() < 10 ? "0" : "") + d.getMinutes() }
     // Adds a reminder on the selected day at "HH:MM"; false for a bad time, an empty text or a past time.
@@ -51,10 +73,33 @@ Item {
                     text: cal.monthTitle; color: Colors.islandFg
                     font.family: Theme.fontUi; font.pixelSize: 15; font.weight: Font.DemiBold
                 }
-                Text {
+                Item {
                     visible: !!Settings.island.hijri
-                    text: Hijri.format(cal.selected); color: Colors.islandFgVar; opacity: 0.7
-                    font.family: Theme.fontUi; font.pixelSize: 12; font.weight: Font.Medium
+                    width: capRow.width; height: capRow.height
+                    Rectangle { // hover pill so the caption reads as a button
+                        anchors.fill: parent; anchors.margins: -3; anchors.leftMargin: -6; anchors.rightMargin: -6
+                        radius: height / 2; color: Colors.islandSurfaceHigh; visible: capHit.containsMouse
+                    }
+                    Row {
+                        id: capRow
+                        spacing: 4
+                        opacity: capHit.containsMouse ? 1 : 0.85
+                        Text {
+                            text: cal.caption; color: Colors.islandFgVar
+                            font.family: Theme.fontUi; font.pixelSize: 12; font.weight: Font.Medium
+                        }
+                        Text {
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: "swap_horiz"; color: Colors.islandFgVar; font.family: Theme.fontIcon; font.pixelSize: 14
+                        }
+                    }
+                    MouseArea {
+                        id: capHit
+                        anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                        onClicked: cal.toggleHijri()
+                        Accessible.role: Accessible.Button
+                        Accessible.name: cal.hijriGrid ? "Show the Gregorian calendar" : "Show the Hijri calendar"
+                    }
                 }
             }
             Repeater {
@@ -78,7 +123,7 @@ Item {
             width: parent.width; columns: 7
             readonly property real cw: width / 7
             // Monday-first: offset of the 1st, then six rows of dates from the grid's first cell.
-            readonly property date first: new Date(cal.viewYear, cal.viewMonth, 1)
+            readonly property date first: cal.viewFirst
             readonly property int lead: (first.getDay() + 6) % 7
             property string todayText: ""
             Repeater {
@@ -94,15 +139,17 @@ Item {
                 model: 42
                 delegate: Item {
                     required property int index
-                    readonly property date d: new Date(cal.viewYear, cal.viewMonth, 1 - grid.lead + index)
-                    readonly property bool inMonth: d.getMonth() === cal.viewMonth
+                    readonly property date d: new Date(grid.first.getFullYear(), grid.first.getMonth(), grid.first.getDate() - grid.lead + index)
+                    readonly property bool inMonth: d >= cal.viewFirst && d <= cal.viewLast
+                    readonly property int dayNum: cal.hijriGrid ? Hijri.convert(d).day : d.getDate()
                     readonly property bool isToday: d.getTime() === cal.today.getTime()
                     readonly property bool isSelected: d.getTime() === cal.selected.getTime()
                     // Reads Reminders.items so the dot follows adds and removes.
                     readonly property bool hasReminder: Reminders.items.length > 0 && Reminders.onDay(d).length > 0
                     objectName: hasReminder ? "reminderDot" : ""
-                    onIsTodayChanged: if (isToday) grid.todayText = String(d.getDate())
-                    Component.onCompleted: if (isToday) grid.todayText = String(d.getDate())
+                    onIsTodayChanged: if (isToday) grid.todayText = String(dayNum)
+                    onDayNumChanged: if (isToday) grid.todayText = String(dayNum)
+                    Component.onCompleted: if (isToday) grid.todayText = String(dayNum)
                     width: grid.cw; height: cal.cellH
                     Rectangle {
                         anchors.centerIn: parent; width: Math.min(parent.width, parent.height) - 2; height: width; radius: width / 2
@@ -114,7 +161,7 @@ Item {
                         visible: parent.isSelected && !parent.isToday
                     }
                     Text {
-                        anchors.centerIn: parent; text: parent.d.getDate()
+                        anchors.centerIn: parent; text: parent.dayNum
                         color: parent.isToday ? Colors.islandOnPrimary : Colors.islandFg
                         opacity: parent.isToday || parent.inMonth ? 1 : 0.32
                         font.family: Theme.fontUi; font.pixelSize: 13

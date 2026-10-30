@@ -29,5 +29,8 @@ ShellRoot {
         function size(): string { return cal.size.width + "x" + cal.size.height }
         function next(): void { cal.shift(1) }
         function prev(): void { cal.shift(-1) }
+        function hijri(on: bool): void { Settings.set("island.hijri", on) }
+        function caption(): string { return cal.caption }
+        function toggleHijri(): void { cal.toggleHijri() }
     }
 }
