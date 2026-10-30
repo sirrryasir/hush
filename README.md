@@ -69,6 +69,10 @@ tiles exist, your shortcuts (with copyable bind blocks) and the theme. Other com
 `hush reload`, `hush shell <start|stop|restart|status|log>`, `hush timer 25m`, `hush volume`,
 `hush brightness`. `HUSH_ROOT`, `XDG_CONFIG_HOME`, `HUSH_WALL_DIRS` and `HUSH_REDUCED_MOTION` change paths and motion.
 
+## Tests
+
+`bash tests/sandbox.sh` runs them in a headless session that never touches your desktop; `bash tests/sandbox.sh test_launcher_surface.sh` runs one.
+
 ## License
 
 MIT.
