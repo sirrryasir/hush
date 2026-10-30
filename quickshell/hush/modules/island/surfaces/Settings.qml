@@ -34,7 +34,6 @@ FocusScope {
         { id: "behaviour", label: "Behaviour", glyph: "touch_app" },
         { id: "shortcuts", label: "Shortcuts", glyph: "keyboard" },
         { id: "modules", label: "Modules", glyph: "widgets" },
-        { id: "lock", label: "Lock", glyph: "lock" },
         { id: "theme", label: "Theme", glyph: "palette" },
         { id: "about", label: "About", glyph: "info" }]
 
@@ -47,10 +46,6 @@ FocusScope {
         Cfg.Settings.set(cfgPath(key), v)
         const p = Object.assign({}, preview); delete p[key]; preview = p
     }
-
-    function setLock(k, v) { Cfg.Settings.set("lock." + k, v); lockSync.restart() }
-    // after Settings' writer has put settings.json on disk (it runs async)
-    Timer { id: lockSync; interval: 500; onTriggered: Quickshell.execDetached(["hush", "sddm", "sync"]) }
 
     FileView {
         path: Quickshell.shellDir + "/../../VERSION"
@@ -483,18 +478,6 @@ FocusScope {
                 }
                 Chip { objectName: "resetLayout"; anchors.right: parent.right; text: "Reset layout"; onClicked: Cfg.Composer.reset() }
             }
-        }
-
-        // Lock: settings.json lock.* for the lock and login screens (lockscreen/gen.py reads them);
-        // `hush lock` regenerates its layout, the greeter follows through `hush sddm sync`.
-        ColumnLayout {
-            visible: root.page === "lock"; width: parent.width; spacing: 0
-            readonly property real rowH: 32
-            Row2 { title: "Clock"; z: 1; Drop { key: "lock.clock"; options: ["quiet", "bold", "stacked"]; onChosen: lockSync.restart() } }
-            Row2 { title: "Date"; Switch { anchors.verticalCenter: parent.verticalCenter; on: root.cfgValue("lock.date") !== false; onToggled: v => root.setLock("date", v) } }
-            Row2 { title: "Name"; Switch { anchors.verticalCenter: parent.verticalCenter; on: root.cfgValue("lock.name") !== false; onToggled: v => root.setLock("name", v) } }
-            Row2 { title: "Reveal on key"; Switch { anchors.verticalCenter: parent.verticalCenter; on: root.cfgValue("lock.reveal") !== false; onToggled: v => root.setLock("reveal", v) } }
-            Row2 { title: "Status line"; Switch { anchors.verticalCenter: parent.verticalCenter; on: root.cfgValue("lock.status") !== false; onToggled: v => root.setLock("status", v) } }
         }
 
         ColumnLayout {

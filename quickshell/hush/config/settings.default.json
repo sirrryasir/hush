@@ -1,5 +1,4 @@
 {
-  "lock": "quickshell",
   "island": {
     "width": 140, "height": 36, "radius": 18, "topGap": 6, "reserve": 40,
     "mode": "reserve", "hoverFace": true, "liveActivities": true, "reducedMotion": false,
@@ -8,7 +7,6 @@
     "clock": "24"
   },
   "focus": { "focus": 25, "break": 5, "long": 15, "cycles": 4 },
-  "lock": { "clock": "quiet", "date": true, "name": true, "reveal": true, "status": true },
   "modules": {
     "media": true, "notifications": true, "calendar": true, "launcher": true, "wallpapers": true, "settings": true
   },

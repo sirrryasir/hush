@@ -41,8 +41,6 @@ command -v matugen >/dev/null || say "warning: matugen not found; hush theme wil
 
 link "$HUSH_ROOT/quickshell/hush"            "$CFG/quickshell/hush"
 link "$HUSH_ROOT/matugen"                    "$CFG/matugen"
-link "$HUSH_ROOT/hyprlock"                   "$CFG/hyprlock"
-link "$HUSH_ROOT/hyprlock/hyprlock.conf"     "$CFG/hypr/hyprlock.conf"
 link "$HUSH_ROOT/hypr/plugins.lua"           "$CFG/hush/plugins.lua"
 link "$HUSH_ROOT/integrations/shell/hush.sh"  "$CFG/hush/shell.sh"
 for b in hush hush-wallgen hush-fonts hush-gtk; do link "$HUSH_ROOT/bin/$b" "$BIN/$b"; done
@@ -53,11 +51,6 @@ else
 fi
 # Kvantum/hush holds only generated files; hush renders them there.
 mkdir -p "$CFG/Kvantum/hush" "$CFG/hush"
-# hyprlock sources the generated lock layout; write a single-monitor one now so the lock screen
-# works before the first `hush reload` (which regenerates it per connected monitor).
-if [[ ! -f "$CFG/hush/hyprlock-layout.conf" ]]; then
-  python3 "$HUSH_ROOT/lockscreen/gen.py" hyprlock "$CFG/hush/hyprlock-layout.conf" && say "ok      lock screen layout ($CFG/hush/hyprlock-layout.conf)"
-fi
 
 if [[ -d "$HUSH_ROOT/.git" ]]; then
   git -C "$HUSH_ROOT" config core.hooksPath .githooks
@@ -77,5 +70,4 @@ if [[ $SKIP_THEME == 0 ]]; then
 fi
 [[ -d "$BACKUP" ]] && say "backups are in $BACKUP"
 say "optional: hush plugins install  (GloView overview and dynamic-cursors; see README, Plugins)"
-say "optional: sudo $HUSH_ROOT/sddm/install.sh  (Hush login screen; run it yourself, install.sh never uses sudo)"
 say "done. Start the shell with: hush shell start"

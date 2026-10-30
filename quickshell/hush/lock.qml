@@ -10,9 +10,9 @@ import qs.services
 import "lock" as Hush
 
 // The Hush lock screen: `hush lock` runs this file as its own process (qs -p), so restarting the
-// shell cannot unlock. One lockscreen/Screen.qml per output (lock/Screen.qml links to it); the
+// shell cannot unlock. One lock/Screen.qml per output; the
 // password goes through PAM ("login"), the fingerprint through a second PAM context running
-// lockscreen/pam/fprint in parallel when fprintd is installed. If this process dies the compositor
+// lock/pam/fprint in parallel when fprintd is installed. If this process dies the compositor
 // keeps the session locked (ext-session-lock). HUSH_LOCK_TEST=fail|ok skips PAM for the tests.
 ShellRoot {
     id: root
@@ -47,7 +47,7 @@ ShellRoot {
     }
     PamContext {
         id: fprint
-        configDirectory: (Quickshell.env("HUSH_ROOT") || Paths.repo) + "/lockscreen/pam"
+        configDirectory: (Quickshell.env("HUSH_ROOT") || Paths.repo) + "/quickshell/hush/lock/pam"
         config: "fprint"
         onPamMessage: root.message = message
         // a miss ends pam_fprintd's tries: start again; no reader or no enrolled finger: stay quiet
@@ -80,7 +80,6 @@ ShellRoot {
                 mode: "lock"
                 userName: Quickshell.env("USER") || ""
                 background: "file://" + (Cfg.State.wallpaper || Paths.themes + "/" + Cfg.State.theme + "/wallpaper.png")
-                layoutSource: "file://" + Quickshell.env("HOME") + "/.config/hush/lock-layout.qml"
                 glyphs: (Battery.present ? [Battery.icon] : []).concat([Net.icon])
                 message: root.message
                 colors: Colors
