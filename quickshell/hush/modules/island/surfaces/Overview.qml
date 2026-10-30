@@ -112,7 +112,7 @@ FocusScope {
                         color: Qt.rgba(1, 1, 1, 0.22)
                     }
                     Repeater {
-                        model: cell.wins
+                        model: ScriptModel { values: cell.wins }
                         Rectangle {
                             required property var modelData
                             readonly property rect r: root.fit(modelData.lastIpcObject, cell.width - 8, cell.height - 8)
@@ -131,7 +131,9 @@ FocusScope {
             id: stage
             width: parent.width; height: parent.height - 84 - parent.spacing
             Repeater {
-                model: root.thumbs
+                objectName: "stageThumbs"
+                // ScriptModel keeps delegates (and their running captures) when the array is rebuilt.
+                model: ScriptModel { values: root.thumbs }
                 Item {
                     id: thumb
                     required property var modelData
@@ -145,7 +147,6 @@ FocusScope {
                     scale: hot && !dragger.active ? 1.02 : 1
                     Behavior on scale { NumberAnimation { duration: Theme.durationShort } }
                     Accessible.role: Accessible.Button; Accessible.name: modelData.title
-                    Drag.active: dragger.active
                     Drag.source: thumb
                     Drag.hotSpot.x: width / 2; Drag.hotSpot.y: height / 2
 
@@ -193,8 +194,9 @@ FocusScope {
                     DragHandler {
                         id: dragger
                         // Drop on a cell, then snap back to the window's place (it leaves the stage if the move took).
-                        onActiveChanged: if (!active) {
-                            thumb.Drag.drop()
+                        // Drag.active is set here, not bound: drop() must run while the drag is still active.
+                        onActiveChanged: if (active) thumb.Drag.active = true; else {
+                            thumb.Drag.drop(); thumb.Drag.active = false
                             thumb.x = Qt.binding(() => thumb.r.x); thumb.y = Qt.binding(() => thumb.r.y)
                         }
                     }

@@ -37,6 +37,13 @@ ShellRoot {
         }
         property bool closed: false
     }
+    property var kept: null
+    function find(it, name) {
+        if (!it) return null
+        if (it.objectName === name) return it
+        for (let i = 0; i < it.children.length; i++) { const r = find(it.children[i], name); if (r) return r }
+        return null
+    }
     IpcHandler {
         target: "harness-overview"
         function size(): string { return !root.ov ? "" : root.ov.size.width + "x" + root.ov.size.height }
@@ -52,6 +59,9 @@ ShellRoot {
             return out.join(";")
         }
         function moveSame(): bool { return root.ov.moveThumb(0, root.ov.shownWorkspace) }
+        // Keep thumbnail 0, refresh the toplevels; sameThumb() says whether its delegate survived.
+        function keepThumb(): void { root.kept = root.find(root.ov, "stageThumbs").itemAt(0); Hyprland.refreshToplevels() }
+        function sameThumb(): bool { return !!root.kept && root.find(root.ov, "stageThumbs").itemAt(0) === root.kept }
         function closed(): bool { return win.closed }
         function requestClose(): void { root.ov.close() }
     }

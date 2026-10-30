@@ -156,6 +156,11 @@ t_overview() {
   shell_ipc toggleOverview >/dev/null; shell_wait_state overview
   assert_eq "overview" "$(shell_state)" "toggleOverview opens the overview surface"
   local n; n=$(shell_ipc overviewCells); (( n >= 5 )) && pass "overview lists $n workspaces" || fail "overview lists $n workspaces"
+  if input_start; then
+    local s0; s0=$(shell_ipc overviewShown); sleep 0.4; input_key Right; sleep 0.3
+    [[ "$(shell_ipc overviewShown)" != "$s0" ]] && pass "Right steps the shown workspace (keys reach the surface)" || fail "Right did not reach the overview (shown stays $s0)"
+    input_stop
+  else pass "$(input_why): overview key check skipped"; fi
   shell_ipc closeSurface >/dev/null; shell_wait_state rest
   local e; e=$(shell_log_errors); [[ -z "$e" ]] && pass "overview IPC runs without errors" || fail "overview: $e"
 }

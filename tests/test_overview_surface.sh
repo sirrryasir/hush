@@ -33,6 +33,16 @@ t_surface() {
     (( w > 0 && h > 0 && x >= 0 && y >= 0 && x + w <= 848 && y + h <= 270 )) || { ok=0; fail "rect out of the stage: $r"; }
   done
   (( ok )) && pass "every thumbnail sits inside the stage (${rects:-none})"
+  if (( $(live "$WS") > 0 )); then
+    assert_eq "false" "$(hq moveSame)" "dropping a window on its own workspace does nothing"
+    hq keepThumb >/dev/null; sleep 0.6
+    assert_eq "true" "$(hq sameThumb)" "a toplevel refresh keeps the live thumbnail (no rebuild)"
+    if [[ "${HUSH_SANDBOX:-0}" == 1 ]]; then # a new window on the shown workspace must not rebuild the others
+      hq keepThumb >/dev/null; kitty --class hush-sandbox-term >/dev/null 2>&1 & local k=$!; sleep 1.5
+      assert_eq "true" "$(hq sameThumb)" "a window opening keeps the existing thumbnails"
+      kill "$k" 2>/dev/null; wait "$k" 2>/dev/null; sleep 0.5
+    fi
+  else pass "no window on workspace $WS: same-workspace drop and refresh checks skipped"; fi
 }
 t_steps() {
   local ids; ids=$(hq cellIds | tr -d '"'); IFS=, read -ra id <<<"$ids"
@@ -44,8 +54,6 @@ t_steps() {
   if (( empty >= 0 )); then
     hq hoverCell "$empty" >/dev/null; assert_eq "0" "$(hq thumbCount)" "an empty workspace shows no thumbnails"
   else pass "no empty workspace in the strip (skipped)"; fi
-  hq hoverCell 0 >/dev/null
-  assert_eq "false" "$(hq moveSame)" "dropping on its own workspace does nothing"
   hq requestClose >/dev/null; assert_eq "true" "$(hq closed)" "close() reaches the host"
 }
 t_unknown_screen() {

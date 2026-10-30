@@ -119,6 +119,7 @@ Singleton {
         function toggleOverview(): void { root.overview() }
         function overviewVisible(): bool { return root.island ? root.island.state === "overview" : false }
         function overviewCells(): int { const o = root.surface("overview"); return o ? o.cellCount : 0 }
+        function overviewShown(): int { const o = root.surface("overview"); return o ? o.shownWorkspace : -1 }
         // --- end modes ---
         // Morph probe for tests/test_morph.sh: open the control center after delayMs, reverse it
         // reverseMs later (0: stay open), timed in the shell so no IPC client start-up lands mid-capture.
