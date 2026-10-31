@@ -325,7 +325,8 @@ FocusScope {
         }
     }
     // A region picked with slurp, shot with grim into ~/Pictures (beside the recordings' ~/Videos),
-    // copied with wl-copy and announced as a notification; the panel closes first so it is not in it.
+    // copied with wl-copy and announced as a notification; the panel closes first so it is not in it, and the
+    // shot waits 0.25 s after the pick so the closing fade and the windows' inactive dim have settled.
     Component {
         id: shotTile
         Toggle { toggle: false; icon: "screenshot_region"; label: "Screenshot"; subtitle: "Select a region"
@@ -339,7 +340,7 @@ FocusScope {
     }
     function screenshot() {
         closeRequested()
-        Quickshell.execDetached(["sh", "-c", 'd="${XDG_PICTURES_DIR:-$HOME/Pictures}"; mkdir -p "$d"; f="$d/hush-$(date +%Y%m%d-%H%M%S).png"; g=$(slurp) || exit 0; grim -g "$g" "$f" && wl-copy <"$f" && notify-send -a hush -h string:x-hush-kind:screenshot -i "$f" "Screenshot" "Saved to ${f#"$HOME"/} and copied"'])
+        Quickshell.execDetached(["sh", "-c", 'd="${XDG_PICTURES_DIR:-$HOME/Pictures}"; mkdir -p "$d"; f="$d/hush-$(date +%Y%m%d-%H%M%S).png"; g=$(slurp) || exit 0; sleep 0.25; grim -g "$g" "$f" && wl-copy <"$f" && notify-send -a hush -h string:x-hush-kind:screenshot -i "$f" "Screenshot" "Saved to ${f#"$HOME"/} and copied"'])
     }
     Component {
         id: lockTile

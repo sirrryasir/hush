@@ -39,6 +39,7 @@ Singleton {
         if (_state === UPowerDeviceState.Charging && _prev !== 0) { justPlugged = true; plugTimer.restart() }
         else if (_state !== UPowerDeviceState.Charging) { justPlugged = false; plugTimer.stop() }
         _prev = _state
+        alertCheck()
     }
     property int _prev: 0
     Timer { id: plugTimer; interval: 2000; onTriggered: root.justPlugged = false }
@@ -55,7 +56,13 @@ Singleton {
     }
     function alertCheck() {
         if (!present) return
-        if (charging) { if (_alerted <= 100) clearAlert(); _alerted = 101; return }
+        // Only a real discharge counts: right after start UPower reports 0 % before its first reading.
+        const draining = dev.state === UPowerDeviceState.Discharging && percent > 0
+        if (!draining || percent > _alerted + 2) {
+            clearAlert()  // also one left over from before a restart
+            _alerted = 101
+            if (!draining) return
+        }
         const t = Alert.next(alertAt, percent, _alerted)
         if (t < 0) return
         _alerted = t
