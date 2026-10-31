@@ -39,6 +39,15 @@ t_settings() {
   assert_eq "True" "$(python3 -c "import json;print(json.load(open('$f'))['island']['hijri'])")" "hijri true in settings.json after the switch"
   hq flip "Hijri date" >/dev/null; sleep 0.6
   assert_eq "false" "$(hq dataOf island.hijri)" "hijri back to false"
+  # Sounds page: master switch round trip and one row per event.
+  hq setPage sounds >/dev/null; sleep 0.3
+  assert_eq "true" "$(hq hasSwitch "Sounds")" "Sounds page has the master switch"
+  assert_eq "true" "$(hq hasSwitch "Battery low")" "Sounds page has a Battery low row"
+  hq flip "Sounds" >/dev/null; sleep 0.6
+  assert_eq "False" "$(python3 -c "import json;print(json.load(open('$f'))['sounds']['enabled'])")" "sounds.enabled false in settings.json after the switch"
+  hq flip "Sounds" >/dev/null; sleep 0.6
+  assert_eq "true" "$(hq dataOf sounds.enabled)" "sounds back on"
+  hq setPage behaviour >/dev/null; sleep 0.3
   # Dropdown lists stay inside the 336 px surface (open upward near the bottom); the page starts below the header.
   assert_eq "true" "$([[ $(hq rowTop "Hover face") -ge 14 ]] && echo true)" "first row starts below the header padding"
   local b

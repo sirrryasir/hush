@@ -1,0 +1,91 @@
+#!/usr/bin/env python3
+"""Hush event sounds ("Dyad"): each event is one strike of two FM-tine notes; the interval carries the
+meaning (fifth / third routine, minor third battery, tritone and minor second critical) and a 2-semitone
+bend marks arrival (up) or removal (down). Usage: hush-soundgen [root Hz, default 440].
+Writes 48 kHz mono WAVs to quickshell/hush/sounds/. Deterministic; no samples."""
+import sys, wave, pathlib
+import numpy as np
+
+SR = 48000
+OUT = pathlib.Path(__file__).resolve().parent.parent / "quickshell" / "hush" / "sounds"
+ROOT = float(sys.argv[1]) if len(sys.argv) > 1 else 440.0
+# Loudness ladder: active RMS and peak in dBFS. Routine, attention, critical.
+TIER = {"R": (-24, -12), "A": (-20, -8), "C": (-16, -4)}
+
+def t(d): return np.arange(int(d * SR)) / SR
+
+def env(d, attack, tau):
+    x = t(d)
+    a = 0.5 - 0.5 * np.cos(np.pi * np.clip(x / attack, 0, 1))
+    return a * np.exp(-x / tau)
+
+def tine(f, tau, bend=0.0, cents=0.0):
+    d = tau * 5
+    x = t(d)
+    fr = f * 2 ** (cents / 1200) * 2 ** ((bend / 12) * (np.clip(x / 0.08, 0, 1) - 1))  # glides into f
+    ph = 2 * np.pi * np.cumsum(fr) / SR
+    idx = 0.8 * np.clip(1 - x / 0.08, 0, 1)  # bright strike settling to a pure tone
+    return np.sin(ph + idx * np.sin(ph)) * env(d, 0.003, tau)
+
+def chord(semis, tau=0.11, bend=0.0):
+    out = tine(ROOT, tau, bend)
+    for i, s in enumerate(semis):
+        out = out + tine(ROOT * 2 ** (s / 12), tau, bend, cents=3 * (i + 1))  # slight width, no chorus
+    return out
+
+def at(parts, dur):
+    buf = np.zeros(int(dur * SR))
+    for start, sig in parts:
+        i = int(start * SR); n = min(len(sig), len(buf) - i); buf[i:i + n] += sig[:n]
+    return buf
+
+def tick():  # 10 ms band-limited noise click for the screenshot shutter
+    x = t(0.01); n = np.random.default_rng(7).normal(0, 1, len(x))
+    return np.convolve(n, np.hanning(9) * np.cos(2 * np.pi * 2200 * np.arange(9) / SR), "same") * np.hanning(len(x)) * 0.06
+
+def onepole(x, hz, high=False):
+    a = np.exp(-2 * np.pi * hz / SR); y = np.empty_like(x); p = 0.0
+    for i, v in enumerate(x):
+        p = (1 - a) * v + a * p; y[i] = p
+    return x - y if high else y
+
+def save(name, x, tier):
+    x = onepole(onepole(x, 5500), 150, high=True)  # keep to what laptop speakers carry
+    rms_t, peak_t = TIER[tier]
+    act = x[np.abs(x) > 1e-4 * np.abs(x).max()]
+    x = x * 10 ** (rms_t / 20) / np.sqrt(np.mean(act ** 2))
+    lim = 10 ** (peak_t / 20)
+    if np.abs(x).max() > lim:
+        x = x * lim / np.abs(x).max()
+    x = np.concatenate([x, np.zeros(int(0.02 * SR))])
+    with wave.open(str(OUT / f"{name}.wav"), "wb") as w:
+        w.setnchannels(1); w.setsampwidth(2); w.setframerate(SR)
+        w.writeframes((np.clip(x, -1, 1) * 32767).astype("<i2").tobytes())
+
+def main():
+    OUT.mkdir(parents=True, exist_ok=True)
+    crit = chord([1], 0.2)
+    phrase = at([(0, crit), (0.3, crit)], 1.0)
+    batt = chord([6], 0.16)
+    shot = chord([12], 0.04)
+    sounds = {
+        "notification": (chord([7]), "R"),
+        "message": (chord([4]), "R"),
+        "critical": (at([(0, phrase), (1.0, phrase)], 2.1), "C"),
+        "battery-low": (chord([3], 0.18, bend=-2), "A"),
+        "battery-critical": (at([(0, batt), (0.22, batt), (0.44, batt)], 1.3), "C"),
+        "plug-in": (chord([7], bend=2), "R"),
+        "plug-out": (chord([7], bend=-2), "R"),
+        "device-added": (chord([12], bend=2), "R"),
+        "device-removed": (chord([12], bend=-2), "R"),
+        "screenshot": (at([(0, shot), (0, tick())], 0.2), "R"),
+        "timer-done": (chord([4, 7], 0.22), "A"),
+        "focus-start": (chord([5], bend=2) * 0.7, "R"),
+        "focus-end": (chord([7], 0.26), "A"),
+    }
+    for name, (sig, tier) in sounds.items():
+        save(name, sig, tier)
+    print(f"hush-soundgen: wrote {len(sounds)} sounds to {OUT} (root {ROOT:g} Hz)")
+
+if __name__ == "__main__":
+    main()

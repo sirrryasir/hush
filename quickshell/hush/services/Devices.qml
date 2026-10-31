@@ -54,7 +54,7 @@ Singleton {
                 const old = root.list, next = root.parse(text)
                 root.list = next
                 const was = root.seeded; root.seeded = true
-                if (was) for (const d of next) if (!old.some(o => o.dev === d.dev)) root.arrived(d)
+                if (was) for (const d of next) if (!old.some(o => o.dev === d.dev)) { root.arrived(d); Sounds.play("device-added") }
             }
         }
     }
@@ -68,6 +68,6 @@ Singleton {
     Process {
         id: ejector
         property string name: ""
-        onExited: code => { if (code === 0) root.ejected(name); refresh.restart() }
+        onExited: code => { if (code === 0) { root.ejected(name); Sounds.play("device-removed") } refresh.restart() }
     }
 }

@@ -34,6 +34,8 @@ Singleton {
     property bool justPlugged: false
     property int _state: dev ? dev.state : 0
     on_StateChanged: {
+        if (_prev !== 0 && (_state === UPowerDeviceState.Charging) !== (_prev === UPowerDeviceState.Charging) && _state !== UPowerDeviceState.FullyCharged && _prev !== UPowerDeviceState.FullyCharged)
+            Sounds.play(_state === UPowerDeviceState.Charging ? "plug-in" : "plug-out")
         if (_state === UPowerDeviceState.Charging && _prev !== 0) { justPlugged = true; plugTimer.restart() }
         else if (_state !== UPowerDeviceState.Charging) { justPlugged = false; plugTimer.stop() }
         _prev = _state

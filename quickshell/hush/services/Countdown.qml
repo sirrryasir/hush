@@ -49,13 +49,13 @@ Singleton {
         const left = Math.ceil((endsAt - Date.now()) / 1000)
         if (left > 0) { remaining = left; return }
         if (phase !== "") { next(); return }
-        const l = label; stop(); finished(l)
+        const l = label; stop(); finished(l); Sounds.play("timer-done")
     }
     function next() {
         if (phase === "long") { stop(); return }
         if (phase === "break") cycle++
         focusStart(phase === "focus" ? (cycle < Settings.focus.cycles ? "break" : "long") : "focus")
-        Quickshell.execDetached(["notify-send", "-a", "hush", "-i", "timer", phaseLabel, phaseMins + " min"])
+        Quickshell.execDetached(["notify-send", "-a", "hush", "-i", "timer", "-h", "string:x-hush-kind:" + (phase === "focus" ? "focus-start" : "focus-end"), phaseLabel, phaseMins + " min"])
     }
     function save() {
         store.setText(JSON.stringify(running ? { endsAt: endsAt, label: label, phase: phase, cycle: cycle, dndWas: dndWas } : {}))

@@ -339,7 +339,7 @@ FocusScope {
     }
     function screenshot() {
         closeRequested()
-        Quickshell.execDetached(["sh", "-c", 'd="${XDG_PICTURES_DIR:-$HOME/Pictures}"; mkdir -p "$d"; f="$d/hush-$(date +%Y%m%d-%H%M%S).png"; g=$(slurp) || exit 0; grim -g "$g" "$f" && wl-copy <"$f" && notify-send -a hush -i "$f" "Screenshot" "Saved to ${f#"$HOME"/} and copied"'])
+        Quickshell.execDetached(["sh", "-c", 'd="${XDG_PICTURES_DIR:-$HOME/Pictures}"; mkdir -p "$d"; f="$d/hush-$(date +%Y%m%d-%H%M%S).png"; g=$(slurp) || exit 0; grim -g "$g" "$f" && wl-copy <"$f" && notify-send -a hush -h string:x-hush-kind:screenshot -i "$f" "Screenshot" "Saved to ${f#"$HOME"/} and copied"'])
     }
     Component {
         id: lockTile

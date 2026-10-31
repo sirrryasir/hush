@@ -65,6 +65,7 @@ Singleton {
         n.closed.connect(() => root.forget(n))
         // Carried over from before a reload: keep it in the center, do not pop it again.
         if (n.lastGeneration) return
+        Sounds.notify(n)
         const centerOpen = Ipc.island && Ipc.island.state === "notifCenter"
         if (!centerOpen) root.unread++
         // The shell's own notices (the focus timer's phase changes) show through do not disturb.

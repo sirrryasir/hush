@@ -7,6 +7,7 @@
     "clock": "24", "hijri": false
   },
   "battery": { "alerts": [20, 10, 5] },
+  "sounds": { "enabled": true, "volume": 60, "dnd": "critical", "burstMs": 1500, "events": {}, "apps": {} },
   "focus": { "focus": 25, "break": 5, "long": 15, "cycles": 4 },
   "modules": {
     "media": true, "notifications": true, "calendar": true, "launcher": true, "wallpapers": true, "settings": true

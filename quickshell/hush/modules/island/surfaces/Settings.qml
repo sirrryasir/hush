@@ -5,6 +5,7 @@ import Quickshell.Io
 import qs.config
 import qs.config as Cfg
 import qs.modules.island.cc
+import qs.services as Svc
 import "../states"
 
 // Settings surface: 560x336 GUI over the Settings singleton. A page rail on the left
@@ -31,6 +32,7 @@ FocusScope {
     readonly property var pages: [
         { id: "island", label: "Island", glyph: "pill" },
         { id: "behaviour", label: "Behaviour", glyph: "touch_app" },
+        { id: "sounds", label: "Sounds", glyph: "volume_up" },
         { id: "shortcuts", label: "Shortcuts", glyph: "keyboard" },
         { id: "modules", label: "Modules", glyph: "widgets" },
         { id: "theme", label: "Theme", glyph: "palette" },
@@ -116,8 +118,11 @@ FocusScope {
     component Drop: Item {
         id: dd
         property string key; property var options: []
+        // Optional: `shown` replaces the stored value on the button, `pick(v)` replaces writing `key`.
+        property string shown: ""
+        property var pick: null
         signal chosen()
-        readonly property string cur: String(root.cfgValue(key))
+        readonly property string cur: shown !== "" ? shown : String(root.cfgValue(key))
         readonly property string rowTitle: parent && parent.parent && parent.parent.title !== undefined ? parent.parent.title : ""
         property bool open: false
         Connections { target: root; function onOpenDropChanged() { if (root.openDrop !== dd) dd.open = false } }
@@ -149,7 +154,7 @@ FocusScope {
                     Label { x: 10; height: parent.height; text: parent.modelData; font.weight: parent.modelData === dd.cur ? Font.DemiBold : Font.Normal }
                     MouseArea { id: hov; anchors.fill: parent; hoverEnabled: true
                         Accessible.role: Accessible.MenuItem; Accessible.name: parent.modelData
-                        onClicked: { Cfg.Settings.set(root.cfgPath(dd.key), parent.modelData); dd.open = false; dd.chosen() } }
+                        onClicked: { if (dd.pick) dd.pick(parent.modelData); else Cfg.Settings.set(root.cfgPath(dd.key), parent.modelData); dd.open = false; dd.chosen() } }
                 }
             }
         }
@@ -291,7 +296,7 @@ FocusScope {
         x: 148; y: 14; width: parent.width - 160; height: parent.height - 28 - (root.warning !== "" ? 24 : 0)
         clip: true; contentWidth: width; boundsBehavior: Flickable.StopAtBounds
         onContentYChanged: root.back()
-        contentHeight: Math.max(height, behaviourPage.visible ? behaviourPage.height : shortcutsPage.visible ? shortcutsPage.height : modulesPage.visible ? modulesPage.height : 0)
+        contentHeight: Math.max(height, behaviourPage.visible ? behaviourPage.height : soundsPage.visible ? soundsPage.height : shortcutsPage.visible ? shortcutsPage.height : modulesPage.visible ? modulesPage.height : 0)
 
         ColumnLayout {
             visible: root.page === "island"; width: parent.width; height: parent.height; spacing: 0
@@ -326,6 +331,56 @@ FocusScope {
             Row2 { title: "Right click"; z: 3; Drop { key: "clickRight"; options: ["cc", "notifs", "media", "calendar", "none"] } }
             Row2 { title: "Middle click"; z: 2; Drop { key: "clickMiddle"; options: ["cc", "notifs", "media", "calendar", "none"] } }
             Row2 { title: "Scroll"; z: 1; Drop { key: "scroll"; options: ["volume", "brightness", "none"] } }
+        }
+
+        // Sounds: master switch and volume, what gets through do not disturb, the burst window, one row per
+        // event (switch and play), then one row per app seen in notifications (default, off or another sound).
+        ColumnLayout {
+            id: soundsPage
+            visible: root.page === "sounds"; width: parent.width; spacing: 0
+            readonly property real rowH: 32
+            readonly property var cfg: Cfg.Settings.data.sounds || ({})
+            readonly property var apps: {
+                const seen = Svc.Notifs.list.map(n => n.appName).concat(Object.keys(cfg.apps || {}))
+                return seen.filter((a, i) => a && a !== "hush" && seen.indexOf(a) === i).sort()
+            }
+            function pretty(e) { return e.charAt(0).toUpperCase() + e.slice(1).replace(/-/g, " ") }
+            Row2 { title: "Sounds"; Switch { anchors.verticalCenter: parent.verticalCenter; on: soundsPage.cfg.enabled !== false; onToggled: v => Cfg.Settings.set("sounds.enabled", v) } }
+            Row2 { title: "Volume"; Slide { width: parent.width; key: "sounds.volume"; from: 0; to: 100; step: 5; unit: "%" } }
+            Row2 { title: "Burst window"; Slide { width: parent.width; key: "sounds.burstMs"; from: 0; to: 5000; step: 100; unit: "ms" } }
+            Row2 { title: "Do not disturb"; z: 30; Drop { key: "sounds.dnd"; options: ["critical", "none"]; shown: soundsPage.cfg.dnd === "none" ? "silent" : "critical only"
+                pick: v => Cfg.Settings.set("sounds.dnd", v) } }
+            Repeater {
+                model: Svc.Sounds.events
+                delegate: Row2 {
+                    id: evRow
+                    required property string modelData
+                    title: soundsPage.pretty(modelData)
+                    Row { spacing: 8; anchors.verticalCenter: parent.verticalCenter
+                        Switch { anchors.verticalCenter: parent.verticalCenter; name: evRow.title
+                            on: !(soundsPage.cfg.events && soundsPage.cfg.events[evRow.modelData] === false)
+                            onToggled: v => Cfg.Settings.set("sounds.events." + evRow.modelData, v) }
+                        Chip { text: "Play"; accName: "Play " + evRow.title; onClicked: Svc.Sounds.play(evRow.modelData, true) } }
+                }
+            }
+            Label { visible: soundsPage.apps.length > 0; Layout.topMargin: 8; height: 24; text: "Apps"; font.weight: Font.DemiBold }
+            Repeater {
+                model: soundsPage.apps
+                delegate: Row2 {
+                    id: appRow
+                    required property string modelData
+                    required property int index
+                    title: modelData; z: 20 - index
+                    Drop { options: ["default", "off", "notification", "message", "critical", "timer-done", "device-added"]
+                        shown: (soundsPage.cfg.apps || {})[appRow.modelData] || "default"
+                        pick: v => {
+                            const a = Object.assign({}, soundsPage.cfg.apps || {}), app = appRow.modelData
+                            if (v === "default") delete a[app]; else a[app] = v
+                            Cfg.Settings.set("sounds.apps", a)
+                            if (v !== "default" && v !== "off") Svc.Sounds.play(v, true)
+                        } }
+                }
+            }
         }
 
         // Shortcuts: click a key field and press a combo (Enter alone clears, Esc cancels); the bind blocks are rendered below.
