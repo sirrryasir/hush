@@ -1,7 +1,10 @@
 pragma Singleton
 import QtQuick
 import Quickshell
+import Quickshell.Io
 import Quickshell.Services.UPower
+import qs.config
+import "BatteryAlert.js" as Alert
 
 Singleton {
     id: root
@@ -37,4 +40,30 @@ Singleton {
     }
     property int _prev: 0
     Timer { id: plugTimer; interval: 2000; onTriggered: root.justPlugged = false }
+
+    // Low-battery alerts: one Hush notification per threshold crossed on battery (critical below the
+    // first, so it stays up), replacing the last one; the cable clears it. Thresholds: battery.alerts.
+    readonly property var alertAt: Settings.data.battery && Settings.data.battery.alerts ? Settings.data.battery.alerts : [20, 10, 5]
+    property int _alerted: 101
+    onPercentChanged: alertCheck()
+    onChargingChanged: alertCheck()
+    onPresentChanged: alertCheck()
+    function clearAlert() {
+        for (const n of Notifs.list.slice()) if (n.hints && n.hints["x-hush-kind"] === "battery") Notifs.dismiss(n)
+    }
+    function alertCheck() {
+        if (!present) return
+        if (charging) { if (_alerted <= 100) clearAlert(); _alerted = 101; return }
+        const t = Alert.next(alertAt, percent, _alerted)
+        if (t < 0) return
+        _alerted = t
+        clearAlert()
+        const critical = t < Math.max(...alertAt), left = Alert.left(dev.timeToEmpty)
+        alertSend.command = ["notify-send", "-a", "hush", "-u", critical ? "critical" : "normal",
+            "-h", "string:x-hush-kind:battery", "-i", critical ? "battery-caution" : "battery-low",
+            (critical ? "Battery very low · " : "Battery low · ") + percent + "%",
+            (left ? "About " + left + " left. " : "") + (critical ? "Plug in now." : "Plug in when you can.")]
+        alertSend.running = true
+    }
+    Process { id: alertSend }
 }
