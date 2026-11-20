@@ -57,10 +57,9 @@ dirs=()
 for d in hush hypr kitty fastfetch Kvantum gtk-3.0 gtk-4.0 qt6ct waybar nvim; do [[ -e "$REAL_CFG/$d" ]] && dirs+=("$d"); done
 tar -C "$REAL_CFG" -chf - --exclude=hypr/plugins --exclude=nvim/lazy-lock.json "${dirs[@]}" 2>/dev/null | tar -C "$H/.config" -xf -
 mkdir -p "$H/.config/quickshell" "$H/.config/hush"
+rm -f "$H/.config/hush/settings.json" # tests assert the defaults, not the user's layout
 ln -sfn "$ROOT/quickshell/hush" "$H/.config/quickshell/hush"
 ln -sfn "$ROOT/matugen" "$H/.config/matugen"
-ln -sfn "$ROOT/hyprlock" "$H/.config/hyprlock"
-ln -sfn "$ROOT/hypr/plugins.lua" "$H/.config/hush/plugins.lua"
 for b in hush hush-wallgen hush-fonts hush-gtk; do ln -sfn "$ROOT/bin/$b" "$H/.local/bin/$b"; done
 # read-only things the shell and the toolkits look up under HOME
 for d in fonts icons themes bin dbus-1; do [[ -e "$REAL_HOME/.local/share/$d" ]] && ln -sfn "$REAL_HOME/.local/share/$d" "$H/.local/share/$d"; done

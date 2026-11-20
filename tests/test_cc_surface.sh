@@ -210,10 +210,11 @@ t_screenshot() {
   assert_eq "true" "$(cc tileShown screenshot)" "screenshot tile in the grid once enabled (grim on PATH)"
   shot screenshot-tile
   cc pressTile screenshot >/dev/null
-  for i in $(seq 20); do grep -q notify-send "$STUB/shotlog" 2>/dev/null && break; sleep 0.3; done
+  # wait for the screenshot's own notification: a real low-battery alert also logs notify-send
+  for i in $(seq 20); do grep -q x-hush-kind:screenshot "$STUB/shotlog" 2>/dev/null && break; sleep 0.3; done
   assert_contains "$STUB/shotlog" "grim -g 0,0 10x10 $HOME/Pictures/hush-" "tap shoots the slurp region with grim into ~/Pictures"
   assert_contains "$STUB/shotlog" "wl-copy" "the image is copied with wl-copy"
-  assert_contains "$STUB/shotlog" "notify-send -a hush -i $HOME/Pictures/hush-" "a notification announces it"
+  assert_contains "$STUB/shotlog" "notify-send -a hush -h string:x-hush-kind:screenshot -i $HOME/Pictures/hush-" "a notification announces it"
 }
 # Every tile enabled: tiles stay 56 px, the surface grows past 304 and the last row ends above the sliders.
 t_alltiles() {
