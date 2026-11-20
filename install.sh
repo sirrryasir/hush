@@ -48,6 +48,10 @@ if [[ -d "$CFG/nvim/lua/plugins" ]]; then
 else
   say "skip    nvim plugin (no $CFG/nvim/lua/plugins; LazyVim layout expected)"
 fi
+# links an older Hush made to files it no longer ships; only dangling ones go
+for old in "$CFG/hyprlock" "$CFG/hypr/hyprlock.conf" "$CFG/hush/plugins.lua"; do
+  if [[ -L "$old" && ! -e "$old" ]]; then rm "$old"; say "remove  $old (dangling, from an older Hush)"; fi
+done
 # Kvantum/hush holds only generated files; hush renders them there.
 mkdir -p "$CFG/Kvantum/hush" "$CFG/hush"
 
