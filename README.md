@@ -10,7 +10,7 @@ replaces the bar, launcher, notification daemon and control center.
 
 ## Install
 
-Needs Hyprland 0.56 or later (Lua config), Quickshell 0.3, matugen 4, awww, python3 with Pillow, lua, imagemagick and git; fprintd is optional, for fingerprint unlock.
+Needs Hyprland 0.56 or later (Lua config), Quickshell 0.3, matugen 4, awww, PipeWire, python3 with Pillow, lua, imagemagick and git; fprintd is optional, for fingerprint unlock.
 
 ```bash
 yay -S hush-shell && hush install    # Arch (hush-git tracks main)
