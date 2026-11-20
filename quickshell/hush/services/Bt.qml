@@ -3,6 +3,8 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import Quickshell.Bluetooth
+import Quickshell.Services.Pipewire
+import "BtAudio.js" as BtAudio
 
 // Bluetooth state for the island. An rfkill soft block makes bluez drop the adapter (or report it
 // Blocked), so toggle() lifts the block with `rfkill unblock bluetooth` and powers the adapter once
@@ -66,6 +68,11 @@ Singleton {
     // [{name, address, connected, paired, busy, battery (0..100 or -1), dev}]. Unnamed nearby
     // devices (bare addresses) are left out; paired ones always show.
     property var devices: []
+    // Addresses PipeWire has a bluez sink or source for ("bluez_output.F9_EB_...", "bluez_input.F9:EB:..").
+    // Kernel 7.x skips the "device connected" event on a headset's own reconnect, so bluez keeps
+    // Device1.Connected false while audio streams (bluez#2485, closed unfixed); PipeWire knows better.
+    readonly property var audioAddrs: Pipewire.nodes.values.map(n => BtAudio.addr(n.name)).filter(a => a)
+    function isConnected(d) { return !!d && (d.connected || audioAddrs.indexOf((d.address || "").toUpperCase()) >= 0) }
     function sourceDevices() { return fake ? fakeDevices : (Bluetooth.devices ? Bluetooth.devices.values : []) }
     function list() {
         const out = [], devs = sourceDevices()
@@ -74,9 +81,9 @@ Singleton {
             const named = d.name && d.name.replace(/[-:]/g, "") !== (d.address || "").replace(/:/g, "")
             if (!named && !d.paired) continue
             out.push({
-                name: d.name || d.address, address: d.address || "", connected: d.connected, paired: d.paired,
+                name: d.name || d.address, address: d.address || "", connected: isConnected(d), paired: d.paired,
                 busy: !!d.pairing || d.state === BluetoothDeviceState.Connecting || d.state === BluetoothDeviceState.Disconnecting,
-                battery: d.connected && d.batteryAvailable ? Math.round(d.battery * 100) : -1,
+                battery: isConnected(d) && d.batteryAvailable ? Math.round(d.battery * 100) : -1,
                 dev: d
             })
         }
@@ -92,7 +99,9 @@ Singleton {
         const a = root.adapter; if (a && a.discovering) a.discovering = false
     }
     // Row actions. Pairing trusts the device and connects it once bluez reports it paired.
-    function connectDevice(d) { if (d) d.connect(); later.restart() }
+    // Connect trusts too: without a trusted flag bluez asks an agent to authorise each profile,
+    // and Hush runs none (Quickshell has no agent API), so an untrusted headset is rejected.
+    function connectDevice(d) { if (!d) return; try { d.trusted = true } catch (e) {} d.connect(); later.restart() }
     function disconnectDevice(d) { if (d) d.disconnect(); later.restart() }
     function pairDevice(d) {
         if (!d) return
@@ -102,7 +111,7 @@ Singleton {
         later.restart()
     }
     function forgetDevice(d) { if (d) d.forget(); later.restart() }
-    function toggleDevice(d) { if (d.connected) disconnectDevice(d); else if (d.paired) connectDevice(d); else pairDevice(d) }
+    function toggleDevice(d) { if (isConnected(d)) disconnectDevice(d); else if (d.paired) connectDevice(d); else pairDevice(d) }
     Timer { id: later; interval: 300; onTriggered: root.list() }
     Timer {
         id: pairWatch; interval: 500; repeat: true
@@ -152,12 +161,13 @@ Singleton {
     function refresh() {
         let n = "";
         const devs = sourceDevices();
-        for (let i = 0; i < devs.length; i++) if (devs[i].connected) { n = devs[i].name; break; }
+        for (let i = 0; i < devs.length; i++) if (isConnected(devs[i])) { n = devs[i].name; break; }
         root.connectedName = n; list();
         // Re-read rfkill only while something looks blocked (an external `rfkill block` drops the adapter).
         if (root.blocked && !root.fake) probe()
     }
     Component.onCompleted: { if (fake) makeFakes(); refresh(); if (!fake) probe() }
     Connections { target: Bluetooth.devices; function onValuesChanged() { root.refresh() } }
+    onAudioAddrsChanged: refresh()
     Timer { interval: 3000; running: true; repeat: true; onTriggered: root.refresh() }
 }

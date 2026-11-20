@@ -10,7 +10,7 @@ Rectangle {
     id: row
     required property var modelData
     readonly property var dev: modelData.dev
-    readonly property bool connected: !!dev && dev.connected
+    readonly property bool connected: Svc.Bt.isConnected(dev)
     readonly property bool paired: !!dev && dev.paired
     readonly property bool busy: !!dev && (dev.pairing || dev.state === BluetoothDeviceState.Connecting || dev.state === BluetoothDeviceState.Disconnecting)
     readonly property int battery: connected && dev.batteryAvailable ? Math.round(dev.battery * 100) : -1
